@@ -3,7 +3,7 @@ package com.tankpilot.ai.controller;
 import com.tankpilot.ai.fallback.LocalHeuristicFallback;
 import com.tankpilot.ai.model.AIAdvisorRequest;
 import com.tankpilot.ai.model.AIAdvisorResponse;
-import com.tankpilot.ai.service.OpenAIAdvisorService;
+import com.tankpilot.ai.service.AdvisorService;
 import com.tankpilot.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -32,9 +32,9 @@ public class AIAdvisorController {
 
     private static final Logger log = LoggerFactory.getLogger(AIAdvisorController.class);
 
-    private final OpenAIAdvisorService aiService;
+    private final AdvisorService aiService;
 
-    public AIAdvisorController(OpenAIAdvisorService aiService) {
+    public AIAdvisorController(AdvisorService aiService) {
         this.aiService = aiService;
     }
 

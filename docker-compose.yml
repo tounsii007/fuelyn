@@ -98,11 +98,51 @@ services:
       retries: 12
       start_period: 60s
 
+  # ─── Local LLM (Ollama) ────────────────────────────────────
+  # Provides an OpenAI-compatible /api/chat endpoint backed by a
+  # small instruction-tuned model. The ai-service prefers this over
+  # OpenAI so that no Tankerkönig data leaves the host and per-request
+  # cost is zero. Falls through to OpenAI if unavailable.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_KEEP_ALIVE: "30m"
+    volumes:
+      - ollama_data:/root/.ollama
+    expose:
+      - "11434"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # One-shot init: pulls the model into the named volume on first boot.
+  # Re-runs are no-ops because Ollama caches model layers.
+  ollama-init:
+    image: ollama/ollama:latest
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: "http://ollama:11434"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
+    entrypoint: ["sh", "-c", "echo \"[init] pulling ${OLLAMA_MODEL:-qwen2.5:3b-instruct}\" && ollama pull ${OLLAMA_MODEL:-qwen2.5:3b-instruct} && echo \"[init] done\""]
+    volumes:
+      - ollama_data:/root/.ollama
+
   ai-service:
     build:
       context: ./backend
       dockerfile: ai-service/Dockerfile
     restart: unless-stopped
+    depends_on:
+      ollama:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "28820"
@@ -110,6 +150,16 @@ services:
       HMAC_SECRET: ${HMAC_SECRET}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      # Tiered AI pipeline: try Ollama first, OpenAI second.
+      # Set AI_PROVIDERS=heuristic to disable LLM enrichment entirely.
+      AI_ENRICHMENT_ENABLED: ${AI_ENRICHMENT_ENABLED:-true}
+      AI_PROVIDERS: ${AI_PROVIDERS:-ollama,openai}
+      OLLAMA_ENABLED: "true"
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
+      # OpenAI fallback — opt-in. Without an API key the bean is not
+      # registered and the orchestrator silently skips this tier.
+      OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     expose:
       - "28820"
@@ -181,3 +231,4 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+  ollama_data:

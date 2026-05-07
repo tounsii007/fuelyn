@@ -15,12 +15,35 @@ tankpilot:
     jwt-public-key: ${JWT_PUBLIC_KEY:}
     jwt-private-key: ${JWT_PRIVATE_KEY:}
     service-id: ai-service
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4o-mini}
-    max-tokens: 800
-    temperature: 0.7
-    timeout-ms: ${OPENAI_TIMEOUT_MS:30000}
+
+  # ─── AI tiered pipeline ─────────────────────────────────────
+  # Pipeline: cache → heuristic baseline → enrichment chain.
+  # `providers` is a CSV in priority order — each backend is tried
+  # until one succeeds. With nothing configured we degrade to the
+  # pure deterministic heuristic.
+  ai:
+    enrichment:
+      enabled: ${AI_ENRICHMENT_ENABLED:true}
+    providers: ${AI_PROVIDERS:ollama,openai}
+    cache:
+      max-size: ${AI_CACHE_MAX:200}
+      ttl-minutes: ${AI_CACHE_TTL_MIN:15}
+
+    ollama:
+      enabled: ${OLLAMA_ENABLED:true}
+      base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
+      model: ${OLLAMA_MODEL:qwen2.5:3b-instruct}
+      temperature: ${OLLAMA_TEMPERATURE:0.4}
+      timeout-ms: ${OLLAMA_TIMEOUT_MS:30000}
+
+    openai:
+      enabled: ${OPENAI_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:gpt-4o-mini}
+      max-tokens: 400
+      temperature: 0.6
+      timeout-ms: ${OPENAI_TIMEOUT_MS:30000}
+
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,https://localhost:3000}
 
@@ -33,11 +56,22 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 2
+      ollama:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
   retry:
     instances:
       openai:
         max-attempts: 2
         wait-duration: 3s
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+      ollama:
+        max-attempts: 2
+        wait-duration: 1s
         retry-exceptions:
           - java.net.ConnectException
           - java.net.SocketTimeoutException
