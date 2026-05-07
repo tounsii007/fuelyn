@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — French Translations (fr-FR)
+// Fuelyn — French Translations (fr-FR)
 //
 // Style: tone professionnel, vouvoiement, terminologie carburant
 // française standard (Diesel / SP95-E5 / SP95-E10). Les unités
@@ -185,7 +185,7 @@ export const fr: TranslationKeys = {
     cacheCleared: 'Cache vidé',
     lastUpdate: 'Dernière mise à jour',
     never: 'Jamais',
-    about: 'À propos de TankPilot',
+    about: 'À propos de Fuelyn',
     privacy: 'Confidentialité',
     imprint: 'Mentions légales',
     github: 'GitHub',
@@ -195,7 +195,7 @@ export const fr: TranslationKeys = {
 
   location: {
     permissionTitle: 'Accès à la position',
-    permissionMessage: 'TankPilot utilise votre position pour trouver les stations à proximité.',
+    permissionMessage: 'Fuelyn utilise votre position pour trouver les stations à proximité.',
     permissionDenied: 'Accès à la position refusé',
     permissionDeniedHint: 'Veuillez autoriser l’accès à la position dans les paramètres ou rechercher un lieu manuellement.',
     searchPlaceholder: 'Saisir une ville, un code postal ou un lieu…',
@@ -204,7 +204,7 @@ export const fr: TranslationKeys = {
   },
 
   onboarding: {
-    welcome: 'Bienvenue sur TankPilot',
+    welcome: 'Bienvenue sur Fuelyn',
     subtitle: 'Trouvez la meilleure station — pas seulement la moins chère.',
     fuelQuestion: 'Quel carburant utilisez-vous ?',
     fuelSelect: 'Choisissez votre carburant par défaut',

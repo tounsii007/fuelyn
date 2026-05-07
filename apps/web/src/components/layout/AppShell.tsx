@@ -133,27 +133,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 group" aria-label="TankPilot Startseite">
+    <Link href="/" className="flex items-center gap-2.5 group" aria-label="Fuelyn Startseite">
+      {/*
+        Fuelyn glyph — abstract "F" cut from a fuel-drop silhouette.
+        Lives inside a deep-navy → electric-blue → violet gradient
+        with a soft ring-glow so the mark feels tactile and emissive
+        in dark mode without being noisy in light mode.
+      */}
       <span
         aria-hidden="true"
-        className="relative w-9 h-9 rounded-2xl tp-ring-glow flex items-center justify-center
-                   bg-gradient-to-br from-[var(--color-brand-500)] via-[var(--color-brand-600)] to-[var(--color-brand-800)]
-                   text-white tp-press transition-transform group-hover:scale-105"
+        className="relative w-9 h-9 rounded-2xl flex items-center justify-center
+                   bg-gradient-to-br from-[var(--color-brand-400)] via-[var(--color-brand-600)] to-[var(--color-violet-500)]
+                   text-white shadow-[var(--shadow-glow-brand)]
+                   transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          {/* Drop silhouette */}
           <path
-            strokeLinecap="round"
+            d="M12 2.5c4.6 5.5 7 9.4 7 12.6a7 7 0 11-14 0c0-3.2 2.4-7.1 7-12.6Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
             strokeLinejoin="round"
-            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+          />
+          {/* Lightning-F mark inside the drop */}
+          <path
+            d="M11 9h3.2l-3 3.6h2.4L10.4 18l.8-3.8H9.6L11 9Z"
+            fill="currentColor"
           />
         </svg>
-        <span className="absolute inset-0 rounded-2xl bg-white/30 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* Hover sheen */}
+        <span className="absolute inset-0 rounded-2xl bg-white/25 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity" />
       </span>
       <span className="flex flex-col leading-none">
-        <span className="text-[15px] font-bold tracking-tight tp-text-gradient">TankPilot</span>
+        <span className="text-[15px] font-bold tracking-tight tp-text-gradient">Fuelyn</span>
         <span className="text-[10px] font-medium text-[var(--color-fg-subtle)] mt-0.5">
-          Günstig &amp; smart tanken
+          AI fuel intelligence
         </span>
       </span>
     </Link>

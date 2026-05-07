@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — English Translations
+// Fuelyn — English Translations
 // ============================================================
 
 import type { TranslationKeys } from './de';
@@ -180,7 +180,7 @@ export const en: TranslationKeys = {
     cacheCleared: 'Cache cleared',
     lastUpdate: 'Last update',
     never: 'Never',
-    about: 'About TankPilot',
+    about: 'About Fuelyn',
     privacy: 'Privacy',
     imprint: 'Imprint',
     github: 'GitHub',
@@ -190,7 +190,7 @@ export const en: TranslationKeys = {
 
   location: {
     permissionTitle: 'Location access',
-    permissionMessage: 'TankPilot uses your location to find nearby gas stations.',
+    permissionMessage: 'Fuelyn uses your location to find nearby gas stations.',
     permissionDenied: 'Location access denied',
     permissionDeniedHint: 'Please allow location access in settings or search for a location manually.',
     searchPlaceholder: 'Enter city, ZIP code, or place...',
@@ -199,7 +199,7 @@ export const en: TranslationKeys = {
   },
 
   onboarding: {
-    welcome: 'Welcome to TankPilot',
+    welcome: 'Welcome to Fuelyn',
     subtitle: 'Find the best gas station \u2014 not just the cheapest.',
     fuelQuestion: 'What do you drive?',
     fuelSelect: 'Choose your default fuel type',

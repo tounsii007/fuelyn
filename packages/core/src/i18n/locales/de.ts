@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — German Translations
+// Fuelyn — German Translations
 // ============================================================
 
 export const de = {
@@ -178,7 +178,7 @@ export const de = {
     cacheCleared: 'Cache wurde gelöscht',
     lastUpdate: 'Letzte Aktualisierung',
     never: 'Nie',
-    about: 'Über TankPilot',
+    about: 'Über Fuelyn',
     privacy: 'Datenschutz',
     imprint: 'Impressum',
     github: 'GitHub',
@@ -188,7 +188,7 @@ export const de = {
 
   location: {
     permissionTitle: 'Standortzugriff',
-    permissionMessage: 'TankPilot nutzt deinen Standort, um Tankstellen in deiner Nähe zu finden.',
+    permissionMessage: 'Fuelyn nutzt deinen Standort, um Tankstellen in deiner Nähe zu finden.',
     permissionDenied: 'Standortzugriff verweigert',
     permissionDeniedHint: 'Bitte erlaube den Standortzugriff in den Einstellungen oder suche manuell nach einem Ort.',
     searchPlaceholder: 'Ort, PLZ oder Stadt eingeben...',
@@ -197,7 +197,7 @@ export const de = {
   },
 
   onboarding: {
-    welcome: 'Willkommen bei TankPilot',
+    welcome: 'Willkommen bei Fuelyn',
     subtitle: 'Finde die beste Tankstelle — nicht nur die billigste.',
     fuelQuestion: 'Was tankst du?',
     fuelSelect: 'Wähle deinen Standard-Kraftstoff',

@@ -24,6 +24,7 @@ import { AddressSearch } from '@/components/stations/AddressSearch';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
+import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@tankpilot/core';
 import type {
@@ -388,6 +389,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <SearchHistory />
+                <BestDealCard recommendations={recommendations} />
                 <PriceStats recommendations={recommendations} />
 
                 {recommendations.length > 0 && (

@@ -8,15 +8,25 @@ import { NO_FLASH_SCRIPT } from '@/lib/theme/ThemeProvider';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'TankPilot - Günstig & schlau tanken',
+  title: 'Fuelyn — AI-powered fuel intelligence',
   description:
-    'Finde die beste Tankstelle in deiner Nähe. Nicht nur die billigste - die sinnvollste.',
-  keywords: ['Tankstelle', 'Spritpreise', 'Benzinpreise', 'Diesel', 'Super E5', 'Super E10', 'Deutschland'],
-  authors: [{ name: 'TankPilot' }],
+    'Fuelyn finds the smartest gas station, predicts fuel-price drops, and turns every refuel into a data-driven decision.',
+  keywords: [
+    'Fuelyn',
+    'Tankstelle',
+    'Spritpreise',
+    'Fuel prices',
+    'AI fuel advisor',
+    'Diesel',
+    'Super E5',
+    'Super E10',
+    'Deutschland',
+  ],
+  authors: [{ name: 'Fuelyn' }],
   manifest: '/manifest.json',
   openGraph: {
-    title: 'TankPilot - Günstig & schlau tanken',
-    description: 'Finde die beste Tankstelle in deiner Nähe.',
+    title: 'Fuelyn — AI-powered fuel intelligence',
+    description: 'Smart fuel decisions, every refuel.',
     type: 'website',
     locale: 'de_DE',
   },
@@ -28,7 +38,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
-    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
+    // Match the new cinematic navy from tokens.css
+    { media: '(prefers-color-scheme: dark)', color: '#0a0f1d' },
   ],
 };
 

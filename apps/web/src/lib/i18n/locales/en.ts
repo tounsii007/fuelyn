@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — English Translations (re-export from core)
+// Fuelyn Web — English Translations (re-export from core)
 // ============================================================
 
 export { en } from '@tankpilot/core';
