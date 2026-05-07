@@ -117,7 +117,7 @@ class LocalHeuristicFallbackTest {
         var history = buildLinearHistory(1.700, 0.005, 12); // +0.5 ct / hour
         var trend = LocalHeuristicFallback.analyseTrend(history);
 
-        assertThat(trend.direction()).isEqualTo(LocalHeuristicFallback.Trend.Direction.RISING);
+        assertThat(trend.direction()).isEqualTo(com.tankpilot.ai.signals.EwmaChangePoint.Direction.RISING);
         assertThat(trend.slopePerDay()).isGreaterThan(0.05); // > 5 ct/day
         assertThat(trend.strength()).isGreaterThan(0.5);
     }
@@ -127,7 +127,7 @@ class LocalHeuristicFallbackTest {
         var history = buildLinearHistory(1.800, -0.004, 12);
         var trend = LocalHeuristicFallback.analyseTrend(history);
 
-        assertThat(trend.direction()).isEqualTo(LocalHeuristicFallback.Trend.Direction.FALLING);
+        assertThat(trend.direction()).isEqualTo(com.tankpilot.ai.signals.EwmaChangePoint.Direction.FALLING);
         assertThat(trend.slopePerDay()).isLessThan(0);
     }
 
@@ -136,7 +136,7 @@ class LocalHeuristicFallbackTest {
         var history = buildLinearHistory(1.749, 0.0, 12);
         var trend = LocalHeuristicFallback.analyseTrend(history);
 
-        assertThat(trend.direction()).isEqualTo(LocalHeuristicFallback.Trend.Direction.STABLE);
+        assertThat(trend.direction()).isEqualTo(com.tankpilot.ai.signals.EwmaChangePoint.Direction.STABLE);
     }
 
     @Test
@@ -145,7 +145,7 @@ class LocalHeuristicFallbackTest {
                 new AIAdvisorRequest.PricePoint(1.7, ts(0)),
                 new AIAdvisorRequest.PricePoint(1.7, ts(1))
         ));
-        assertThat(trend.direction()).isEqualTo(LocalHeuristicFallback.Trend.Direction.STABLE);
+        assertThat(trend.direction()).isEqualTo(com.tankpilot.ai.signals.EwmaChangePoint.Direction.STABLE);
         assertThat(trend.strength()).isEqualTo(0);
     }
 
@@ -158,7 +158,7 @@ class LocalHeuristicFallbackTest {
         var trend = LocalHeuristicFallback.analyseTrend(combined);
 
         // still detects rising despite the malformed entry
-        assertThat(trend.direction()).isEqualTo(LocalHeuristicFallback.Trend.Direction.RISING);
+        assertThat(trend.direction()).isEqualTo(com.tankpilot.ai.signals.EwmaChangePoint.Direction.RISING);
     }
 
     // ────────────────────────────────────────────────────────────

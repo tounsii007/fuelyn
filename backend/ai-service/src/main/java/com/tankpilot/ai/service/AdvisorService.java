@@ -6,10 +6,14 @@ import com.tankpilot.ai.backend.EnrichmentBackend;
 import com.tankpilot.ai.fallback.LocalHeuristicFallback;
 import com.tankpilot.ai.model.AIAdvisorRequest;
 import com.tankpilot.ai.model.AIAdvisorResponse;
+import com.tankpilot.ai.telemetry.RegretLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,14 +68,32 @@ public class AdvisorService {
     private final Cache<String, AIAdvisorResponse> responseCache;
     private final List<EnrichmentBackend> orderedBackends;
     private final boolean enrichmentEnabled;
+    private final RegretLogger regretLogger;
 
+    /**
+     * Test-friendly overload — RegretLogger is optional so unit tests
+     * can construct the service without wiring up SLF4J marker plumbing.
+     */
+    public AdvisorService(
+            List<EnrichmentBackend> backends,
+            boolean enrichmentEnabled,
+            String providersCsv,
+            long cacheMaxSize,
+            long cacheTtlMinutes
+    ) {
+        this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, null);
+    }
+
+    @Autowired(required = false)
     public AdvisorService(
             List<EnrichmentBackend> backends,
             @Value("${tankpilot.ai.enrichment.enabled:true}") boolean enrichmentEnabled,
             @Value("${tankpilot.ai.providers:ollama,openai}") String providersCsv,
             @Value("${tankpilot.ai.cache.max-size:200}") long cacheMaxSize,
-            @Value("${tankpilot.ai.cache.ttl-minutes:15}") long cacheTtlMinutes
+            @Value("${tankpilot.ai.cache.ttl-minutes:15}") long cacheTtlMinutes,
+            RegretLogger regretLogger
     ) {
+        this.regretLogger = regretLogger;
         this.enrichmentEnabled = enrichmentEnabled;
         this.responseCache = Caffeine.newBuilder()
                 .maximumSize(cacheMaxSize)
@@ -112,6 +134,14 @@ public class AdvisorService {
 
         // [4] Cache final result
         responseCache.put(cacheKey, result);
+
+        // [5] Telemetry — non-blocking, never alters the response
+        if (regretLogger != null) {
+            try {
+                regretLogger.record(UUID.randomUUID().toString().substring(0, 8), request, result);
+            } catch (Exception ignored) { /* never break the request path */ }
+        }
+
         return result;
     }
 
