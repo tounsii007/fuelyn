@@ -216,97 +216,106 @@
   }
 
   /* ─── Background variants (data-attribute switched) ─────────
-   * Set on <html data-bg="aurora">. Default is `aurora`.
+   *
+   * Architecture: a single `.tp-mesh` rule consumes four CSS custom
+   * properties (--mesh-1..4). Each `[data-bg="…"]` sets those vars,
+   * and `:root.dark[data-bg="…"]` overrides them for dark mode. By
+   * routing through CSS variables we sidestep any selector-specificity
+   * conflict that plagued the previous fanned-out rules — picking a
+   * variant always wins because it changes the inputs the single
+   * .tp-mesh rule reads from.
+   *
+   * Set on <html data-bg="aurora">. Default = aurora.
    * Supported values: aurora | sunset | ocean | forest | cyber | minimal
-   * The `tp-mesh` utility below picks the right gradient per variant. */
-  .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 12% 10%, oklch(0.62 0.20 245 / 0.18), transparent 70%),
-      radial-gradient(45% 45% at 88% 0%,  oklch(0.66 0.20 145 / 0.14), transparent 70%),
-      radial-gradient(55% 55% at 100% 90%, oklch(0.66 0.22 25  / 0.10), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.66 0.16 230 / 0.12), transparent 70%);
+   *
+   * Each --mesh-N is a complete `radial-gradient(...)` value.
+   */
+  :root {
+    --mesh-1: radial-gradient(60% 50% at 12% 10%, oklch(0.62 0.20 245 / 0.18), transparent 70%);
+    --mesh-2: radial-gradient(45% 45% at 88% 0%,  oklch(0.66 0.20 145 / 0.14), transparent 70%);
+    --mesh-3: radial-gradient(55% 55% at 100% 90%, oklch(0.66 0.22 25  / 0.10), transparent 70%);
+    --mesh-4: radial-gradient(70% 60% at 30% 100%, oklch(0.66 0.16 230 / 0.12), transparent 70%);
   }
-  .dark .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 12% 10%, oklch(0.42 0.18 245 / 0.35), transparent 70%),
-      radial-gradient(45% 45% at 88% 0%,  oklch(0.40 0.16 145 / 0.25), transparent 70%),
-      radial-gradient(55% 55% at 100% 90%, oklch(0.42 0.18 25  / 0.20), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.42 0.14 230 / 0.22), transparent 70%);
+  :root.dark {
+    --mesh-1: radial-gradient(60% 50% at 12% 10%, oklch(0.42 0.18 245 / 0.35), transparent 70%);
+    --mesh-2: radial-gradient(45% 45% at 88% 0%,  oklch(0.40 0.16 145 / 0.25), transparent 70%);
+    --mesh-3: radial-gradient(55% 55% at 100% 90%, oklch(0.42 0.18 25  / 0.20), transparent 70%);
+    --mesh-4: radial-gradient(70% 60% at 30% 100%, oklch(0.42 0.14 230 / 0.22), transparent 70%);
   }
 
   /* Sunset — warm corals + amber */
-  [data-bg="sunset"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 0%,    oklch(0.78 0.18 30 / 0.30), transparent 70%),
-      radial-gradient(50% 50% at 100% 0%,  oklch(0.82 0.16 60 / 0.22), transparent 70%),
-      radial-gradient(60% 60% at 100% 100%,oklch(0.66 0.22 10 / 0.18), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.78 0.13 340 / 0.18), transparent 70%);
+  :root[data-bg="sunset"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 0%,    oklch(0.78 0.18 30 / 0.30), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 0%,  oklch(0.82 0.16 60 / 0.22), transparent 70%);
+    --mesh-3: radial-gradient(60% 60% at 100% 100%,oklch(0.66 0.22 10 / 0.18), transparent 70%);
+    --mesh-4: radial-gradient(70% 60% at 30% 100%, oklch(0.78 0.13 340 / 0.18), transparent 70%);
   }
-  [data-bg="sunset"].dark .tp-mesh,
-  .dark [data-bg="sunset"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 0%,    oklch(0.46 0.16 30 / 0.45), transparent 70%),
-      radial-gradient(50% 50% at 100% 0%,  oklch(0.50 0.14 60 / 0.30), transparent 70%),
-      radial-gradient(60% 60% at 100% 100%,oklch(0.42 0.20 10 / 0.30), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.46 0.12 340 / 0.30), transparent 70%);
+  :root.dark[data-bg="sunset"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 0%,    oklch(0.46 0.16 30 / 0.45), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 0%,  oklch(0.50 0.14 60 / 0.30), transparent 70%);
+    --mesh-3: radial-gradient(60% 60% at 100% 100%,oklch(0.42 0.20 10 / 0.30), transparent 70%);
+    --mesh-4: radial-gradient(70% 60% at 30% 100%, oklch(0.46 0.12 340 / 0.30), transparent 70%);
   }
 
   /* Ocean — deep teal + cyan */
-  [data-bg="ocean"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 10% 0%,   oklch(0.68 0.16 200 / 0.22), transparent 70%),
-      radial-gradient(50% 50% at 100% 30%, oklch(0.62 0.18 220 / 0.22), transparent 70%),
-      radial-gradient(70% 60% at 50% 100%, oklch(0.58 0.14 180 / 0.18), transparent 70%);
+  :root[data-bg="ocean"] {
+    --mesh-1: radial-gradient(60% 50% at 10% 0%,   oklch(0.68 0.16 200 / 0.22), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 30%, oklch(0.62 0.18 220 / 0.22), transparent 70%);
+    --mesh-3: radial-gradient(70% 60% at 50% 100%, oklch(0.58 0.14 180 / 0.18), transparent 70%);
+    --mesh-4: none;
   }
-  [data-bg="ocean"].dark .tp-mesh,
-  .dark [data-bg="ocean"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 10% 0%,   oklch(0.36 0.14 200 / 0.45), transparent 70%),
-      radial-gradient(50% 50% at 100% 30%, oklch(0.32 0.16 220 / 0.40), transparent 70%),
-      radial-gradient(70% 60% at 50% 100%, oklch(0.30 0.13 180 / 0.35), transparent 70%);
+  :root.dark[data-bg="ocean"] {
+    --mesh-1: radial-gradient(60% 50% at 10% 0%,   oklch(0.36 0.14 200 / 0.45), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 30%, oklch(0.32 0.16 220 / 0.40), transparent 70%);
+    --mesh-3: radial-gradient(70% 60% at 50% 100%, oklch(0.30 0.13 180 / 0.35), transparent 70%);
+    --mesh-4: none;
   }
 
   /* Forest — green + earth */
-  [data-bg="forest"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 20% 0%,   oklch(0.72 0.14 150 / 0.20), transparent 70%),
-      radial-gradient(50% 50% at 100% 50%, oklch(0.66 0.16 130 / 0.18), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.58 0.10 100 / 0.16), transparent 70%);
+  :root[data-bg="forest"] {
+    --mesh-1: radial-gradient(60% 50% at 20% 0%,   oklch(0.72 0.14 150 / 0.20), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 50%, oklch(0.66 0.16 130 / 0.18), transparent 70%);
+    --mesh-3: radial-gradient(70% 60% at 30% 100%, oklch(0.58 0.10 100 / 0.16), transparent 70%);
+    --mesh-4: none;
   }
-  [data-bg="forest"].dark .tp-mesh,
-  .dark [data-bg="forest"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 20% 0%,   oklch(0.36 0.14 150 / 0.45), transparent 70%),
-      radial-gradient(50% 50% at 100% 50%, oklch(0.32 0.16 130 / 0.40), transparent 70%),
-      radial-gradient(70% 60% at 30% 100%, oklch(0.28 0.10 100 / 0.30), transparent 70%);
+  :root.dark[data-bg="forest"] {
+    --mesh-1: radial-gradient(60% 50% at 20% 0%,   oklch(0.36 0.14 150 / 0.45), transparent 70%);
+    --mesh-2: radial-gradient(50% 50% at 100% 50%, oklch(0.32 0.16 130 / 0.40), transparent 70%);
+    --mesh-3: radial-gradient(70% 60% at 30% 100%, oklch(0.28 0.10 100 / 0.30), transparent 70%);
+    --mesh-4: none;
   }
 
   /* Cyber — neon magenta + violet */
-  [data-bg="cyber"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 100%,  oklch(0.66 0.22 320 / 0.28), transparent 70%),
-      radial-gradient(60% 50% at 100% 0%,  oklch(0.66 0.22 280 / 0.26), transparent 70%),
-      radial-gradient(50% 50% at 50% 50%,  oklch(0.72 0.18 350 / 0.16), transparent 70%);
+  :root[data-bg="cyber"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 100%,  oklch(0.66 0.22 320 / 0.28), transparent 70%);
+    --mesh-2: radial-gradient(60% 50% at 100% 0%,  oklch(0.66 0.22 280 / 0.26), transparent 70%);
+    --mesh-3: radial-gradient(50% 50% at 50% 50%,  oklch(0.72 0.18 350 / 0.16), transparent 70%);
+    --mesh-4: none;
   }
-  [data-bg="cyber"].dark .tp-mesh,
-  .dark [data-bg="cyber"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 100%,  oklch(0.42 0.22 320 / 0.50), transparent 70%),
-      radial-gradient(60% 50% at 100% 0%,  oklch(0.40 0.24 280 / 0.45), transparent 70%),
-      radial-gradient(50% 50% at 50% 50%,  oklch(0.36 0.20 350 / 0.30), transparent 70%);
+  :root.dark[data-bg="cyber"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 100%,  oklch(0.42 0.22 320 / 0.50), transparent 70%);
+    --mesh-2: radial-gradient(60% 50% at 100% 0%,  oklch(0.40 0.24 280 / 0.45), transparent 70%);
+    --mesh-3: radial-gradient(50% 50% at 50% 50%,  oklch(0.36 0.20 350 / 0.30), transparent 70%);
+    --mesh-4: none;
   }
 
   /* Minimal — barely-there subtle wash */
-  [data-bg="minimal"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 0%,    oklch(0.80 0.04 240 / 0.10), transparent 70%),
-      radial-gradient(60% 50% at 100% 100%,oklch(0.80 0.04 240 / 0.06), transparent 70%);
+  :root[data-bg="minimal"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 0%,    oklch(0.80 0.04 240 / 0.10), transparent 70%);
+    --mesh-2: radial-gradient(60% 50% at 100% 100%,oklch(0.80 0.04 240 / 0.06), transparent 70%);
+    --mesh-3: none;
+    --mesh-4: none;
   }
-  [data-bg="minimal"].dark .tp-mesh,
-  .dark [data-bg="minimal"] .tp-mesh {
-    background-image:
-      radial-gradient(60% 50% at 0% 0%,    oklch(0.36 0.04 240 / 0.30), transparent 70%),
-      radial-gradient(60% 50% at 100% 100%,oklch(0.36 0.04 240 / 0.20), transparent 70%);
+  :root.dark[data-bg="minimal"] {
+    --mesh-1: radial-gradient(60% 50% at 0% 0%,    oklch(0.36 0.04 240 / 0.30), transparent 70%);
+    --mesh-2: radial-gradient(60% 50% at 100% 100%,oklch(0.36 0.04 240 / 0.20), transparent 70%);
+    --mesh-3: none;
+    --mesh-4: none;
+  }
+
+  /* Single mesh rule — all variants reach this exact selector. */
+  .tp-mesh {
+    background-image: var(--mesh-1), var(--mesh-2), var(--mesh-3), var(--mesh-4);
   }
 
   /* Animated mesh — slow drift for hero areas */

@@ -41,8 +41,16 @@ function ThemeSync() {
   // Apply the chosen background variant to <html> so the .tp-mesh
   // utility (used everywhere the gradient backdrop appears) picks
   // up the matching CSS rule from tokens.css.
+  //
+  // Defensive fallback: if the persisted settings predate the
+  // `background` field (older app versions) we coerce to 'aurora'
+  // so the user never lands on an undefined value.
   useEffect(() => {
-    document.documentElement.dataset.bg = background ?? 'aurora';
+    const root = document.documentElement;
+    const variant = background && typeof background === 'string' ? background : 'aurora';
+    root.setAttribute('data-bg', variant);
+    // Mirror to dataset for code that prefers the typed accessor.
+    root.dataset.bg = variant;
   }, [background]);
 
   return null;
