@@ -18,6 +18,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useGeolocation } from '@/lib/hooks/use-location';
 import { fetchJson } from '@/lib/http/fetch-json';
 
 interface NominatimAddress {
@@ -41,6 +42,31 @@ interface SearchResult {
   readonly class?: string;
   readonly type?: string;
   readonly address?: NominatimAddress;
+}
+
+/** Reverse-geocoding response shape (a single SearchResult-ish record). */
+interface ReverseGeocodeResult {
+  readonly display_name: string;
+  readonly address?: NominatimAddress;
+}
+
+const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
+
+/**
+ * Format a reverse-geocode hit into a single-line label that fits the
+ * search input. Prefers structured pieces in this order:
+ *   road [house_number], postcode city, state
+ * Falls back to display_name for unknown shapes.
+ */
+function formatReverseLabel(r: ReverseGeocodeResult): string {
+  const a = r.address ?? {};
+  const cityLike = a.city ?? a.town ?? a.village ?? a.municipality ?? '';
+  const street = a.road ? `${a.road}${a.house_number ? ' ' + a.house_number : ''}` : '';
+  const tail = [a.postcode, cityLike].filter(Boolean).join(' ');
+  const main = [street, tail].filter(Boolean).join(', ');
+  if (main) return main;
+  // Last resort: trim Nominatim's chatty display_name to first 3 segments.
+  return r.display_name.split(',').slice(0, 3).map((s) => s.trim()).filter(Boolean).join(', ');
 }
 
 type ResultGroup = 'Adresse' | 'PLZ' | 'Stadt' | 'Ort';
@@ -118,17 +144,131 @@ function formatResult(r: SearchResult): FormattedResult {
 
 const GROUP_ORDER: ResultGroup[] = ['Adresse', 'PLZ', 'Stadt', 'Ort'];
 
+// ─── GeolocateButton ───────────────────────────────────────
+//
+// Compact "use my location" button that lives inside the search
+// input's right rail. Drives a four-state visual machine:
+//
+//   idle      → outlined crosshair, brand-blue on hover
+//   locating  → animated pulse around a filled dot
+//   success   → check-mark, briefly green
+//   denied    → strike-through crosshair, amber
+
+interface GeolocateButtonProps {
+  readonly state: GeoState;
+  readonly onClick: () => void;
+}
+
+function GeolocateButton({ state, onClick }: GeolocateButtonProps) {
+  const baseClasses =
+    'w-7 h-7 inline-flex items-center justify-center rounded-lg ' +
+    'transition-colors focus:outline-none focus-visible:ring-2 ' +
+    'focus-visible:ring-brand-500/40';
+
+  const toneClasses = {
+    idle: 'text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/30',
+    locating: 'text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30',
+    success: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
+    denied: 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30',
+  } as const;
+
+  const labels = {
+    idle: 'Aktuellen Standort verwenden',
+    locating: 'Standort wird ermittelt…',
+    success: 'Standort übernommen',
+    denied: 'Standort nicht verfügbar — erneut versuchen',
+  } as const;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={labels[state]}
+      aria-label={labels[state]}
+      aria-busy={state === 'locating' || undefined}
+      disabled={state === 'locating'}
+      className={`${baseClasses} ${toneClasses[state]} ${state === 'locating' ? 'cursor-progress' : ''}`}
+    >
+      {state === 'locating' ? <CrosshairLocating /> : state === 'success' ? <CheckIcon /> : state === 'denied' ? <CrosshairDenied /> : <CrosshairIcon />}
+    </button>
+  );
+}
+
+function CrosshairIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+      <path strokeLinecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </svg>
+  );
+}
+
+function CrosshairLocating() {
+  return (
+    <span className="relative inline-flex w-4 h-4 items-center justify-center" aria-hidden="true">
+      <span className="absolute inset-0 rounded-full bg-current opacity-30 animate-ping" />
+      <span className="relative w-2 h-2 rounded-full bg-current" />
+    </span>
+  );
+}
+
+function CrosshairDenied() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" d="M5 5l14 14" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 5 5 9-11" />
+    </svg>
+  );
+}
+
+type GeoState = 'idle' | 'locating' | 'success' | 'denied';
+
 export function AddressSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FormattedResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [geoState, setGeoState] = useState<GeoState>('idle');
+  const [geoMessage, setGeoMessage] = useState<string | null>(null);
   const setUserLocation = useAppStore((s) => s.setUserLocation);
+  const userLocation = useAppStore((s) => s.userLocation);
+  const { requestLocation, permission, insecureContext } = useGeolocation();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const geoRequestedAtRef = useRef<number | null>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -201,6 +341,81 @@ export function AddressSearch() {
     debounceRef.current = setTimeout(() => search(value), DEBOUNCE_MS);
   };
 
+  /**
+   * Reverse-geocode a coordinate pair and write a human-readable
+   * label into the search input so the user sees what was detected.
+   * Best-effort: failures fall back to the existing query state.
+   */
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lon: String(lng),
+      format: 'json',
+      addressdetails: '1',
+      'accept-language': 'de',
+      zoom: '14', // city-block level
+    });
+    try {
+      const data = await fetchJson<ReverseGeocodeResult>(
+        `${NOMINATIM_REVERSE}?${params.toString()}`,
+        { timeoutMs: 6000 },
+      );
+      setQuery(formatReverseLabel(data));
+    } catch {
+      // Silent — userLocation is already set; the label is just polish.
+    }
+  }, []);
+
+  /**
+   * Trigger native geolocation on demand. Drives a small state machine
+   * to give the button a visible "locating → success / denied" rhythm
+   * even on fast networks.
+   */
+  const handleUseCurrentLocation = useCallback(() => {
+    if (geoState === 'locating') return; // already in flight
+    setGeoState('locating');
+    setGeoMessage(null);
+    geoRequestedAtRef.current = Date.now();
+    setIsOpen(false);
+    // Delegate to the shared hook, which handles permission states,
+    // insecure-context fallback (Berlin) and store updates.
+    requestLocation();
+  }, [geoState, requestLocation]);
+
+  // Watch for location changes triggered by our button click and
+  // settle the local state machine accordingly.
+  useEffect(() => {
+    if (geoState !== 'locating') return;
+    // Permission was rejected mid-request → show error state
+    if (permission === 'denied') {
+      setGeoState('denied');
+      setGeoMessage(
+        insecureContext
+          ? 'Standort nur über HTTPS verfügbar.'
+          : 'Standortzugriff verweigert.',
+      );
+      return;
+    }
+    // We've got coordinates after the request started → success
+    if (
+      userLocation &&
+      geoRequestedAtRef.current &&
+      Date.now() - geoRequestedAtRef.current < 30_000
+    ) {
+      setGeoState('success');
+      setGeoMessage(null);
+      void reverseGeocode(userLocation.lat, userLocation.lng);
+      // Auto-fade the success indicator back to idle
+      const t = setTimeout(() => setGeoState('idle'), 1_800);
+      return () => clearTimeout(t);
+    }
+    // 12 s timeout → stop spinning, show neutral idle again
+    const fallback = setTimeout(() => {
+      setGeoState((s) => (s === 'locating' ? 'idle' : s));
+    }, 12_000);
+    return () => clearTimeout(fallback);
+  }, [geoState, permission, userLocation, reverseGeocode, insecureContext]);
+
   const handleSelect = useCallback(
     (result: FormattedResult) => {
       const lat = Number.parseFloat(result.raw.lat);
@@ -265,12 +480,22 @@ export function AddressSearch() {
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
+        {/* Search icon (left) */}
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 pointer-events-none"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+          />
         </svg>
+
         <input
           type="text"
           value={query}
@@ -285,29 +510,70 @@ export function AddressSearch() {
               ? `addr-result-${results[activeIndex].raw.place_id}`
               : undefined
           }
-          className="w-full pl-9 pr-8 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700
+          /* pr-20: enough room for both the X-clear button (when shown)
+             and the always-present geolocation button on the right. */
+          className="w-full pl-9 pr-20 py-2 text-sm rounded-xl
+                     border border-gray-200 dark:border-gray-700
                      bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                     placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30
+                     placeholder:text-gray-400 dark:placeholder:text-gray-500
+                     focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30
                      focus:border-brand-500 transition-all"
         />
-        {loading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-brand-500 rounded-full animate-spin" />
-          </div>
-        )}
-        {query && !loading && (
-          <button
-            type="button"
-            onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Eingabe löschen"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
+
+        {/* Trailing controls — clear · search-spinner · geolocate */}
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+          {loading ? (
+            <span
+              aria-label="Suche läuft"
+              className="w-7 h-7 inline-flex items-center justify-center"
+            >
+              <span className="w-4 h-4 border-2 border-gray-300 dark:border-gray-600 border-t-brand-500 rounded-full animate-spin" />
+            </span>
+          ) : query ? (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery('');
+                setResults([]);
+                setIsOpen(false);
+              }}
+              className="w-7 h-7 inline-flex items-center justify-center rounded-lg
+                         text-gray-400 dark:text-gray-500
+                         hover:text-gray-700 dark:hover:text-gray-200
+                         hover:bg-gray-100 dark:hover:bg-gray-700/60
+                         focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40
+                         transition-colors"
+              aria-label="Eingabe löschen"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          ) : null}
+
+          <GeolocateButton state={geoState} onClick={handleUseCurrentLocation} />
+        </div>
       </div>
+
+      {/* Geolocation feedback banner (denied / fallback / etc.) */}
+      {geoMessage && (
+        <p
+          role="status"
+          className="mt-1.5 text-xs text-amber-700 dark:text-amber-300
+                     bg-amber-50 dark:bg-amber-900/30
+                     border border-amber-200 dark:border-amber-800/60
+                     rounded-lg px-2.5 py-1.5"
+        >
+          {geoMessage}
+        </p>
+      )}
 
       {isOpen && results.length > 0 && (
         <div
