@@ -37,29 +37,54 @@ interface FuelAdvisorProps {
 }
 
 // ---- Confidence visuals ----
+//
+// All colors come from Tailwind tokens (no inline hex), so the
+// component picks up dark-mode + future palette changes for free.
 
-const CONFIDENCE_CONFIG: Record<Confidence, { label: string; color: string; bg: string; dots: number }> = {
-  high:   { label: 'Hoch',    color: '#10B981', bg: 'bg-green-50 dark:bg-green-900/20',  dots: 3 },
-  medium: { label: 'Mittel',  color: '#F59E0B', bg: 'bg-amber-50 dark:bg-amber-900/20',  dots: 2 },
-  low:    { label: 'Niedrig', color: '#94A3B8', bg: 'bg-gray-50 dark:bg-gray-800',       dots: 1 },
+const CONFIDENCE_CONFIG: Record<
+  Confidence,
+  { label: string; dotOn: string; dotOff: string; text: string; bg: string; dots: number }
+> = {
+  high: {
+    label: 'Hoch',
+    dotOn: 'bg-emerald-500',
+    dotOff: 'bg-gray-200 dark:bg-gray-700',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    dots: 3,
+  },
+  medium: {
+    label: 'Mittel',
+    dotOn: 'bg-amber-500',
+    dotOff: 'bg-gray-200 dark:bg-gray-700',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+    dots: 2,
+  },
+  low: {
+    label: 'Niedrig',
+    dotOn: 'bg-slate-400 dark:bg-slate-500',
+    dotOff: 'bg-gray-200 dark:bg-gray-700',
+    text: 'text-slate-600 dark:text-slate-300',
+    bg: 'bg-gray-50 dark:bg-gray-800/60',
+    dots: 1,
+  },
 };
 
 function ConfidenceDots({ confidence }: { confidence: Confidence }) {
   const cfg = CONFIDENCE_CONFIG[confidence];
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1" aria-label={`Konfidenz: ${cfg.label}`}>
       {[1, 2, 3].map((n) => (
         <span
           key={n}
-          className="w-1.5 h-1.5 rounded-full transition-colors"
-          style={{
-            backgroundColor: n <= cfg.dots ? cfg.color : '#D1D5DB',
-          }}
+          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+            n <= cfg.dots ? cfg.dotOn : cfg.dotOff
+          }`}
+          aria-hidden="true"
         />
       ))}
-      <span className="text-[10px] font-medium ml-0.5" style={{ color: cfg.color }}>
-        {cfg.label}
-      </span>
+      <span className={`text-[10px] font-medium ml-0.5 ${cfg.text}`}>{cfg.label}</span>
     </div>
   );
 }
@@ -272,9 +297,7 @@ export function FuelAdvisor({
             )}
           </div>
           <div className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${confidenceCfg.bg}`}>
-            <span style={{ color: confidenceCfg.color }}>
-              Konfidenz: {confidenceCfg.label}
-            </span>
+            <span className={confidenceCfg.text}>Konfidenz: {confidenceCfg.label}</span>
           </div>
         </div>
       </div>

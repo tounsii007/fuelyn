@@ -5,13 +5,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { useStationSearch } from '@/lib/hooks/use-stations';
 import { useRecommendations } from '@/lib/hooks/use-recommendations';
 import { PriceTag } from '@/components/ui/PriceTag';
 import { ReachabilityBadge } from '@/components/ui/ReachabilityBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { IconButton } from '@/components/ui/IconButton';
 import {
   FUEL_TYPES,
   FUEL_TYPE_LABELS,
@@ -52,33 +53,37 @@ export default function ComparePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-fade-in">
-      <Link href="/"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 mb-6">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-        Zur&uuml;ck
-      </Link>
-
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Tankstellen-Vergleich</h1>
-        {compared.length > 0 && (
-          <button type="button" onClick={clearCompare}
-            className="text-sm text-red-500 hover:text-red-600">
-            Alle entfernen
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Tankstellen-Vergleich"
+        action={
+          compared.length > 0 && (
+            <button
+              type="button"
+              onClick={clearCompare}
+              className="text-sm font-medium text-red-600 hover:text-red-700
+                         dark:text-red-400 dark:hover:text-red-300
+                         focus-visible:outline-none focus-visible:ring-2
+                         focus-visible:ring-red-500/40 rounded-md px-2 py-1
+                         transition-colors"
+            >
+              Alle entfernen
+            </button>
+          )
+        }
+      />
 
       {compared.length === 0 ? (
         <EmptyState
-          title="Keine Tankstellen ausgew&auml;hlt"
-          message="W&auml;hle bis zu 3 Tankstellen auf der Karte oder in der Liste zum Vergleichen aus."
+          title="Keine Tankstellen ausgewählt"
+          message="Wähle bis zu 3 Tankstellen auf der Karte oder in der Liste zum Vergleichen aus."
         />
       ) : (
         <>
           {/* Compare Grid */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${compared.length}, 1fr)` }}>
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: `repeat(${compared.length}, minmax(0, 1fr))` }}
+          >
             {compared.map((rec) => {
               const s = rec.station;
               const address = formatAddress(s.street, s.houseNumber, s.postCode, s.place);
@@ -86,82 +91,115 @@ export default function ComparePage() {
               const reachability = computeReachability(s.dist, range);
 
               return (
-                <div key={s.id} className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
+                <article
+                  key={s.id}
+                  className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-card
+                             border border-gray-100 dark:border-gray-700/60
+                             p-5 transition-shadow hover:shadow-card-hover"
+                >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
+                  <header className="flex items-start justify-between gap-2 mb-4">
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
                         {s.brand || s.name}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{address}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                        {address}
+                      </p>
                     </div>
-                    <button type="button" onClick={() => toggleCompare(s.id)}
-                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ml-2 flex-shrink-0">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <IconButton
+                      size="sm"
+                      onClick={() => toggleCompare(s.id)}
+                      aria-label="Aus Vergleich entfernen"
+                    >
+                      <svg
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                    </button>
-                  </div>
+                    </IconButton>
+                  </header>
 
                   {/* Status */}
                   <div className="flex items-center gap-2 mb-4">
-                    <span className={`w-2 h-2 rounded-full ${s.isOpen ? 'bg-reach-safe' : 'bg-gray-300'}`} />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      {s.isOpen ? 'Ge\u00f6ffnet' : 'Geschlossen'}
+                    <span
+                      className={`w-2 h-2 rounded-full ${s.isOpen ? 'bg-reach-safe' : 'bg-gray-300 dark:bg-gray-600'}`}
+                      aria-hidden="true"
+                    />
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {s.isOpen ? 'Geöffnet' : 'Geschlossen'}
                     </span>
                   </div>
 
                   {/* Prices */}
-                  <div className="space-y-2 mb-4">
+                  <dl className="space-y-2 mb-4">
                     {FUEL_TYPES.map((ft: FuelType) => (
                       <div key={ft} className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{FUEL_TYPE_LABELS[ft]}</span>
-                        <PriceTag price={s.prices[ft]} fuelType={ft} size="sm" />
+                        <dt className="text-xs text-gray-500 dark:text-gray-400">
+                          {FUEL_TYPE_LABELS[ft]}
+                        </dt>
+                        <dd>
+                          <PriceTag price={s.prices[ft]} fuelType={ft} size="sm" />
+                        </dd>
                       </div>
                     ))}
-                  </div>
+                  </dl>
 
                   {/* Distance & Time */}
-                  <div className="border-t border-gray-100 dark:border-gray-700 pt-3 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Entfernung</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{formatDistance(s.dist)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Fahrzeit</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">~{formatDriveTime(driveTime)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs items-center">
+                  <div className="border-t border-gray-100 dark:border-gray-700/60 pt-3 space-y-2">
+                    <Row label="Entfernung" value={formatDistance(s.dist)} />
+                    <Row label="Fahrzeit" value={`~${formatDriveTime(driveTime)}`} />
+                    <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-500 dark:text-gray-400">Erreichbarkeit</span>
                       <ReachabilityBadge status={reachability} />
                     </div>
                     {rec.isBestOption && (
-                      <div className="bg-brand-50 dark:bg-brand-900/20 text-brand-600 text-xs font-semibold text-center py-1.5 rounded-lg mt-2">
+                      <div
+                        className="bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-200
+                                   text-xs font-semibold text-center py-1.5 rounded-lg mt-2"
+                      >
                         Beste Empfehlung
                       </div>
                     )}
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
 
           {/* Add more hint */}
           {compared.length < 3 && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
-              Du kannst bis zu 3 Tankstellen vergleichen. Noch {3 - compared.length} Platz/Pl&auml;tze frei.
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
+              Du kannst bis zu 3 Tankstellen vergleichen. Noch {3 - compared.length} Platz/Plätze
+              frei.
             </p>
           )}
         </>
       )}
 
       {/* How to add */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mt-6">
-        <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">So f&uuml;gst du Tankstellen hinzu:</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Tippe auf der Hauptseite auf eine Tankstelle und w&auml;hle &bdquo;Vergleichen&ldquo; &mdash; oder nutze den Button in der Listenansicht.
+      <aside className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 mt-6 border border-gray-100 dark:border-gray-700/60">
+        <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          So fügst du Tankstellen hinzu:
+        </h3>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Tippe auf der Hauptseite auf eine Tankstelle und wähle „Vergleichen" — oder nutze den
+          Button in der Listenansicht.
         </p>
-      </div>
+      </aside>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-xs">
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="font-medium tabular-nums text-gray-900 dark:text-gray-100">{value}</span>
     </div>
   );
 }

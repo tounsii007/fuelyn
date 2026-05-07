@@ -40,55 +40,69 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
     : 50;
 
   return (
-    <div className="mx-4 mb-3 bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-4">
-      <div className="flex items-center justify-between mb-3">
+    <section
+      aria-label={`${FUEL_TYPE_LABELS[fuelType]} Preis\u00FCbersicht`}
+      className="mx-4 mb-3 bg-white dark:bg-gray-800/90 rounded-2xl shadow-card
+                 border border-gray-100 dark:border-gray-700/60 p-4"
+    >
+      <header className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
           {FUEL_TYPE_LABELS[fuelType]} Preise
         </p>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500">
+        <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
           {stats.count} Stationen mit Preis
         </p>
-      </div>
+      </header>
 
       {/* Stats Row */}
-      <div className="flex items-end justify-between gap-2 mb-3">
+      <dl className="flex items-end justify-between gap-2 mb-3">
         <div className="text-center">
-          <p className="text-[10px] text-reach-safe font-medium">G&uuml;nstigste</p>
-          <p className="text-base font-bold text-reach-safe">{formatPrice(stats.min)} &euro;</p>
+          <dt className="text-[10px] font-medium text-reach-safe">G\u00FCnstigste</dt>
+          <dd className="text-base font-bold text-reach-safe tabular-nums">
+            {formatPrice(stats.min)} \u20AC
+          </dd>
         </div>
         <div className="text-center">
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Durchschnitt</p>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">{formatPrice(stats.avg)} &euro;</p>
+          <dt className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+            Durchschnitt
+          </dt>
+          <dd className="text-sm font-semibold tabular-nums text-gray-700 dark:text-gray-200">
+            {formatPrice(stats.avg)} \u20AC
+          </dd>
         </div>
         <div className="text-center">
-          <p className="text-[10px] text-reach-unreachable font-medium">Teuerste</p>
-          <p className="text-base font-bold text-reach-unreachable">{formatPrice(stats.max)} &euro;</p>
+          <dt className="text-[10px] font-medium text-reach-unreachable">Teuerste</dt>
+          <dd className="text-base font-bold text-reach-unreachable tabular-nums">
+            {formatPrice(stats.max)} \u20AC
+          </dd>
         </div>
-      </div>
+      </dl>
 
-      {/* Visual Price Bar */}
-      <div className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible">
-        {/* Gradient bar */}
-        <div className="absolute inset-0 rounded-full"
-          style={{
-            background: 'linear-gradient(to right, #10B981, #F59E0B, #EF4444)',
-          }}
-        />
+      {/* Visual Price Bar \u2014 pure-Tailwind gradient via fuel/reach colors */}
+      <div
+        className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible"
+        role="img"
+        aria-label={`Preisverteilung: g\u00FCnstig ${formatPrice(stats.min)} \u20AC, teuer ${formatPrice(stats.max)} \u20AC`}
+      >
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-reach-safe via-reach-tight to-reach-unreachable" />
         {/* Average indicator */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white dark:bg-gray-200 border-2 border-gray-900 dark:border-gray-300 rounded-full shadow-sm"
-          style={{ left: `${avgPosition}%`, marginLeft: -6 }}
+        <span
+          className="absolute top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3
+                     bg-white dark:bg-gray-100 border-2 border-gray-900 dark:border-gray-300
+                     rounded-full shadow-sm"
+          style={{ left: `${avgPosition}%` }}
           title={`Durchschnitt: ${formatPrice(stats.avg)} \u20AC`}
+          aria-hidden="true"
         />
       </div>
 
       {/* Savings hint */}
       {stats.spread > 0.02 && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-center">
-          Sparpotenzial: bis zu {formatPrice(stats.spread)} &euro;/L
+        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 text-center">
+          Sparpotenzial: bis zu {formatPrice(stats.spread)} \u20AC/L
           {stats.spread > 0.05 && ' \u2014 Vergleichen lohnt sich!'}
         </p>
       )}
-    </div>
+    </section>
   );
 }
