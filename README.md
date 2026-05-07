@@ -27,7 +27,11 @@ fuelyn/
 └─ package.json
 ```
 
-Siehe [ARCHITECTURE.md](./ARCHITECTURE.md) für Details.
+Tiefere Doku:
+
+- [**FUELYN.md**](./FUELYN.md) — Brand identity, Design-System, Component-Hierarchy, Anti-Patterns
+- [**ROADMAP.md**](./ROADMAP.md) — Per-Phase-Plan mit Goals, Deliverables, Acceptance-Criteria, Aufwandsschätzung
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System-Topologie
 
 ## Voraussetzungen
 

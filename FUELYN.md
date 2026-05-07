@@ -381,58 +381,25 @@ All backend services already exist and are healthy in this monorepo — see `doc
 
 ## 10. Roadmap
 
-### Phase 0 — Foundation (✅ done)
+The detailed roadmap — every phase with goals, deliverables, technical
+approach, acceptance criteria, risks, and effort estimates — lives in
+its own document so it can evolve independently of the brand spec:
 
-- Brand rename → Fuelyn
-- Cinematic dark-navy + electric/cyan/violet palette
-- Glow shadow scale
-- New brand glyph + splash polish
-- `BestDealCard` premium hero
-- 4 locales (DE / EN-UK / EN-US / FR)
-- 8-signal advisor + tiered AI pipeline (heuristic → Ollama → OpenAI)
-- Real-time Kafka stream (Redpanda)
-- 72 web tests + 103 backend tests, all green
+→ **[ROADMAP.md](./ROADMAP.md)** — full per-phase plan
 
-### Phase 1 — Premium polish (this sprint)
+Quick overview (status only — see ROADMAP.md for details):
 
-- [ ] `PricePredictionCard` — live "wait 2 h, save 6 ct" hero
-- [ ] `AnomalyBadge` — neon-orange spike marker
-- [ ] `AnimatedCounter` — savings ticker on `BestDealCard`
-- [ ] `Sparkline` — 24 h price chart inline in cards
-- [ ] Map marker glow ring for the top deal
-- [ ] Mobile bottom-sheet drag interactions
-- [ ] Magnetic hover on top-bar icons
+| Phase | Theme | Status |
+|---|---|---|
+| **0** | Foundation — brand, design tokens, AI pipeline, Kafka stream | ✅ done |
+| **1** | Premium polish — PricePredictionCard, Sparkline, AnimatedCounter, glow markers, bottom-sheet drag, magnetic hover, AnomalyBadge | ⏳ next |
+| **2** | Intelligence widening — AIChatDrawer, heatmap, per-station forecast, loyalty bonus, smart-alerts dashboard | planned |
+| **3** | Mobile-native feel — PWA install + offline, Web Push, voice search, native bottom-sheet | planned |
+| **4** | Production readiness — real domain + Let's Encrypt, public deployment, Sentry/Grafana, analytics service, A/B advisor weights | planned |
+| **5** | Native mobile — React Native, iOS Live Activities, CarPlay/Android Auto, B2B fleet dashboard, multi-region | future |
 
-### Phase 2 — Intelligence widening
-
-- [ ] AI chat drawer (`AIChatDrawer`) connected to `ai-service`
-- [ ] Heatmap overlay (cheap zones, geohash precision 6)
-- [ ] Per-station 24 h forecast (`StationForecaster` already exists)
-- [ ] Loyalty bonus applied in BestDealCard (`AffiliateRebate`)
-
-### Phase 3 — Mobile-native feel
-
-- [ ] PWA install prompt + offline shell
-- [ ] Web Push for `fuelyn.alerts.v1` consumer
-- [ ] Voice search (Web Speech API)
-- [ ] Service worker prefetches the next zoom-tile ring
-- [ ] Native-quality bottom-sheet (drag + spring + snap)
-
-### Phase 4 — Production readiness
-
-- [ ] Real Let's Encrypt cert (replaces Caddy internal CA)
-- [ ] Public domain DNS + deployment recipe (Hetzner / Fly.io)
-- [ ] Sentry / Grafana
-- [ ] Analytics service + ClickHouse for `/wrapped`
-- [ ] A/B framework on advisor weights via `RegretLogger`
-- [ ] Rate-limit / abuse protection on Nominatim BFF proxy
-
-### Phase 5 — Mobile native
-
-- [ ] React Native app sharing `@fuelyn/core`
-- [ ] iOS Live Activities for navigation
-- [ ] Android Auto / CarPlay integration
-- [ ] Fleet / B2B dashboard
+**Phase ordering:** complete each phase fully before the next; Phase 4
+items can interleave with 2/3 if a deployment need arises.
 
 ---
 
