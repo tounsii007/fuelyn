@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Energy Type Taxonomy
+// Fuelyn — Energy Type Taxonomy
 // Comprehensive type system for all fuel types, charging types,
 // connector types, and station categories in Germany.
 // ============================================================

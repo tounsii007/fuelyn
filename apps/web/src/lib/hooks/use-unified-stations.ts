@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Unified Stations Hook
+// Fuelyn — Unified Stations Hook
 // Queries the /api/unified endpoint for all station types
 // based on selected energy types. Replaces the combination of
 // useStationSearch + useChargingStations for the expanded model.
@@ -8,7 +8,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { EnergyType, UnifiedStation } from '@tankpilot/core';
+import type { EnergyType, UnifiedStation } from '@fuelyn/core';
 import { fetchJson } from '../http/fetch-json';
 
 interface UseUnifiedStationsParams {

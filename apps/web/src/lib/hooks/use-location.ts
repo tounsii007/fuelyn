@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — Geolocation Hook
+// Fuelyn Web — Geolocation Hook
 // Handles secure-context restrictions gracefully: when accessed
 // over HTTP (e.g. phone on same WiFi), GPS is blocked by the
 // browser. In that case, we detect it early and skip retries.
@@ -72,7 +72,7 @@ export function useGeolocation() {
         requestInFlightRef.current = false;
         // Only log in development, not a real error for the user
         if (process.env.NODE_ENV !== 'production') {
-          console.info('[TankPilot] Geolocation unavailable:', err.message);
+          console.info('[Fuelyn] Geolocation unavailable:', err.message);
         }
         setPermission('denied');
       },

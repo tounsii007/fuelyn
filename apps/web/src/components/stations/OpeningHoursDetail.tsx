@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { OpeningTime } from '@tankpilot/core';
+import type { OpeningTime } from '@fuelyn/core';
 
 interface OpeningHoursDetailProps {
   openingTimes: readonly OpeningTime[];

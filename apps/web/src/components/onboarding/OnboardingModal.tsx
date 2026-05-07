@@ -7,11 +7,11 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 const STEPS = [
-  { id: 'welcome', title: 'Willkommen bei TankPilot' },
+  { id: 'welcome', title: 'Willkommen bei Fuelyn' },
   { id: 'fuel', title: 'Dein Kraftstoff' },
   { id: 'tips', title: 'So funktioniert es' },
 ] as const;
@@ -69,7 +69,7 @@ export function OnboardingModal() {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Willkommen bei TankPilot
+                Willkommen bei Fuelyn
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 Finde nicht nur die billigste, sondern die <strong>sinnvollste</strong> Tankstelle

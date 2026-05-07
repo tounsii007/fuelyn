@@ -1,7 +1,7 @@
 // ============================================================
 // BFF - /api/ai/advisor
 // Proxies AI recommendations to the Java AI service (via Gateway)
-// and falls back to the local heuristic engine from @tankpilot/core
+// and falls back to the local heuristic engine from @fuelyn/core
 // when the backend is unreachable.
 // ============================================================
 
@@ -10,7 +10,7 @@ import { backendFetch, BackendApiError } from '@/lib/api/backend-client';
 import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
 import { parseJson } from '@/lib/http/validate';
 import { AdvisorRequestSchema, type AdvisorRequest } from '@/lib/api/schemas';
-import { analyzePrices, type PriceDataInput } from '@tankpilot/core';
+import { analyzePrices, type PriceDataInput } from '@fuelyn/core';
 
 // ─── Types ──────────────────────────────────────────────────
 

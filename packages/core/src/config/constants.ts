@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Application Constants
+// Fuelyn — Application Constants
 // ============================================================
 
 import type { AppSettings, FuelType, StationFilter } from '../domain/types';
@@ -94,15 +94,15 @@ export const MAP_STATION_ZOOM = 15;
 // ─── Storage Keys ────────────────────────────────────────────
 
 export const STORAGE_KEYS = {
-  VEHICLE_PROFILES: 'tankpilot:vehicles',
-  FAVORITES: 'tankpilot:favorites',
-  SETTINGS: 'tankpilot:settings',
-  LAST_SEARCH: 'tankpilot:lastSearch',
-  ONBOARDING_DONE: 'tankpilot:onboardingDone',
-  PRICE_ALERTS: 'tankpilot:priceAlerts',
-  FUEL_LOG: 'tankpilot:fuelLog',
-  PRICE_HISTORY: 'tankpilot:priceHistory',
-  SAVED_LOCATIONS: 'tankpilot:savedLocations',
+  VEHICLE_PROFILES: 'fuelyn:vehicles',
+  FAVORITES: 'fuelyn:favorites',
+  SETTINGS: 'fuelyn:settings',
+  LAST_SEARCH: 'fuelyn:lastSearch',
+  ONBOARDING_DONE: 'fuelyn:onboardingDone',
+  PRICE_ALERTS: 'fuelyn:priceAlerts',
+  FUEL_LOG: 'fuelyn:fuelLog',
+  PRICE_HISTORY: 'fuelyn:priceHistory',
+  SAVED_LOCATIONS: 'fuelyn:savedLocations',
 } as const;
 
 // ─── Brands (common German fuel station brands) ──────────────

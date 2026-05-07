@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — useOnlineStatus Hook
+// Fuelyn Web — useOnlineStatus Hook
 // Tracks online/offline state and whether the user was recently
 // offline (for "back online" toasts).
 // ============================================================

@@ -1,5 +1,5 @@
 /* ============================================================
-   TankPilot — Design Tokens (Tailwind v4 @theme layer)
+   Fuelyn — Design Tokens (Tailwind v4 @theme layer)
    ============================================================
    Modern token system using OKLCH color space for perceptually
    uniform color scales, with separate semantic tokens for surface,
@@ -236,18 +236,18 @@
 /* ─── Modern utilities (glassmorphism, mesh, animations) ──── */
 @layer utilities {
   /* Frosted-glass surface — used by sticky headers, sheets, popovers */
-  .tp-glass {
+  .fy-glass {
     background-color: color-mix(in oklch, var(--color-surface) 72%, transparent);
     -webkit-backdrop-filter: saturate(1.5) blur(14px);
     backdrop-filter: saturate(1.5) blur(14px);
     border: 1px solid color-mix(in oklch, var(--color-border) 65%, transparent);
   }
-  .dark .tp-glass {
+  .dark .fy-glass {
     background-color: color-mix(in oklch, var(--color-surface) 60%, transparent);
   }
 
   /* Subtle frosted-glass — for inline pills, segmented controls */
-  .tp-glass-subtle {
+  .fy-glass-subtle {
     background-color: color-mix(in oklch, var(--color-bg-subtle) 70%, transparent);
     -webkit-backdrop-filter: saturate(1.4) blur(8px);
     backdrop-filter: saturate(1.4) blur(8px);
@@ -255,13 +255,13 @@
 
   /* ─── Background variants (data-attribute switched) ─────────
    *
-   * Architecture: a single `.tp-mesh` rule consumes four CSS custom
+   * Architecture: a single `.fy-mesh` rule consumes four CSS custom
    * properties (--mesh-1..4). Each `[data-bg="…"]` sets those vars,
    * and `:root.dark[data-bg="…"]` overrides them for dark mode. By
    * routing through CSS variables we sidestep any selector-specificity
    * conflict that plagued the previous fanned-out rules — picking a
    * variant always wins because it changes the inputs the single
-   * .tp-mesh rule reads from.
+   * .fy-mesh rule reads from.
    *
    * Set on <html data-bg="aurora">. Default = aurora.
    * Supported values: aurora | sunset | ocean | forest | cyber | minimal
@@ -352,25 +352,25 @@
   }
 
   /* Single mesh rule — all variants reach this exact selector. */
-  .tp-mesh {
+  .fy-mesh {
     background-image: var(--mesh-1), var(--mesh-2), var(--mesh-3), var(--mesh-4);
   }
 
   /* Animated mesh — slow drift for hero areas */
-  .tp-mesh-animated {
+  .fy-mesh-animated {
     background-size: 200% 200%;
-    animation: tp-mesh-drift 22s ease-in-out infinite;
+    animation: fy-mesh-drift 22s ease-in-out infinite;
   }
-  @keyframes tp-mesh-drift {
+  @keyframes fy-mesh-drift {
     0%, 100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
     50%      { background-position: 30% 20%, 70% 30%, 60% 70%, 30% 80%; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .tp-mesh-animated { animation: none; }
+    .fy-mesh-animated { animation: none; }
   }
 
   /* Brand gradient text — used for hero headlines */
-  .tp-text-gradient {
+  .fy-text-gradient {
     background-image: linear-gradient(135deg,
       var(--color-brand-500) 0%,
       var(--color-brand-700) 50%,
@@ -381,44 +381,44 @@
   }
 
   /* Floating ring (decorative behind logo / icons) */
-  .tp-ring-glow {
+  .fy-ring-glow {
     box-shadow:
       0 0 0 1px color-mix(in oklch, var(--color-brand-500) 30%, transparent),
       0 12px 40px -8px color-mix(in oklch, var(--color-brand-500) 35%, transparent);
   }
 
   /* Hover-lift transition for cards / interactive surfaces */
-  .tp-hover-lift {
+  .fy-hover-lift {
     transition: transform var(--duration-default) var(--ease-spring),
                 box-shadow var(--duration-default) var(--ease-spring);
   }
-  .tp-hover-lift:hover {
+  .fy-hover-lift:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-xl);
   }
 
   /* Press-down feedback */
-  .tp-press {
+  .fy-press {
     transition: transform var(--duration-fast) var(--ease-snap);
   }
-  .tp-press:active {
+  .fy-press:active {
     transform: scale(0.97);
   }
 
   /* Soft float animation — for hero icons */
-  .tp-float {
-    animation: tp-float 6s ease-in-out infinite;
+  .fy-float {
+    animation: fy-float 6s ease-in-out infinite;
   }
-  @keyframes tp-float {
+  @keyframes fy-float {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-6px); }
   }
 
   /* Fade + slide-up on enter — used by route transitions */
-  .tp-enter {
-    animation: tp-enter var(--duration-default) var(--ease-spring) both;
+  .fy-enter {
+    animation: fy-enter var(--duration-default) var(--ease-spring) both;
   }
-  @keyframes tp-enter {
+  @keyframes fy-enter {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }

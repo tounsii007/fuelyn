@@ -9,8 +9,8 @@ import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { VehicleForm } from '@/components/vehicle/VehicleForm';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@tankpilot/core';
-import { computeRemainingRange } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@fuelyn/core';
+import { computeRemainingRange } from '@fuelyn/core';
 
 export default function VehiclePage() {
   const vehicle = useAppStore((s) => s.vehicle);

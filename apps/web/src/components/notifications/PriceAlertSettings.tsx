@@ -9,8 +9,8 @@
 import { useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useNotifications } from '@/lib/hooks/use-notifications';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 const FUEL_TYPES: FuelType[] = ['e5', 'e10', 'diesel'];
 

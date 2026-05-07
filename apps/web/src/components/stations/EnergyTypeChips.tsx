@@ -5,13 +5,13 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { EnergyType, EnergyCategory } from '@tankpilot/core';
+import type { EnergyType, EnergyCategory } from '@fuelyn/core';
 import {
   ENERGY_TYPE_LABELS,
   ENERGY_TYPE_ICONS,
   ENERGY_CATEGORY_LABELS,
   getEnergyTypesByCategory,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 
 interface EnergyTypeChipsProps {
   selected: readonly EnergyType[];

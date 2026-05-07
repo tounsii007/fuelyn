@@ -175,7 +175,7 @@ export function StoryShell({
 
   return (
     <div
-      className="fixed inset-0 z-[90] tp-mesh tp-mesh-animated overflow-hidden"
+      className="fixed inset-0 z-[90] fy-mesh fy-mesh-animated overflow-hidden"
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -217,7 +217,7 @@ export function StoryShell({
           onClick={handleShare}
           aria-label="Teilen"
           className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md
-                     text-white grid place-items-center tp-press"
+                     text-white grid place-items-center fy-press"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round"
@@ -229,7 +229,7 @@ export function StoryShell({
           onClick={close}
           aria-label="Schließen"
           className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md
-                     text-white grid place-items-center tp-press"
+                     text-white grid place-items-center fy-press"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -255,7 +255,7 @@ export function StoryShell({
       <div
         key={slide.id}
         className="absolute inset-0 flex items-center justify-center p-6 z-[2]"
-        style={{ animation: 'tp-enter 350ms var(--ease-spring) both' }}
+        style={{ animation: 'fy-enter 350ms var(--ease-spring) both' }}
       >
         {slide.node}
       </div>

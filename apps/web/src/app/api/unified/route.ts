@@ -13,8 +13,8 @@ import {
   mapStationsToUnified,
   searchH2Stations,
   searchGasStations,
-} from '@tankpilot/core';
-import type { FuelType, EnergyType, UnifiedStation } from '@tankpilot/core';
+} from '@fuelyn/core';
+import type { FuelType, EnergyType, UnifiedStation } from '@fuelyn/core';
 
 const client = new ApiClient({ baseUrl: API_BASE_URL });
 const service = new StationService({
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (needsCharging) {
-    const { mapChargingStationsToUnified } = await import('@tankpilot/core');
+    const { mapChargingStationsToUnified } = await import('@fuelyn/core');
     const OCM_BASE = 'https://api.openchargemap.io/v3/poi';
     const params = new URLSearchParams({
       output: 'json', latitude: String(lat), longitude: String(lng),
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
     if (apiKey) params.set('key', apiKey);
 
     promises.push(
-      fetch(`${OCM_BASE}?${params}`, { signal: AbortSignal.timeout(10_000), headers: { 'User-Agent': 'TankPilot/1.0' } })
+      fetch(`${OCM_BASE}?${params}`, { signal: AbortSignal.timeout(10_000), headers: { 'User-Agent': 'Fuelyn/1.0' } })
         .then((r) => r.json())
         .then((raw) => {
           const stations = (raw as Array<Record<string, unknown>>)

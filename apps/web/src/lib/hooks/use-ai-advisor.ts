@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web -- AI Advisor Hook (TanStack Query)
+// Fuelyn Web -- AI Advisor Hook (TanStack Query)
 // Calls the /api/ai/advisor endpoint to get GPT-4o-mini
 // powered fuel recommendations. Falls back gracefully when
 // the API is unavailable.
@@ -8,7 +8,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { FuelType } from '@tankpilot/core';
+import type { FuelType } from '@fuelyn/core';
 import type { AIAdvisorResponse } from '@/lib/ai/fuel-advisor-ai';
 
 // ---- Types ----

@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { StationRecommendation } from '@tankpilot/core';
+import type { StationRecommendation } from '@fuelyn/core';
 import { StationCard } from './StationCard';
 import { StationCardSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';

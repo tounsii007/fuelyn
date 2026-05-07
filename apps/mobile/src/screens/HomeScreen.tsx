@@ -22,7 +22,7 @@ export function HomeScreen() {
         <Text style={styles.title}>Tankstellen in der Nähe</Text>
         <Text style={styles.subtitle}>
           Die vollständige Mobile-Implementierung teilt sich die Business-Logik
-          aus `@tankpilot/core` - Recommendation Engine, API Service, Zod Validation
+          aus `@fuelyn/core` - Recommendation Engine, API Service, Zod Validation
           und Storage Abstraction.
         </Text>
       </View>

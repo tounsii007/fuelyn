@@ -1,10 +1,10 @@
 // ============================================================
-// TankPilot — Affiliate Partner Definitions
+// Fuelyn — Affiliate Partner Definitions
 // Partners with referral/affiliate programs for monetization.
 // Replace URLs with actual affiliate tracking links.
 // ============================================================
 
-import type { AffiliatePartner } from '@tankpilot/core';
+import type { AffiliatePartner } from '@fuelyn/core';
 
 export const AFFILIATE_PARTNERS: AffiliatePartner[] = [
   // ─── Tankkarten ─────────────────────────────────────────

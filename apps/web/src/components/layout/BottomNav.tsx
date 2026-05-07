@@ -32,7 +32,7 @@ export function BottomNav() {
     <nav
       aria-label="Hauptnavigation"
       className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-30 safe-bottom
-                 tp-glass rounded-[var(--radius-pill)] shadow-[var(--shadow-lg)]
+                 fy-glass rounded-[var(--radius-pill)] shadow-[var(--shadow-lg)]
                  px-1.5 py-1 flex items-center gap-1"
     >
       {TABS.map((tab) => {
@@ -46,7 +46,7 @@ export function BottomNav() {
             aria-current={active ? 'page' : undefined}
             className={[
               'relative flex flex-col items-center justify-center gap-0.5 min-w-[60px] h-12 px-3',
-              'rounded-[var(--radius-pill)] tp-press transition-colors',
+              'rounded-[var(--radius-pill)] fy-press transition-colors',
               active
                 ? 'text-[var(--color-brand-700)] dark:text-[var(--color-brand-100)]'
                 : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]',

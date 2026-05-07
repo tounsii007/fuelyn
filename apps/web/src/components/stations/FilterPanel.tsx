@@ -7,9 +7,9 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { KNOWN_BRANDS, KNOWN_CHARGING_OPERATORS } from '@tankpilot/core';
-import type { EnergyType, ConnectorType, ChargingSpeed, StationType } from '@tankpilot/core';
-import { STATION_TYPE_LABELS, STATION_TYPE_ICONS, isElectricType } from '@tankpilot/core';
+import { KNOWN_BRANDS, KNOWN_CHARGING_OPERATORS } from '@fuelyn/core';
+import type { EnergyType, ConnectorType, ChargingSpeed, StationType } from '@fuelyn/core';
+import { STATION_TYPE_LABELS, STATION_TYPE_ICONS, isElectricType } from '@fuelyn/core';
 import { EnergyTypeChips } from './EnergyTypeChips';
 import { ConnectorFilter } from './ConnectorFilter';
 

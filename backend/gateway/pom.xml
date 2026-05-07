@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.tankpilot</groupId>
-        <artifactId>tankpilot-backend</artifactId>
+        <groupId>com.fuelyn</groupId>
+        <artifactId>fuelyn-backend</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>tankpilot-gateway</artifactId>
-    <name>TankPilot API Gateway</name>
-    <description>API Gateway for TankPilot — routing, rate limiting, HMAC signing, security headers</description>
+    <artifactId>fuelyn-gateway</artifactId>
+    <name>Fuelyn API Gateway</name>
+    <description>API Gateway for Fuelyn — routing, rate limiting, HMAC signing, security headers</description>
 
     <dependencies>
         <!-- Spring Cloud Gateway (reactive, WebFlux-based) -->

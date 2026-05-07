@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PriceHistoryChart } from '@/components/charts/PriceHistoryChart';
 import { ConsumptionTracker } from '@/components/intelligence/ConsumptionTracker';

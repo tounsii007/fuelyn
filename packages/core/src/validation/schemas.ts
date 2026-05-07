@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Zod Validation Schemas
+// Fuelyn — Zod Validation Schemas
 // Runtime validation for all Tankerkönig API responses.
 // Each schema maps raw API data → validated domain model.
 // ============================================================

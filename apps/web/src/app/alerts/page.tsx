@@ -6,8 +6,8 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
-import type { FuelType, PriceAlert } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
+import type { FuelType, PriceAlert } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GeoFenceList } from '@/components/alerts/GeoFenceList';
 import { Button } from '@/components/ui/Button';

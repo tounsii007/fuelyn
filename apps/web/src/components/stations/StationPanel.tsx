@@ -2,7 +2,7 @@
 
 import { useAppStore } from '@/lib/store/app-store';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
-import type { FuelType } from '@tankpilot/core';
+import type { FuelType } from '@fuelyn/core';
 import {
   formatAddress,
   formatPrice,
@@ -10,7 +10,7 @@ import {
   computeRemainingRange,
   FUEL_TYPE_LABELS,
   FUEL_TYPES,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 import { BrandBadge } from '../ui/BrandBadge';
 
 export function StationPanel() {
@@ -53,7 +53,7 @@ export function StationPanel() {
   const handleShare = async () => {
     const text = `${station.brand || station.name}\n${address}\n${FUEL_TYPE_LABELS[fuelType]}: ${price != null ? `${formatPrice(price)} \u20ac` : '\u2014'}`;
     const shareData = {
-      title: `${station.brand || station.name} \u2014 TankPilot`,
+      title: `${station.brand || station.name} \u2014 Fuelyn`,
       text,
     };
 

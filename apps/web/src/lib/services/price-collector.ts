@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Price Collection Service
+// Fuelyn — Price Collection Service
 // Server-side service that fetches prices from Tankerkoenig
 // and persists them to SQLite via Prisma.
 // ============================================================
@@ -9,8 +9,8 @@ import {
   ApiClient,
   StationService,
   API_BASE_URL,
-} from '@tankpilot/core';
-import type { FuelType, Station } from '@tankpilot/core';
+} from '@fuelyn/core';
+import type { FuelType, Station } from '@fuelyn/core';
 
 // ─── Types ──────────────────────────────────────────────────
 

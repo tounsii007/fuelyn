@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Unified Station Model
+// Fuelyn — Unified Station Model
 // Discriminated union for all station types: fuel, charging,
 // hydrogen, and gas stations. Enables unified filtering,
 // sorting, and display across data sources.

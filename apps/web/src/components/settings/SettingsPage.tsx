@@ -9,14 +9,14 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
-import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
+import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from '@fuelyn/core';
 import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
 
 // ─── Background variants ────────────────────────────────────
 //
 // Six pre-designed gradient meshes. Their CSS lives in
-// `apps/web/src/styles/tokens.css` under `[data-bg="…"] .tp-mesh`.
+// `apps/web/src/styles/tokens.css` under `[data-bg="…"] .fy-mesh`.
 // Applied globally via ThemeSync, which writes `data-bg` on <html>.
 const BG_OPTIONS: ReadonlyArray<{
   value: BackgroundVariant;
@@ -369,7 +369,7 @@ export function SettingsPage() {
               <AboutLink href="/privacy" label={t('settings.privacy')} />
               <AboutLink href="/imprint" label={t('settings.imprint')} />
               <AboutLink
-                href="https://github.com/tankpilot"
+                href="https://github.com/fuelyn"
                 label={t('settings.github')}
                 external
               />
@@ -500,7 +500,7 @@ function AboutLink({
 
 function formatLastUpdate(): string {
   try {
-    const raw = localStorage.getItem('tankpilot:lastUpdate');
+    const raw = localStorage.getItem('fuelyn:lastUpdate');
     if (!raw) return '-';
     const date = new Date(raw);
     if (isNaN(date.getTime())) return '-';

@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: tankpilot-gateway
+    name: fuelyn-gateway
   cloud:
     gateway:
       routes:
@@ -71,7 +71,7 @@ spring:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
-tankpilot:
+fuelyn:
   security:
     hmac-secret: "${TANKPILOT_HMAC_SECRET:}"
     jwt-public-key: "${TANKPILOT_JWT_PUBLIC_KEY:}"
@@ -123,5 +123,5 @@ management:
 
 logging:
   level:
-    com.tankpilot.gateway: INFO
+    com.fuelyn.gateway: INFO
     org.springframework.cloud.gateway: WARN

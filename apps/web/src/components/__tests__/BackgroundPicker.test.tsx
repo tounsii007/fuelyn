@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useEffect } from 'react';
-import type { BackgroundVariant } from '@tankpilot/core';
+import type { BackgroundVariant } from '@fuelyn/core';
 
 // Stub Next link (router-free in test environment)
 vi.mock('next/link', () => ({

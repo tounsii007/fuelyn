@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Gas Station Adapter (LPG / CNG / LNG)
+// Fuelyn — Gas Station Adapter (LPG / CNG / LNG)
 // Curated dataset of gas refueling stations in Germany.
 // Data sourced from gas-tankstellen.de public information.
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// Price Intelligence — re-export from @tankpilot/core.
+// Price Intelligence — re-export from @fuelyn/core.
 //
 // The implementation lives in `packages/core/src/engine/price-intelligence.ts`
 // as the single source of truth. This shim remains to preserve existing
@@ -11,11 +11,11 @@ export {
   fallbackRecommendation,
   getMockRecommendation,
   PRICE_INTELLIGENCE_DEFAULTS,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 
 export type {
   PriceRecommendation,
   PriceDataInput,
   Confidence,
   Action,
-} from '@tankpilot/core';
+} from '@fuelyn/core';

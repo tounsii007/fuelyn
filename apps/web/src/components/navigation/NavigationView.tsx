@@ -17,7 +17,7 @@ import {
 import L from 'leaflet';
 import { useAppStore } from '@/lib/store/app-store';
 import { ManeuverIcon } from './ManeuverIcon';
-import type { RouteStep, Coordinates } from '@tankpilot/core';
+import type { RouteStep, Coordinates } from '@fuelyn/core';
 
 import 'leaflet/dist/leaflet.css';
 

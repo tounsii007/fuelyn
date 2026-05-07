@@ -13,8 +13,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { FUEL_TYPE_LABELS, RADIUS_OPTIONS_KM } from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS, RADIUS_OPTIONS_KM } from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/lib/theme/ThemeProvider';
@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Decorative animated mesh gradient — fixed behind everything */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 tp-mesh tp-mesh-animated"
+        className="pointer-events-none fixed inset-0 -z-10 fy-mesh fy-mesh-animated"
       />
       {/* Subtle grain layer for tactility */}
       <div
@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className={[
           'sticky top-0 z-30 transition-all duration-200',
           scrolled
-            ? 'tp-glass shadow-[var(--shadow-sm)] border-b border-[var(--color-border-subtle)]'
+            ? 'fy-glass shadow-[var(--shadow-sm)] border-b border-[var(--color-border-subtle)]'
             : 'bg-transparent border-b border-transparent',
         ].join(' ')}
       >
@@ -165,7 +165,7 @@ function Brand() {
         <span className="absolute inset-0 rounded-2xl bg-white/25 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity" />
       </span>
       <span className="flex flex-col leading-none">
-        <span className="text-[15px] font-bold tracking-tight tp-text-gradient">Fuelyn</span>
+        <span className="text-[15px] font-bold tracking-tight fy-text-gradient">Fuelyn</span>
         <span className="text-[10px] font-medium text-[var(--color-fg-subtle)] mt-0.5">
           AI fuel intelligence
         </span>
@@ -185,8 +185,8 @@ function CommandTrigger() {
       }}
       aria-label="Schnellsuche öffnen"
       className="hidden md:inline-flex items-center gap-2 h-8 px-3 rounded-[var(--radius-pill)]
-                 tp-glass-subtle text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
-                 border border-[var(--color-border)] tp-press
+                 fy-glass-subtle text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
+                 border border-[var(--color-border)] fy-press
                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-500)]/40"
     >
       <SearchIcon />
@@ -293,7 +293,7 @@ function PopoverSelect({ value, onChange, options, icon, ariaLabel }: PopoverSel
         onKeyDown={handleTriggerKey}
         className={[
           'inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[var(--radius-pill)]',
-          'tp-glass-subtle border transition-all',
+          'fy-glass-subtle border transition-all',
           open
             ? 'border-[var(--color-brand-500)] shadow-[var(--shadow-glow-brand)]'
             : 'border-[var(--color-border)] hover:border-[var(--color-border-strong)]',
@@ -318,7 +318,7 @@ function PopoverSelect({ value, onChange, options, icon, ariaLabel }: PopoverSel
                      bg-white dark:bg-gray-900
                      border border-gray-200 dark:border-gray-700/80
                      rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/5
-                     p-1 tp-enter overflow-hidden"
+                     p-1 fy-enter overflow-hidden"
         >
           {options.map((o, i) => {
             const isSelected = o.value === value;
@@ -377,7 +377,7 @@ function IconButton({
       aria-label={label}
       title={label}
       className="w-9 h-9 rounded-2xl flex items-center justify-center text-[var(--color-fg-subtle)]
-                 hover:text-[var(--color-fg)] hover:bg-[var(--color-surface-hover)] tp-press
+                 hover:text-[var(--color-fg)] hover:bg-[var(--color-surface-hover)] fy-press
                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-500)]/40
                  transition-colors"
     >
@@ -401,7 +401,7 @@ function IconLink({
       aria-label={label}
       title={label}
       className="w-9 h-9 rounded-2xl flex items-center justify-center text-[var(--color-fg-subtle)]
-                 hover:text-[var(--color-fg)] hover:bg-[var(--color-surface-hover)] tp-press
+                 hover:text-[var(--color-fg)] hover:bg-[var(--color-surface-hover)] fy-press
                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-500)]/40
                  transition-colors"
     >
@@ -494,7 +494,7 @@ function MoreMenu() {
                      bg-white dark:bg-gray-900
                      border border-gray-200 dark:border-gray-700/80
                      rounded-2xl shadow-xl ring-1 ring-black/5 dark:ring-white/5
-                     p-2 tp-enter"
+                     p-2 fy-enter"
         >
           {groups.map((group, gi) => (
             <div key={group.title} className={gi > 0 ? 'pt-2 mt-2 border-t border-[var(--color-border-subtle)]' : ''}>

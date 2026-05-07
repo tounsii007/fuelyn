@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — Push Notification Hook
+// Fuelyn Web — Push Notification Hook
 // Manages browser notification permission, service worker
 // push subscription, and test notification dispatch.
 // ============================================================
@@ -87,7 +87,7 @@ export function useNotifications(): UseNotificationsReturn {
           // browsers — that's fine, local notifications still work.
           if (process.env.NODE_ENV !== 'production') {
             console.info(
-              '[TankPilot] Push subscription skipped (no VAPID key configured)',
+              '[Fuelyn] Push subscription skipped (no VAPID key configured)',
             );
           }
         }
@@ -124,7 +124,7 @@ export function useNotifications(): UseNotificationsReturn {
     try {
       const registration = await navigator.serviceWorker.ready;
 
-      await registration.showNotification('TankPilot Preisalarm', {
+      await registration.showNotification('Fuelyn Preisalarm', {
         body: 'Super E10 bei Shell Hamburg f\u00FCr 1,489 \u20AC/L \u2014 unter deinem Wunschpreis!',
         icon: '/icons/icon-192x192.png',
         badge: '/icons/icon-72x72.png',
@@ -138,7 +138,7 @@ export function useNotifications(): UseNotificationsReturn {
       });
     } catch {
       // Fallback to the basic Notification API when SW is unavailable
-      new Notification('TankPilot Preisalarm', {
+      new Notification('Fuelyn Preisalarm', {
         body: 'Super E10 bei Shell Hamburg f\u00FCr 1,489 \u20AC/L \u2014 unter deinem Wunschpreis!',
         icon: '/icons/icon-192x192.png',
       });

@@ -24,7 +24,7 @@ import {
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'tankpilot:theme';
+const STORAGE_KEY = 'fuelyn:theme';
 
 interface ThemeContextValue {
   /** What the user picked. */

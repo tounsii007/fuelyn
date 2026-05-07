@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // includes the workspace's `packages/core` source code.
   outputFileTracingRoot: path.join(__dirname, '../../'),
 
-  transpilePackages: ['@tankpilot/core'],
+  transpilePackages: ['@fuelyn/core'],
 
   // Allow dev server access from phones/tablets on the same network (HTTP + HTTPS)
   allowedDevOrigins: [

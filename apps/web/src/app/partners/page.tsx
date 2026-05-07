@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AFFILIATE_PARTNERS } from '@/lib/affiliate-partners';
-import type { AffiliatePartner } from '@tankpilot/core';
+import type { AffiliatePartner } from '@fuelyn/core';
 
 type TabId = 'all' | 'tankkarte' | 'ladekarte' | 'club';
 
@@ -181,7 +181,7 @@ export default function PartnersPage() {
         {/* Disclaimer */}
         <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-8 px-4 leading-relaxed">
           * Bei Klick auf &quot;Mehr erfahren&quot; wirst du zur Website des Anbieters weitergeleitet.
-          TankPilot kann eine Provision erhalten, wenn du dich über unseren Link anmeldest.
+          Fuelyn kann eine Provision erhalten, wenn du dich über unseren Link anmeldest.
           Dies hat keinen Einfluss auf den Preis für dich.
         </p>
       </div>

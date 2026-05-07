@@ -4,7 +4,7 @@
 
 'use client';
 
-import type { SortMode } from '@tankpilot/core';
+import type { SortMode } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [

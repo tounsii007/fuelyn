@@ -5,19 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.tankpilot</groupId>
-        <artifactId>tankpilot-backend</artifactId>
+        <groupId>com.fuelyn</groupId>
+        <artifactId>fuelyn-backend</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>ai-service</artifactId>
-    <name>TankPilot AI Service</name>
+    <name>Fuelyn AI Service</name>
     <description>GPT-4o-mini powered fuel recommendation microservice with local fallback</description>
 
     <dependencies>
         <dependency>
-            <groupId>com.tankpilot</groupId>
-            <artifactId>tankpilot-common</artifactId>
+            <groupId>com.fuelyn</groupId>
+            <artifactId>fuelyn-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

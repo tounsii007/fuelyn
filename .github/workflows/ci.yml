@@ -39,10 +39,10 @@ jobs:
         run: npx tsc --noEmit -p apps/web/tsconfig.typecheck.json
 
       - name: Vitest — packages/core
-        run: npm test --workspace=@tankpilot/core
+        run: npm test --workspace=@fuelyn/core
 
       - name: Vitest — apps/web
-        run: npm test --workspace=@tankpilot/web
+        run: npm test --workspace=@fuelyn/web
 
   # ─── Java / Backend ─────────────────────────────────────
   java:

@@ -5,10 +5,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { FuelType, FuelLevelUnit, DriveType, VehicleProfile } from '@tankpilot/core';
-import { FUEL_TYPES, FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS } from '@tankpilot/core';
-import { searchVehicleModels } from '@tankpilot/core/domain/vehicles';
-import type { VehicleModel } from '@tankpilot/core/domain/vehicles';
+import type { FuelType, FuelLevelUnit, DriveType, VehicleProfile } from '@fuelyn/core';
+import { FUEL_TYPES, FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS } from '@fuelyn/core';
+import { searchVehicleModels } from '@fuelyn/core/domain/vehicles';
+import type { VehicleModel } from '@fuelyn/core/domain/vehicles';
 import { useAppStore } from '@/lib/store/app-store';
 import { useVehicleActions } from '@/lib/hooks/use-vehicle';
 import { Autocomplete } from '../ui/Autocomplete';

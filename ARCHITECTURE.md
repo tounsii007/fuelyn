@@ -1,4 +1,4 @@
-# TankPilot — Architektur
+# Fuelyn — Architektur
 
 ## Überblick
 
@@ -35,7 +35,7 @@
 
 ### Mobile (apps/mobile)
 - Expo Router 55, React Native 0.83
-- Shared Domain-Logik aus `@tankpilot/core`
+- Shared Domain-Logik aus `@fuelyn/core`
 
 ### Gateway (backend/gateway)
 - Spring Cloud Gateway
@@ -57,7 +57,7 @@
 - JWT-Provider + HMAC-Signer für Service-to-Service Calls
 - Shared `ApiResponse<T>` Envelope
 - `SecurityProperties` validiert Secrets beim Start (min. 32 Zeichen,
-  keine Platzhalter-Werte — siehe [SecurityProperties.java](backend/common/src/main/java/com/tankpilot/common/config/SecurityProperties.java))
+  keine Platzhalter-Werte — siehe [SecurityProperties.java](backend/common/src/main/java/com/fuelyn/common/config/SecurityProperties.java))
 - `GlobalExceptionHandler` übersetzt Validation-Fehler in 400, Service-Fehler in deren Status
 
 ### Core (packages/core)
@@ -72,7 +72,7 @@
 3. BFF validiert Body und leitet mit HMAC-Signing an Gateway
 4. Gateway routet an ai-service (Circuit Breaker: max. 10s Timeout)
 5. ai-service ruft OpenAI auf, fällt bei Fehler auf lokale Heuristik zurück
-6. Bei komplettem Backend-Ausfall: BFF selbst nutzt `@tankpilot/core`-Engine
+6. Bei komplettem Backend-Ausfall: BFF selbst nutzt `@fuelyn/core`-Engine
 
 ## Sicherheits-Prinzipien
 

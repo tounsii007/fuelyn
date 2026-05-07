@@ -5,7 +5,7 @@ spring:
   application:
     name: price-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/tankpilot-prices;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/fuelyn-prices;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
@@ -29,7 +29,7 @@ spring:
     caffeine:
       spec: maximumSize=500,expireAfterWrite=300s
 
-tankpilot:
+fuelyn:
   security:
     hmac-secret: ${HMAC_SECRET:}
     jwt-public-key: ${JWT_PUBLIC_KEY:}
@@ -55,7 +55,7 @@ tankpilot:
   # to SSE subscribers (live UI updates) and the alerts processor.
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:redpanda:29092}
-    prices-topic: ${KAFKA_PRICES_TOPIC:tankpilot.prices.v1}
+    prices-topic: ${KAFKA_PRICES_TOPIC:fuelyn.prices.v1}
     publisher:
       enabled: ${KAFKA_PUBLISHER_ENABLED:true}
     consumer:

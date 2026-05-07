@@ -6,7 +6,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { WrappedReport } from '@tankpilot/core';
+import type { WrappedReport } from '@fuelyn/core';
 import { CountUp } from './CountUp';
 
 const MONTH_NAMES = [
@@ -37,7 +37,7 @@ function SlideLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="max-w-md w-full text-center text-white tp-enter">
+    <div className="max-w-md w-full text-center text-white fy-enter">
       {eyebrow && (
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 mb-3">
           {eyebrow}
@@ -54,7 +54,7 @@ export function CoverSlide({ report }: SlideProps) {
   return (
     <SlideLayout>
       <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-3">
-        TankPilot Wrapped
+        Fuelyn Wrapped
       </div>
       <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-none">
         Dein {report.year}

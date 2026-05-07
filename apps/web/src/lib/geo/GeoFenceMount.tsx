@@ -12,7 +12,7 @@
 import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useGeoFenceWatcher } from './use-geo-fence-watcher';
-import { isFuelStation, type GeoFence, type StationPriceSnapshot } from '@tankpilot/core';
+import { isFuelStation, type GeoFence, type StationPriceSnapshot } from '@fuelyn/core';
 import { useUnifiedStations } from '@/lib/hooks/use-unified-stations';
 
 export function GeoFenceMount() {

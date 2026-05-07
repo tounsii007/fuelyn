@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Prisma Client Singleton
+// Fuelyn — Prisma Client Singleton
 // Ensures a single PrismaClient instance across hot-reloads
 // in Next.js development mode.
 // ============================================================

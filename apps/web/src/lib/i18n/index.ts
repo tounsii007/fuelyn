@@ -1,10 +1,10 @@
 // ============================================================
-// TankPilot Web — i18n Setup
+// Fuelyn Web — i18n Setup
 // Provides locale detection and translation access.
 // ============================================================
 
-import type { AppLocale, TranslationKeys } from '@tankpilot/core';
-import { de, en, enUS, fr } from '@tankpilot/core';
+import type { AppLocale, TranslationKeys } from '@fuelyn/core';
+import { de, en, enUS, fr } from '@fuelyn/core';
 
 const translations: Record<AppLocale, TranslationKeys> = {
   de,

@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { requestNotificationPermission } from '@/lib/geo/use-geo-fence-watcher';
-import type { FavoriteStation } from '@tankpilot/core';
+import type { FavoriteStation } from '@fuelyn/core';
 
 const FUEL_LABELS: Record<'diesel' | 'e5' | 'e10', string> = {
   diesel: 'Diesel',
@@ -180,7 +180,7 @@ function FenceCard({ fence, onToggle, onDelete }: FenceCardProps) {
             onClick={onDelete}
             aria-label="Alarm löschen"
             className="w-8 h-8 rounded-full grid place-items-center text-[var(--color-fg-subtle)]
-                       hover:text-[var(--color-danger-500)] hover:bg-[var(--color-surface-hover)] tp-press"
+                       hover:text-[var(--color-danger-500)] hover:bg-[var(--color-surface-hover)] fy-press"
           >
             <TrashIcon />
           </button>
@@ -267,7 +267,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
   };
 
   return (
-    <Card elevation="raised" padding="md" className="tp-enter">
+    <Card elevation="raised" padding="md" className="fy-enter">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[var(--color-fg)]">
           Neuer Standort-Alarm

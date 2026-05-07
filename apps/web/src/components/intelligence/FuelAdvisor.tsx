@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { FUEL_TYPE_LABELS } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import {
   analyzePrices,
   getMockRecommendation,

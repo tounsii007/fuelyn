@@ -330,8 +330,8 @@ Keyboard navigation parity is required even on mobile (external keyboard support
                       │  produce delta events         │
                       ▼                               │
               ┌──────────────────┐                    │
-              │  Redpanda :29092 │ tankpilot.prices.v1│
-              │  (Kafka wire)    │ tankpilot.alerts.v1│
+              │  Redpanda :29092 │ fuelyn.prices.v1│
+              │  (Kafka wire)    │ fuelyn.alerts.v1│
               └────┬─────┬───────┘                    │
                    │     │                            │
        ┌───────────┘     └───────┐                    │
@@ -413,7 +413,7 @@ All backend services already exist and are healthy in this monorepo — see `doc
 ### Phase 3 — Mobile-native feel
 
 - [ ] PWA install prompt + offline shell
-- [ ] Web Push for `tankpilot.alerts.v1` consumer
+- [ ] Web Push for `fuelyn.alerts.v1` consumer
 - [ ] Voice search (Web Speech API)
 - [ ] Service worker prefetches the next zoom-tile ring
 - [ ] Native-quality bottom-sheet (drag + spring + snap)
@@ -429,7 +429,7 @@ All backend services already exist and are healthy in this monorepo — see `doc
 
 ### Phase 5 — Mobile native
 
-- [ ] React Native app sharing `@tankpilot/core`
+- [ ] React Native app sharing `@fuelyn/core`
 - [ ] iOS Live Activities for navigation
 - [ ] Android Auto / CarPlay integration
 - [ ] Fleet / B2B dashboard
@@ -452,7 +452,7 @@ All backend services already exist and are healthy in this monorepo — see `doc
 | Decision | Why |
 |---|---|
 | OKLCH over HSL | perceptually-uniform; same chroma feels equally vibrant across hues |
-| `tankpilot.localhost` over `tankpilot.de` | RFC 6761 reserves `*.localhost` for loopback; `tankpilot.de` is a real third-party domain |
+| `fuelyn.localhost` over `fuelyn.de` | RFC 6761 reserves `*.localhost` for loopback; `fuelyn.de` is a real third-party domain |
 | Custom `PopoverSelect` over native `<select>` | native `<option>` chrome is OS-painted, can't be styled (was illegible on dark glass) |
 | Tiered AI (heuristic → Ollama → OpenAI) | guarantees correctness even at zero spend; LLM only enriches narrative |
 | Kafka via Redpanda over Apache Kafka | ~256 MB RAM idle vs ~1 GB; same wire protocol |

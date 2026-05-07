@@ -1,4 +1,4 @@
-# TankPilot
+# Fuelyn
 
 Kraftstoff- und Ladesäulen-Navigator für Deutschland. Vergleicht Preise,
 erkennt Muster und liefert KI-gestützte Tank-Empfehlungen. Monorepo aus
@@ -8,7 +8,7 @@ shared TypeScript-Core.
 ## Projektstruktur
 
 ```
-tankpilot/
+fuelyn/
 ├─ apps/
 │  ├─ api/        # Java (separate Legacy-API)
 │  ├─ web/        # Next.js 16 Web-App (BFF + UI + Edge-Middleware)
@@ -61,10 +61,10 @@ Alle Container kommunizieren intern per HTTP über das Docker-Bridge-Network.
 Caddy terminiert TLS am Edge mit einer eigenen internen CA (Auto-Renew).
 HTTP-Anfragen auf `:49080` werden 301 nach HTTPS umgeleitet, HSTS preload ist gesetzt.
 
-### Optional: `tankpilot.localhost` als lokaler Alias
+### Optional: `fuelyn.localhost` als lokaler Alias
 
 Statt `https://localhost:49443` kann der Stack auch unter
-`https://tankpilot.localhost:49443` laufen — ohne Hosts-Datei zu
+`https://fuelyn.localhost:49443` laufen — ohne Hosts-Datei zu
 editieren. Die TLD `.localhost` ist von **RFC 6761 für Loopback
 reserviert**, jedes moderne Betriebssystem und jeder Browser
 löst `*.localhost` automatisch auf `127.0.0.1` auf. Es kollidiert
@@ -73,12 +73,12 @@ nie mit echter Public-DNS und ist immun gegen DNS-over-HTTPS
 
 | URL                                      | Zielservice |
 |------------------------------------------|-------------|
-| `https://tankpilot.localhost:49443`      | Web (Next.js) |
-| `https://api.tankpilot.localhost:49443`  | Gateway (REST + SSE) |
+| `https://fuelyn.localhost:49443`      | Web (Next.js) |
+| `https://api.fuelyn.localhost:49443`  | Gateway (REST + SSE) |
 
 Caddy generiert beim Start automatisch Zertifikate für beide
 Hostnames aus dem internen CA — kein Setup nötig. (Echte
-Public-Domain `tankpilot.de` ist absichtlich nicht konfiguriert,
+Public-Domain `fuelyn.localhost` ist absichtlich nicht konfiguriert,
 sie gehört einem fremden Anbieter; siehe Production-Deployment
 weiter unten falls du eine eigene Domain produktiv schalten willst.)
 
@@ -91,11 +91,11 @@ ist unvollständig" obwohl Windows den Caddy-Root vertraut. Drei
 Optionen:
 
 1. **Hostname-Ausnahme** (schnellster Fix) — in der Antivirus-GUI
-   `https://localhost:49443`, `https://tankpilot.de:49443` und die
+   `https://localhost:49443`, `https://fuelyn.localhost:49443` und die
    `api.*`-Pendants als vertrauenswürdige Adressen eintragen.
 2. **Caddy-Root in den Antivirus-Trust-Store importieren**:
    ```bash
-   docker exec tankpilot-caddy-1 \
+   docker exec fuelyn-caddy-1 \
      cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt
    ```
    Diese Datei dann in der AV-Software unter „Vertrauenswürdige

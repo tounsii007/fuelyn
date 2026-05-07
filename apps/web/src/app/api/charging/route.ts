@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     const res = await fetch(`${OCM_BASE}?${params}`, {
       signal: AbortSignal.timeout(10_000),
-      headers: { 'User-Agent': 'TankPilot/1.0' },
+      headers: { 'User-Agent': 'Fuelyn/1.0' },
     });
 
     if (!res.ok) throw new Error(`OCM responded with ${res.status}`);

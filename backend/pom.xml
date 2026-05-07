@@ -11,12 +11,12 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.tankpilot</groupId>
-    <artifactId>tankpilot-backend</artifactId>
+    <groupId>com.fuelyn</groupId>
+    <artifactId>fuelyn-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>TankPilot Backend</name>
-    <description>Multi-module backend for the TankPilot fuel price application</description>
+    <name>Fuelyn Backend</name>
+    <description>Multi-module backend for the Fuelyn fuel price application</description>
 
     <modules>
         <module>common</module>
@@ -101,8 +101,8 @@
 
             <!-- Common module -->
             <dependency>
-                <groupId>com.tankpilot</groupId>
-                <artifactId>tankpilot-common</artifactId>
+                <groupId>com.fuelyn</groupId>
+                <artifactId>fuelyn-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

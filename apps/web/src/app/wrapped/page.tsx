@@ -12,7 +12,7 @@ import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/lib/store/app-store';
-import { computeWrapped, type WrappedReport } from '@tankpilot/core';
+import { computeWrapped, type WrappedReport } from '@fuelyn/core';
 import { StoryShell, type StorySlide } from '@/components/wrapped/StoryShell';
 import {
   CoverSlide,
@@ -33,7 +33,7 @@ export default function WrappedPage() {
   return (
     <Suspense
       fallback={
-        <main className="fixed inset-0 z-[80] tp-mesh tp-mesh-animated grid place-items-center">
+        <main className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated grid place-items-center">
           <div className="text-white/80 text-sm">Lade Wrapped …</div>
         </main>
       }
@@ -66,7 +66,7 @@ function WrappedPageInner() {
   return (
     <StoryShell
       slides={slides}
-      title={`TankPilot Wrapped ${report.year}`}
+      title={`Fuelyn Wrapped ${report.year}`}
       subtitle={`${report.totals.entries} Tankstopps · ${report.totals.liters.toFixed(0)} L`}
       onClose={() => router.push('/')}
     />
@@ -100,10 +100,10 @@ function buildSlides(report: WrappedReport): StorySlide[] {
 
 function NotEnoughData({ year }: { year: number }) {
   return (
-    <main className="fixed inset-0 z-[80] tp-mesh tp-mesh-animated flex items-center justify-center p-6">
-      <div className="max-w-md w-full text-center text-white tp-enter">
+    <main className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center text-white fy-enter">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-3">
-          TankPilot Wrapped {year}
+          Fuelyn Wrapped {year}
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
           Noch nicht genug Daten.

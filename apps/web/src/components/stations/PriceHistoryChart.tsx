@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
-import { formatPrice, FUEL_TYPE_LABELS } from '@tankpilot/core';
+import { formatPrice, FUEL_TYPE_LABELS } from '@fuelyn/core';
 
 interface PriceHistoryChartProps {
   stationId: string;

@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Tankerkoenig Adapter
+// Fuelyn — Tankerkoenig Adapter
 // Wraps the existing StationService and maps Station objects
 // to UnifiedFuelStation format.
 // ============================================================

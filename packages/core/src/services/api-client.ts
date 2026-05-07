@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — HTTP API Client
+// Fuelyn — HTTP API Client
 // Thin HTTP wrapper with timeout, retry, and typed errors.
 // ============================================================
 

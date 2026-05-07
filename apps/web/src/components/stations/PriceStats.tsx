@@ -6,8 +6,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { StationRecommendation } from '@tankpilot/core';
-import { formatPrice, FUEL_TYPE_LABELS } from '@tankpilot/core';
+import type { StationRecommendation } from '@fuelyn/core';
+import { formatPrice, FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
 
 interface PriceStatsProps {

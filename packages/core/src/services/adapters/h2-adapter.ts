@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Hydrogen (H2) Station Adapter
+// Fuelyn — Hydrogen (H2) Station Adapter
 // Curated dataset of Germany's ~100 hydrogen refueling stations.
 // Data sourced from H2.LIVE public information.
 // ============================================================

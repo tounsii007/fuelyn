@@ -5,8 +5,8 @@
 
 'use client';
 
-import { splitPrice } from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+import { splitPrice } from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 interface PriceTagProps {
   price: number | null;

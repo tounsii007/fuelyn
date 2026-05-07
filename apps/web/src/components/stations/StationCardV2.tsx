@@ -12,7 +12,7 @@
 'use client';
 
 import { useAppStore } from '@/lib/store/app-store';
-import type { StationRecommendation } from '@tankpilot/core';
+import type { StationRecommendation } from '@fuelyn/core';
 import { Badge } from '@/components/ui/Badge';
 
 export interface StationCardV2Props {

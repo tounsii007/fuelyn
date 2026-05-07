@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
-import type { SavedLocation } from '@tankpilot/core';
+import type { SavedLocation } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 const ICONS: { value: SavedLocation['icon']; label: string; emoji: string }[] = [

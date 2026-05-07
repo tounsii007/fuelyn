@@ -1,16 +1,16 @@
 // ============================================================
-// TankPilot Web — Station Data Hooks (TanStack Query)
+// Fuelyn Web — Station Data Hooks (TanStack Query)
 // ============================================================
 
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { Station, StationDetail, FuelType } from '@tankpilot/core';
+import type { Station, StationDetail, FuelType } from '@fuelyn/core';
 import {
   STALE_TIME_LIST_MS,
   STALE_TIME_PRICES_MS,
   REFETCH_INTERVAL_PRICES_MS,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 import { fetchJson } from '../http/fetch-json';
 
 // ─── API Fetchers (call our BFF routes, not Tankerkönig directly) ─

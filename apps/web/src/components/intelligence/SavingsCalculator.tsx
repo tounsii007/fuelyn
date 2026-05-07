@@ -7,8 +7,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { StationRecommendation, FuelType } from '@tankpilot/core';
-import { formatPrice, formatDistance, FUEL_TYPE_LABELS } from '@tankpilot/core';
+import type { StationRecommendation, FuelType } from '@fuelyn/core';
+import { formatPrice, formatDistance, FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
 
 interface SavingsCalculatorProps {

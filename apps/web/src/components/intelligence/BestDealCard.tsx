@@ -25,8 +25,8 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import type { StationRecommendation } from '@tankpilot/core';
-import { formatDistance, formatDriveTime, estimateDriveTime, AVERAGE_SPEED_KMH } from '@tankpilot/core';
+import type { StationRecommendation } from '@fuelyn/core';
+import { formatDistance, formatDriveTime, estimateDriveTime, AVERAGE_SPEED_KMH } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
 import { PriceTag } from '@/components/ui/PriceTag';
 

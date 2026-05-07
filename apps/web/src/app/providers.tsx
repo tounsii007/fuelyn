@@ -38,7 +38,7 @@ function ThemeSync() {
     }
   }, [theme]);
 
-  // Apply the chosen background variant to <html> so the .tp-mesh
+  // Apply the chosen background variant to <html> so the .fy-mesh
   // utility (used everywhere the gradient backdrop appears) picks
   // up the matching CSS rule from tokens.css.
   //
@@ -98,7 +98,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   // Check sessionStorage on client only to avoid hydration mismatch
   useEffect(() => {
-    if (sessionStorage.getItem('tp_splash_done')) {
+    if (sessionStorage.getItem('fuelyn:splash_done')) {
       setShowSplash(false);
     } else {
       setSplashReady(true);
@@ -107,7 +107,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const handleSplashComplete = useCallback(() => {
     setShowSplash(false);
-    sessionStorage.setItem('tp_splash_done', '1');
+    sessionStorage.setItem('fuelyn:splash_done', '1');
   }, []);
 
   return (

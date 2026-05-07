@@ -4,7 +4,7 @@
 
 'use client';
 
-import type { ReachabilityStatus } from '@tankpilot/core';
+import type { ReachabilityStatus } from '@fuelyn/core';
 
 interface ReachabilityBadgeProps {
   status: ReachabilityStatus;

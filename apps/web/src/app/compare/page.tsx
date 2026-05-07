@@ -23,8 +23,8 @@ import {
   AVERAGE_SPEED_KMH,
   computeReachability,
   computeRemainingRange,
-} from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+} from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 export default function ComparePage() {
   const compareIds = useAppStore((s) => s.compareStationIds);

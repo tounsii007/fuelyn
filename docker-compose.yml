@@ -1,5 +1,5 @@
 # ============================================================
-# TankPilot — Local development stack.
+# Fuelyn — Local development stack.
 #
 # All ports are deliberately non-default (defense in depth +
 # avoids common port-scanner targets like 80/443/3000/5432/8080).
@@ -22,7 +22,7 @@
 # After first start, run once to remove browser warnings:
 #   ./scripts/trust-caddy-cert.sh
 # ============================================================
-name: tankpilot
+name: fuelyn
 
 services:
   caddy:
@@ -96,8 +96,8 @@ services:
     restart: unless-stopped
     command: ["postgres", "-c", "port=25432"]
     environment:
-      POSTGRES_DB: tankpilot
-      POSTGRES_USER: tankpilot
+      POSTGRES_DB: fuelyn
+      POSTGRES_USER: fuelyn
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
       PGPORT: "25432"
     volumes:
@@ -105,7 +105,7 @@ services:
     expose:
       - "25432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -p 25432 -U tankpilot -d tankpilot"]
+      test: ["CMD-SHELL", "pg_isready -p 25432 -U fuelyn -d fuelyn"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -124,12 +124,12 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "28810"
       MANAGEMENT_PORT: "29810"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:25432/tankpilot
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:25432/fuelyn
       SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
-      SPRING_DATASOURCE_USERNAME: tankpilot
+      SPRING_DATASOURCE_USERNAME: fuelyn
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
-      KAFKA_PRICES_TOPIC: tankpilot.prices.v1
+      KAFKA_PRICES_TOPIC: fuelyn.prices.v1
       KAFKA_PUBLISHER_ENABLED: ${KAFKA_PUBLISHER_ENABLED:-true}
       HMAC_SECRET: ${HMAC_SECRET:?HMAC_SECRET required}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY required}
@@ -252,7 +252,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       # Streaming consumer
       KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
-      KAFKA_PRICES_TOPIC: tankpilot.prices.v1
+      KAFKA_PRICES_TOPIC: fuelyn.prices.v1
       KAFKA_CONSUMER_ENABLED: ${KAFKA_CONSUMER_ENABLED:-true}
     expose:
       - "28820"
@@ -283,7 +283,7 @@ services:
       TANKPILOT_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       TANKPILOT_JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       TANKPILOT_API_KEY: ${API_KEY_1}
-      CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://tankpilot.localhost:49443,https://api.tankpilot.localhost:49443
+      CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://fuelyn.localhost:49443,https://api.fuelyn.localhost:49443
     expose:
       - "28800"
     healthcheck:
@@ -308,7 +308,7 @@ services:
       JAVA_BACKEND_URL: http://gateway:28800
       JAVA_BACKEND_API_KEY: ${API_KEY_1}
       # API base — clients hit this from the browser. Override in .env
-      # to point at the dev alias (PUBLIC_HOSTNAME=tankpilot.localhost) once
+      # to point at the dev alias (PUBLIC_HOSTNAME=fuelyn.localhost) once
       # you've added the hosts-file entry.
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-https://localhost:49443}
       CRON_SECRET: ${CRON_SECRET}

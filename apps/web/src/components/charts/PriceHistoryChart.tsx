@@ -9,8 +9,8 @@
 import { useState, useMemo, useId } from 'react';
 import type { PriceDataPoint } from '@/lib/utils/mock-price-history';
 import { generateMockPriceHistory } from '@/lib/utils/mock-price-history';
-import { formatPrice, FUEL_TYPE_LABELS } from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+import { formatPrice, FUEL_TYPE_LABELS } from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 type Period = 7 | 30;
 

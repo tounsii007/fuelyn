@@ -5,11 +5,11 @@ spring:
     console:
       enabled: true
 
-tankpilot:
+fuelyn:
   collection:
     enabled: false
 
 logging:
   level:
-    com.tankpilot: DEBUG
+    com.fuelyn: DEBUG
     org.springframework.web: DEBUG

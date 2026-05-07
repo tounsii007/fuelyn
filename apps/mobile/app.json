@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "TankPilot",
-    "slug": "tankpilot",
+    "name": "Fuelyn",
+    "slug": "fuelyn",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "tankpilot",
+    "scheme": "fuelyn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.tankpilot.app",
+      "bundleIdentifier": "com.fuelyn.app",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "TankPilot nutzt deinen Standort, um Tankstellen in deiner Nähe zu finden."
+        "NSLocationWhenInUseUsageDescription": "Fuelyn nutzt deinen Standort, um Tankstellen in deiner Nähe zu finden."
       }
     },
     "android": {
-      "package": "com.tankpilot.app",
+      "package": "com.fuelyn.app",
       "adaptiveIcon": {
         "backgroundColor": "#2575EA"
       },

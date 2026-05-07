@@ -4,7 +4,7 @@
 
 'use client';
 
-import type { StationType, EnergyType } from '@tankpilot/core';
+import type { StationType, EnergyType } from '@fuelyn/core';
 
 interface StationTypeIconProps {
   type: StationType;

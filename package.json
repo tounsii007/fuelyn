@@ -1,5 +1,5 @@
 {
-  "name": "tankpilot",
+  "name": "fuelyn",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -7,8 +7,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "dev:web": "turbo run dev --filter=@tankpilot/web",
-    "dev:mobile": "turbo run dev --filter=@tankpilot/mobile",
+    "dev:web": "turbo run dev --filter=@fuelyn/web",
+    "dev:mobile": "turbo run dev --filter=@fuelyn/mobile",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",

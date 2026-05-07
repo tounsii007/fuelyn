@@ -22,7 +22,7 @@ import {
   type GeoFence,
   type LatLng,
   type StationPriceSnapshot,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 import { useToast } from '@/components/ui/Toast';
 
 const THROTTLE_MS = 30_000; // min 30s between engine calls

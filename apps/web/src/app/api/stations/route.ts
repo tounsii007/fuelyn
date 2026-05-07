@@ -10,8 +10,8 @@ import {
   ApiClient,
   StationService,
   API_BASE_URL,
-} from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+} from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 
 const client = new ApiClient({ baseUrl: API_BASE_URL });
 const service = new StationService({

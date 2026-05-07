@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Domain Types
+// Fuelyn — Domain Types
 // Central type definitions for the entire application.
 // ============================================================
 

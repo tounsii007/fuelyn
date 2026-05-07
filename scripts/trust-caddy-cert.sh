@@ -38,7 +38,7 @@ case "$OS_NAME" in
     ;;
   Linux*)
     echo "[+] Linux detected — copying to /usr/local/share/ca-certificates/ (sudo will prompt)…"
-    sudo cp "$CERT_OUT" /usr/local/share/ca-certificates/caddy-tankpilot-root.crt
+    sudo cp "$CERT_OUT" /usr/local/share/ca-certificates/caddy-fuelyn-root.crt
     sudo update-ca-certificates
     echo "[+] System trust store updated. For Firefox, add via Preferences → Privacy → Certificates."
     ;;

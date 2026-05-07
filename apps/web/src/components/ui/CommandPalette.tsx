@@ -54,7 +54,7 @@ function defaultCommands(
       perform: () => router.push('/alerts') },
     { id: 'partners', group: 'Navigation', label: 'Tank- & Ladekarten', icon: '💳',
       perform: () => router.push('/partners') },
-    { id: 'wrapped', group: 'Navigation', label: 'TankPilot Wrapped', hint: 'Dein Jahr in Zahlen',
+    { id: 'wrapped', group: 'Navigation', label: 'Fuelyn Wrapped', hint: 'Dein Jahr in Zahlen',
       icon: '🎁', perform: () => router.push('/wrapped') },
     { id: 'settings', group: 'Navigation', label: 'Einstellungen', icon: '⚙️',
       perform: () => router.push('/settings') },
@@ -180,15 +180,15 @@ export function CommandPalette() {
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-sm"
-        style={{ animation: 'tp-enter 200ms var(--ease-soft) both' }}
+        style={{ animation: 'fy-enter 200ms var(--ease-soft) both' }}
       />
 
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative w-full max-w-xl tp-glass rounded-[var(--radius-2xl)]
+        className="relative w-full max-w-xl fy-glass rounded-[var(--radius-2xl)]
                    shadow-[var(--shadow-xl)] overflow-hidden"
-        style={{ animation: 'tp-enter 220ms var(--ease-spring) both' }}
+        style={{ animation: 'fy-enter 220ms var(--ease-spring) both' }}
       >
         {/* Search field */}
         <div className="flex items-center gap-3 px-4 h-14 border-b border-[var(--color-border-subtle)]">

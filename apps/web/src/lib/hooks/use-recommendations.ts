@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — Recommendation Hook
+// Fuelyn Web — Recommendation Hook
 // Bridges React Query station data + Zustand vehicle/favorites
 // with the core recommendation engine.
 // ============================================================
@@ -7,8 +7,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { Station, StationRecommendation, SortMode } from '@tankpilot/core';
-import { computeRecommendations } from '@tankpilot/core';
+import type { Station, StationRecommendation, SortMode } from '@fuelyn/core';
+import { computeRecommendations } from '@fuelyn/core';
 import { useAppStore } from '../store/app-store';
 
 export function useRecommendations(

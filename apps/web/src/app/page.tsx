@@ -26,13 +26,13 @@ import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { fetchJson } from '@/lib/http/fetch-json';
-import { fetchRoute, isFuelStation, isChargingStation } from '@tankpilot/core';
+import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
   Station,
   UnifiedStation,
   UnifiedFuelStation,
   ChargingStation as CoreChargingStation,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 import { useCallback, useEffect, useMemo } from 'react';
 
 // Leaflet requires browser APIs — load dynamically with no SSR
@@ -41,8 +41,8 @@ const StationMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center tp-mesh">
-        <div className="flex items-center gap-3 px-5 py-3 rounded-[var(--radius-pill)] tp-glass shadow-[var(--shadow-md)]">
+      <div className="w-full h-full flex items-center justify-center fy-mesh">
+        <div className="flex items-center gap-3 px-5 py-3 rounded-[var(--radius-pill)] fy-glass shadow-[var(--shadow-md)]">
           <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-brand-500)] animate-pulse" />
           <span className="text-sm text-[var(--color-fg-muted)]">Karte wird geladen…</span>
         </div>
@@ -393,7 +393,7 @@ export default function HomePage() {
                 <PriceStats recommendations={recommendations} />
 
                 {recommendations.length > 0 && (
-                  <div className="px-4 space-y-3 pb-2 tp-enter">
+                  <div className="px-4 space-y-3 pb-2 fy-enter">
                     <FuelAdvisor />
                     <SavingsCalculator recommendations={recommendations} />
                   </div>
@@ -420,7 +420,7 @@ export default function HomePage() {
 
 function InsecureContextBanner() {
   return (
-    <div className="flex-shrink-0 px-4 py-2 tp-glass-subtle border-b border-[var(--color-border-subtle)]">
+    <div className="flex-shrink-0 px-4 py-2 fy-glass-subtle border-b border-[var(--color-border-subtle)]">
       <p className="text-xs text-[var(--color-fg-muted)] text-center">
         <span className="font-semibold text-[var(--color-warning-500)]">
           Demo-Standort (Berlin)

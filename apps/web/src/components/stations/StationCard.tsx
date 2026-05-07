@@ -4,8 +4,8 @@
 
 'use client';
 
-import type { StationRecommendation } from '@tankpilot/core';
-import { formatDistance, formatDriveTime, formatAddress } from '@tankpilot/core';
+import type { StationRecommendation } from '@fuelyn/core';
+import { formatDistance, formatDriveTime, formatAddress } from '@fuelyn/core';
 import { PriceTag } from '../ui/PriceTag';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
 import { BrandBadge } from '../ui/BrandBadge';

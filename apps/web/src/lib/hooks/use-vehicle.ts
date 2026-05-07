@@ -1,11 +1,11 @@
 // ============================================================
-// TankPilot Web — Vehicle & Persistence Hooks
+// Fuelyn Web — Vehicle & Persistence Hooks
 // ============================================================
 
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import type { VehicleProfile, FavoriteStation, AppSettings, PriceAlert, FuelLogEntry, SavedLocation } from '@tankpilot/core';
+import type { VehicleProfile, FavoriteStation, AppSettings, PriceAlert, FuelLogEntry, SavedLocation } from '@fuelyn/core';
 import {
   WebStorageAdapter,
   createTypedStorage,
@@ -14,7 +14,7 @@ import {
   appSettingsSchema,
   STORAGE_KEYS,
   DEFAULT_SETTINGS,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 import { z } from 'zod';
 import { useAppStore } from '../store/app-store';
 

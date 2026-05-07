@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Smoke test for the TankPilot AI advisor endpoint.
+  Smoke test for the Fuelyn AI advisor endpoint.
 
 .DESCRIPTION
   Posts a sample request to /api/v1/ai/advisor and pretty-prints the
@@ -95,13 +95,13 @@ if ($Mode -eq 'Direct') {
     $escaped = $payload -replace '"', '\"'
     $url = 'http://127.0.0.1:28820/api/v1/ai/advisor'
 
-    $raw = docker exec tankpilot-ai-service-1 wget -q -O- `
+    $raw = docker exec fuelyn-ai-service-1 wget -q -O- `
         --post-data="$escaped" `
         --header="Content-Type: application/json" `
         $url
 
     if ($LASTEXITCODE -ne 0) {
-        throw "docker exec returned $LASTEXITCODE - is tankpilot-ai-service-1 running?"
+        throw "docker exec returned $LASTEXITCODE - is fuelyn-ai-service-1 running?"
     }
 }
 # Gateway mode: full auth path through Caddy

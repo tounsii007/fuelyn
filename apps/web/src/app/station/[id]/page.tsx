@@ -23,8 +23,8 @@ import {
   computeRemainingRange,
   estimateDriveTime,
   AVERAGE_SPEED_KMH,
-} from '@tankpilot/core';
-import type { FuelType } from '@tankpilot/core';
+} from '@fuelyn/core';
+import type { FuelType } from '@fuelyn/core';
 import { getBrandConfig } from '@/lib/brand-config';
 
 export default function StationDetailPage({
@@ -92,7 +92,7 @@ export default function StationDetailPage({
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: `${station.brand || station.name} \u2014 TankPilot`, text });
+        await navigator.share({ title: `${station.brand || station.name} \u2014 Fuelyn`, text });
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {

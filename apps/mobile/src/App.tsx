@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Mobile - App Entry Point
+// Fuelyn Mobile - App Entry Point
 // ============================================================
 
 import { StatusBar } from 'expo-status-bar';

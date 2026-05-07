@@ -4,7 +4,7 @@
 
 'use client';
 
-import type { ManeuverType } from '@tankpilot/core';
+import type { ManeuverType } from '@fuelyn/core';
 
 interface ManeuverIconProps {
   type: ManeuverType;

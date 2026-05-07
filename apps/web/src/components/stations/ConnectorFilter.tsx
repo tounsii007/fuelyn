@@ -4,13 +4,13 @@
 
 'use client';
 
-import type { ConnectorType, ChargingSpeed } from '@tankpilot/core';
+import type { ConnectorType, ChargingSpeed } from '@fuelyn/core';
 import {
   CONNECTOR_TYPES,
   CONNECTOR_TYPE_LABELS,
   CONNECTOR_TYPE_ICONS,
   CHARGING_SPEED_LABELS,
-} from '@tankpilot/core';
+} from '@fuelyn/core';
 
 interface ConnectorFilterProps {
   selectedConnectors: readonly ConnectorType[];

@@ -7,7 +7,7 @@
 // ============================================================
 
 import { openai } from './openai-client';
-import type { FuelType } from '@tankpilot/core';
+import type { FuelType } from '@fuelyn/core';
 
 // ---- Public Types ----
 
@@ -45,7 +45,7 @@ export interface AIAdvisorResponse {
 
 // ---- System Prompt ----
 
-const SYSTEM_PROMPT = `Du bist ein KI-Tankberater für die App "TankPilot". Deine Aufgabe ist es, basierend auf aktuellen Preisdaten und Preistrends eine Tankempfehlung zu geben.
+const SYSTEM_PROMPT = `Du bist ein KI-Tankberater für die App "Fuelyn". Deine Aufgabe ist es, basierend auf aktuellen Preisdaten und Preistrends eine Tankempfehlung zu geben.
 
 Antworte IMMER im folgenden JSON-Format:
 {

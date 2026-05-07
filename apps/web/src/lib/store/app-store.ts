@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — Application State (Zustand)
+// Fuelyn Web — Application State (Zustand)
 // Lightweight global state for UI concerns. Server data lives
 // in React Query; this store holds local/client-only state.
 // ============================================================
@@ -26,8 +26,8 @@ import type {
   StationType,
   ConnectorType,
   ChargingSpeed,
-} from '@tankpilot/core';
-import { DEFAULT_FILTER, DEFAULT_SETTINGS } from '@tankpilot/core';
+} from '@fuelyn/core';
+import { DEFAULT_FILTER, DEFAULT_SETTINGS } from '@fuelyn/core';
 
 const MAX_COMPARE_STATIONS = 3;
 const MAX_SEARCH_HISTORY = 10;
@@ -184,7 +184,7 @@ interface AppState {
   setGeoFenceEnabled: (id: string, enabled: boolean) => void;
 }
 
-/** Stored geo-fence shape (compatible with @tankpilot/core's GeoFence). */
+/** Stored geo-fence shape (compatible with @fuelyn/core's GeoFence). */
 export interface GeoFenceState {
   readonly id: string;
   readonly label: string;

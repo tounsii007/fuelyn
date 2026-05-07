@@ -1,11 +1,11 @@
 // ============================================================
-// TankPilot Web — Charging Station Hook (OpenChargeMap)
+// Fuelyn Web — Charging Station Hook (OpenChargeMap)
 // ============================================================
 
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { ChargingStation } from '@tankpilot/core';
+import type { ChargingStation } from '@fuelyn/core';
 import { fetchJson } from '../http/fetch-json';
 
 async function fetchChargingStations(params: {

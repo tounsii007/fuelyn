@@ -7,12 +7,12 @@ RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/core/package.json ./packages/core/
-# Only install the web workspace + its transitive @tankpilot/core dep.
+# Only install the web workspace + its transitive @fuelyn/core dep.
 # Skipping `apps/mobile` (Expo) and `apps/api` (Java) keeps the layer small
 # and avoids native-module install failures on Alpine.
 RUN npm ci \
-    --workspace=@tankpilot/web \
-    --workspace=@tankpilot/core \
+    --workspace=@fuelyn/web \
+    --workspace=@fuelyn/core \
     --include-workspace-root
 
 # ─── Build ───────────────────────────────────────────────
@@ -27,7 +27,7 @@ COPY . .
 # (otherwise TS sees `any` and strict checks fail in API routes).
 RUN cd apps/web && npx prisma generate
 
-RUN npm run build --workspace=@tankpilot/web
+RUN npm run build --workspace=@fuelyn/web
 
 # ─── Runtime (Next.js standalone) ────────────────────────
 FROM node:20-alpine AS runner

@@ -10,7 +10,7 @@ import { useAppStore } from '@/lib/store/app-store';
 import { useStationSearch } from '@/lib/hooks/use-stations';
 import { useRecommendations } from '@/lib/hooks/use-recommendations';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { FUEL_TYPE_LABELS, formatDistance, formatPrice } from '@tankpilot/core';
+import { FUEL_TYPE_LABELS, formatDistance, formatPrice } from '@fuelyn/core';
 
 interface RouteStop {
   id: string;

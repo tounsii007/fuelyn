@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Data Source Adapters
+// Fuelyn — Data Source Adapters
 // ============================================================
 
 export type { DataSourceAdapter, SearchArea, AdapterSearchResult } from './adapter-types';

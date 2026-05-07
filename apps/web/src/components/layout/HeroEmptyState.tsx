@@ -34,26 +34,26 @@ export function HeroEmptyState({
   return (
     <section className="relative w-full h-full flex items-center justify-center overflow-hidden">
       {/* Layered mesh + decorative orbs */}
-      <div aria-hidden className="absolute inset-0 tp-mesh tp-mesh-animated" />
+      <div aria-hidden className="absolute inset-0 fy-mesh fy-mesh-animated" />
       <div
         aria-hidden
         className="absolute top-12 right-12 w-72 h-72 rounded-full opacity-50 blur-3xl
-                   bg-[var(--color-brand-300)] dark:bg-[var(--color-brand-700)] tp-float"
+                   bg-[var(--color-brand-300)] dark:bg-[var(--color-brand-700)] fy-float"
       />
       <div
         aria-hidden
         className="absolute bottom-8 left-8 w-64 h-64 rounded-full opacity-40 blur-3xl
-                   bg-[var(--color-accent-300)] dark:bg-[var(--color-accent-700)] tp-float"
+                   bg-[var(--color-accent-300)] dark:bg-[var(--color-accent-700)] fy-float"
         style={{ animationDelay: '2s' }}
       />
 
-      <div className="relative max-w-2xl mx-auto px-6 text-center tp-enter">
+      <div className="relative max-w-2xl mx-auto px-6 text-center fy-enter">
         {/* Pin icon with glow */}
         <div
           aria-hidden
-          className="mx-auto mb-8 w-20 h-20 rounded-3xl tp-ring-glow flex items-center justify-center
+          className="mx-auto mb-8 w-20 h-20 rounded-3xl fy-ring-glow flex items-center justify-center
                      bg-gradient-to-br from-[var(--color-brand-500)] via-[var(--color-brand-600)] to-[var(--color-brand-800)]
-                     text-white tp-float"
+                     text-white fy-float"
         >
           <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -64,7 +64,7 @@ export function HeroEmptyState({
 
         {/* Headline */}
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.05]">
-          <span className="tp-text-gradient">Tanken,</span> wenn es{' '}
+          <span className="fy-text-gradient">Tanken,</span> wenn es{' '}
           <br className="hidden md:block" />
           wirklich günstig ist.
         </h1>
@@ -91,10 +91,10 @@ export function HeroEmptyState({
               key={h.label}
               className={[
                 'inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-pill)]',
-                'text-xs font-medium tp-glass-subtle border border-[var(--color-border-subtle)]',
+                'text-xs font-medium fy-glass-subtle border border-[var(--color-border-subtle)]',
                 TONE_CLASS[h.tone],
               ].join(' ')}
-              style={{ animation: `tp-enter 350ms var(--ease-spring) ${i * 60 + 120}ms both` }}
+              style={{ animation: `fy-enter 350ms var(--ease-spring) ${i * 60 + 120}ms both` }}
             >
               <span aria-hidden>{h.icon}</span>
               {h.label}

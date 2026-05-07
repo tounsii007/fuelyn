@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Unified Filter Model
+// Fuelyn — Unified Filter Model
 // Extended filter for all station types, energy types,
 // connector types, and charging power levels.
 // ============================================================

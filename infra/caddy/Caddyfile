@@ -14,11 +14,11 @@
 #
 # Public surface:
 #   https://localhost:49443           → web (Next.js)
-#   https://tankpilot.localhost:49443        → web (Next.js, dev alias)
+#   https://fuelyn.localhost:49443        → web (Next.js, dev alias)
 #   https://api.localhost:49443       → gateway
-#   https://api.tankpilot.localhost:49443    → gateway (dev alias)
+#   https://api.fuelyn.localhost:49443    → gateway (dev alias)
 #
-# DEV-ONLY hostname: `tankpilot.localhost` is automatically mapped to
+# DEV-ONLY hostname: `fuelyn.localhost` is automatically mapped to
 # 127.0.0.1 by every modern OS / browser per RFC 6761 — no hosts-file
 # edit needed. The `.localhost` TLD is reserved for loopback so this
 # never collides with any public DNS.
@@ -40,7 +40,7 @@
 
 # ─── Public web app ──────────────────────────────────────
 localhost, https://localhost,
-tankpilot.localhost, https://tankpilot.localhost {
+fuelyn.localhost, https://fuelyn.localhost {
     tls internal
 
     encode zstd gzip
@@ -61,7 +61,7 @@ tankpilot.localhost, https://tankpilot.localhost {
 
 # ─── Public Gateway ──────────────────────────────────────
 api.localhost, https://api.localhost,
-api.tankpilot.localhost, https://api.tankpilot.localhost {
+api.fuelyn.localhost, https://api.fuelyn.localhost {
     tls internal
 
     encode zstd gzip
@@ -80,6 +80,6 @@ api.tankpilot.localhost, https://api.tankpilot.localhost {
 
 # ─── Plain-HTTP redirect ─────────────────────────────────
 http://localhost, http://api.localhost,
-http://tankpilot.localhost, http://api.tankpilot.localhost {
+http://fuelyn.localhost, http://api.fuelyn.localhost {
     redir https://{host}:49443{uri} permanent
 }

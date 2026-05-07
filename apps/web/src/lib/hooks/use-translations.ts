@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Web — useTranslations Hook
+// Fuelyn Web — useTranslations Hook
 // Returns a t() function bound to the current locale from the
 // Zustand store. Supports nested dot-notation keys.
 // ============================================================

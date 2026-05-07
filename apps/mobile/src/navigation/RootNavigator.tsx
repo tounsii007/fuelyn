@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot Mobile - Root Navigation
+// Fuelyn Mobile - Root Navigation
 // ============================================================
 
 import { NavigationContainer } from '@react-navigation/native';

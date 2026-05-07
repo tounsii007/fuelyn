@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.tankpilot</groupId>
-        <artifactId>tankpilot-backend</artifactId>
+        <groupId>com.fuelyn</groupId>
+        <artifactId>fuelyn-backend</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>tankpilot-common</artifactId>
-    <name>TankPilot Common</name>
-    <description>Shared security, DTOs, and exception handling for TankPilot microservices</description>
+    <artifactId>fuelyn-common</artifactId>
+    <name>Fuelyn Common</name>
+    <description>Shared security, DTOs, and exception handling for Fuelyn microservices</description>
 
     <!-- Common is a library, not a bootable application -->
     <packaging>jar</packaging>

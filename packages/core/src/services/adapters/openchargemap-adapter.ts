@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — OpenChargeMap Adapter
+// Fuelyn — OpenChargeMap Adapter
 // Maps raw OpenChargeMap data into UnifiedChargingStation format.
 // ============================================================
 
