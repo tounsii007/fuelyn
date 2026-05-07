@@ -283,7 +283,7 @@ services:
       TANKPILOT_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       TANKPILOT_JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       TANKPILOT_API_KEY: ${API_KEY_1}
-      CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://tankpilot.de:49443,https://api.tankpilot.de:49443
+      CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://tankpilot.localhost:49443,https://api.tankpilot.localhost:49443
     expose:
       - "28800"
     healthcheck:
@@ -308,7 +308,7 @@ services:
       JAVA_BACKEND_URL: http://gateway:28800
       JAVA_BACKEND_API_KEY: ${API_KEY_1}
       # API base — clients hit this from the browser. Override in .env
-      # to point at the dev alias (PUBLIC_HOSTNAME=tankpilot.de) once
+      # to point at the dev alias (PUBLIC_HOSTNAME=tankpilot.localhost) once
       # you've added the hosts-file entry.
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-https://localhost:49443}
       CRON_SECRET: ${CRON_SECRET}

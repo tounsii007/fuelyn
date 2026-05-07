@@ -14,14 +14,14 @@
 #
 # Public surface:
 #   https://localhost:49443           → web (Next.js)
-#   https://tankpilot.de:49443        → web (Next.js, dev alias)
+#   https://tankpilot.localhost:49443        → web (Next.js, dev alias)
 #   https://api.localhost:49443       → gateway
-#   https://api.tankpilot.de:49443    → gateway (dev alias)
+#   https://api.tankpilot.localhost:49443    → gateway (dev alias)
 #
-# DEV-ONLY hostname: `tankpilot.de` is mapped to 127.0.0.1 via the
-# OS hosts file. See README — this does NOT touch the real
-# tankpilot.de domain on the public DNS, it's a loopback override
-# only on the developer's own machine.
+# DEV-ONLY hostname: `tankpilot.localhost` is automatically mapped to
+# 127.0.0.1 by every modern OS / browser per RFC 6761 — no hosts-file
+# edit needed. The `.localhost` TLD is reserved for loopback so this
+# never collides with any public DNS.
 #
 # Internal traffic (between containers on the docker network) stays
 # HTTP — they're on a private bridge network so TLS termination
@@ -40,7 +40,7 @@
 
 # ─── Public web app ──────────────────────────────────────
 localhost, https://localhost,
-tankpilot.de, https://tankpilot.de {
+tankpilot.localhost, https://tankpilot.localhost {
     tls internal
 
     encode zstd gzip
@@ -61,7 +61,7 @@ tankpilot.de, https://tankpilot.de {
 
 # ─── Public Gateway ──────────────────────────────────────
 api.localhost, https://api.localhost,
-api.tankpilot.de, https://api.tankpilot.de {
+api.tankpilot.localhost, https://api.tankpilot.localhost {
     tls internal
 
     encode zstd gzip
@@ -80,6 +80,6 @@ api.tankpilot.de, https://api.tankpilot.de {
 
 # ─── Plain-HTTP redirect ─────────────────────────────────
 http://localhost, http://api.localhost,
-http://tankpilot.de, http://api.tankpilot.de {
+http://tankpilot.localhost, http://api.tankpilot.localhost {
     redir https://{host}:49443{uri} permanent
 }

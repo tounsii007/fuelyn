@@ -61,27 +61,26 @@ Alle Container kommunizieren intern per HTTP über das Docker-Bridge-Network.
 Caddy terminiert TLS am Edge mit einer eigenen internen CA (Auto-Renew).
 HTTP-Anfragen auf `:49080` werden 301 nach HTTPS umgeleitet, HSTS preload ist gesetzt.
 
-### Optional: `tankpilot.de` als lokaler Alias
+### Optional: `tankpilot.localhost` als lokaler Alias
 
 Statt `https://localhost:49443` kann der Stack auch unter
-`https://tankpilot.de:49443` laufen. Das ist eine reine Loopback-
-Umleitung in der lokalen Hosts-Datei — die echte Internet-DNS
-für `tankpilot.de` bleibt unberührt.
+`https://tankpilot.localhost:49443` laufen — ohne Hosts-Datei zu
+editieren. Die TLD `.localhost` ist von **RFC 6761 für Loopback
+reserviert**, jedes moderne Betriebssystem und jeder Browser
+löst `*.localhost` automatisch auf `127.0.0.1` auf. Es kollidiert
+nie mit echter Public-DNS und ist immun gegen DNS-over-HTTPS
+(was sonst Hosts-File-Tricks aushebelt).
 
-```powershell
-# Windows (PowerShell als Administrator)
-.\scripts\setup-tankpilot-host.ps1
+| URL                                      | Zielservice |
+|------------------------------------------|-------------|
+| `https://tankpilot.localhost:49443`      | Web (Next.js) |
+| `https://api.tankpilot.localhost:49443`  | Gateway (REST + SSE) |
 
-# Linux / macOS
-sudo ./scripts/setup-tankpilot-host.sh
-```
-
-Beide Skripte fügen `127.0.0.1 tankpilot.de` und
-`127.0.0.1 api.tankpilot.de` zur Hosts-Datei hinzu. Caddy hat die
-neuen Hostnames bereits konfiguriert und liefert dafür automatisch
-ein Zertifikat aus dem internen CA aus. Zum Rückgängig-Machen
-denselben Befehl mit `-Remove` (Windows) bzw. `--remove` (Bash)
-aufrufen.
+Caddy generiert beim Start automatisch Zertifikate für beide
+Hostnames aus dem internen CA — kein Setup nötig. (Echte
+Public-Domain `tankpilot.de` ist absichtlich nicht konfiguriert,
+sie gehört einem fremden Anbieter; siehe Production-Deployment
+weiter unten falls du eine eigene Domain produktiv schalten willst.)
 
 ### Antivirus / Endpoint-Schutz: HTTPS-Inspection
 
