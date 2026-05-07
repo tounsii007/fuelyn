@@ -1,0 +1,33 @@
+{
+  "name": "@tankpilot/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./domain": "./src/domain/index.ts",
+    "./domain/vehicles": "./src/domain/vehicles.ts",
+    "./validation": "./src/validation/schemas.ts",
+    "./services": "./src/services/index.ts",
+    "./engine": "./src/engine/index.ts",
+    "./storage": "./src/storage/storage.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./config": "./src/config/constants.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --pool=threads",
+    "test:watch": "vitest --pool=threads",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  }
+}

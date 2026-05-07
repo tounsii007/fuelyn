@@ -1,0 +1,72 @@
+# ============================================================
+# TankPilot — Caddy reverse proxy (auto-HTTPS via internal CA).
+#
+# Non-default public ports:
+#   HTTPS: 49443
+#   HTTP:  49080  (always 301-redirects to HTTPS)
+#
+# Caddy generates and renews a TLS cert for `localhost` using its
+# built-in self-signed CA. Run `./scripts/trust-caddy-cert.sh` once
+# to install the root CA in the OS trust store.
+#
+# Public surface:
+#   https://localhost:49443           → web (Next.js)
+#   https://api.localhost:49443       → gateway (Spring Cloud Gateway)
+#
+# Internal traffic (between containers on the docker network) stays
+# HTTP — they're on a private bridge network so TLS termination here
+# is sufficient.
+# ============================================================
+
+{
+    # Use non-standard ports across the board.
+    http_port  49080
+    https_port 49443
+
+    # Don't auto-redirect on the standard ports we don't bind.
+    auto_https disable_redirects
+    admin off
+}
+
+# ─── Public web app ──────────────────────────────────────
+localhost, https://localhost {
+    tls internal
+
+    encode zstd gzip
+
+    reverse_proxy web:23700 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-Host  {host}
+        header_up X-Real-IP         {remote_host}
+    }
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options    "nosniff"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        Permissions-Policy        "geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+    }
+}
+
+# ─── Public Gateway ──────────────────────────────────────
+api.localhost, https://api.localhost {
+    tls internal
+
+    encode zstd gzip
+
+    reverse_proxy gateway:28800 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-Host  {host}
+        header_up X-Real-IP         {remote_host}
+    }
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+    }
+}
+
+# ─── Plain-HTTP redirect ─────────────────────────────────
+http://localhost, http://api.localhost {
+    redir https://{host}:49443{uri} permanent
+}

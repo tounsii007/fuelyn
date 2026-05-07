@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
+tankpilot:
+  collection:
+    enabled: false
+
+logging:
+  level:
+    com.tankpilot: DEBUG
+    org.springframework.web: DEBUG

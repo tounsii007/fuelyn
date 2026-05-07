@@ -1,0 +1,116 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: tankpilot-gateway
+  cloud:
+    gateway:
+      routes:
+        # --- Price Service ---
+        - id: price-service
+          uri: ${PRICE_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/prices/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: priceService
+                fallbackUri: forward:/fallback/price-service
+
+        # --- AI Service ---
+        - id: ai-service
+          uri: ${AI_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: aiService
+                fallbackUri: forward:/fallback/ai-service
+
+      # CORS — explicit allow-lists only, no wildcards when credentials are in play.
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Request-Id
+              - X-Service-Token
+              - X-Service-Id
+              - X-Signature
+              - X-Timestamp
+            exposedHeaders:
+              - X-Request-Id
+              - X-RateLimit-Limit
+              - X-RateLimit-Remaining
+              - X-RateLimit-Reset
+              - Retry-After
+            allowCredentials: true
+            maxAge: 3600
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+tankpilot:
+  security:
+    hmac-secret: "${TANKPILOT_HMAC_SECRET:}"
+    jwt-public-key: "${TANKPILOT_JWT_PUBLIC_KEY:}"
+    jwt-private-key: "${TANKPILOT_JWT_PRIVATE_KEY:}"
+    service-id: gateway
+    api-keys:
+      - "${TANKPILOT_API_KEY:}"
+  gateway:
+    rate-limit:
+      requests-per-second: 10
+      burst-capacity: 20
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+    instances:
+      priceService:
+        baseConfig: default
+      aiService:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 10s
+
+management:
+  server:
+    port: ${MANAGEMENT_PORT:9080}
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,circuitbreakers
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:0.1}
+
+logging:
+  level:
+    com.tankpilot.gateway: INFO
+    org.springframework.cloud.gateway: WARN

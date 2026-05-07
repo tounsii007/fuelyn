@@ -1,0 +1,47 @@
+// ============================================================
+// TankPilot — Prisma Schema (SQLite)
+// Stores price history snapshots, station metadata, and
+// collection run logs for the price-history backend.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model PriceSnapshot {
+  id        Int      @id @default(autoincrement())
+  stationId String
+  fuelType  String   // diesel, e5, e10
+  price     Float
+  timestamp DateTime @default(now())
+
+  @@index([stationId, fuelType])
+  @@index([timestamp])
+  @@index([stationId, fuelType, timestamp])
+}
+
+model StationMeta {
+  id        String   @id // Tankerkoenig station UUID
+  name      String
+  brand     String
+  lat       Float
+  lng       Float
+  street    String?
+  city      String?
+  postCode  String?
+  updatedAt DateTime @updatedAt
+}
+
+model CollectionRun {
+  id            Int       @id @default(autoincrement())
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  stationsCount Int       @default(0)
+  pricesCount   Int       @default(0)
+  status        String    @default("running") // running, completed, failed
+  error         String?
+}

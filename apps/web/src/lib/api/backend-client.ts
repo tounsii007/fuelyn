@@ -1,0 +1,83 @@
+// ============================================================
+// Backend API Client
+// Proxies requests to the Java Gateway (port 8080).
+// Used by BFF routes that need to call the Java microservices.
+// ============================================================
+
+const BACKEND_URL = process.env.JAVA_BACKEND_URL ?? 'http://localhost:8080';
+const API_KEY = process.env.JAVA_BACKEND_API_KEY ?? 'dev-api-key-change-in-production';
+const TIMEOUT_MS = 10_000;
+
+interface BackendRequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: unknown;
+  timeout?: number;
+}
+
+export class BackendApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly responseBody?: string,
+  ) {
+    super(message);
+    this.name = 'BackendApiError';
+  }
+}
+
+/**
+ * Makes a request to the Java backend gateway.
+ * Adds API key header and handles timeouts.
+ */
+export async function backendFetch<T>(
+  path: string,
+  options: BackendRequestOptions = {},
+): Promise<T> {
+  const { method = 'GET', body, timeout = TIMEOUT_MS } = options;
+  const url = `${BACKEND_URL}${path}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const headers: Record<string, string> = {
+      'X-API-Key': API_KEY,
+      Accept: 'application/json',
+    };
+
+    if (body != null) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: body != null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new BackendApiError(
+        `Backend responded with ${response.status}`,
+        response.status,
+        text,
+      );
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof BackendApiError) throw error;
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new BackendApiError('Backend request timed out', 504);
+    }
+
+    throw new BackendApiError(
+      `Backend connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      502,
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}

@@ -1,0 +1,36 @@
+# Maven build output
+target/
+
+# Embedded database files
+data/
+*.db
+
+# Packaged jars
+*.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Environment secrets
+.env
+*.env.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Spring Boot DevTools
+spring-boot-devtools.properties

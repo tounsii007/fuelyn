@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2575EA"/>
+      <stop offset="100%" stop-color="#1a5bc4"/>
+    </linearGradient>
+    <linearGradient id="pump" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8F0FE"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="108" ry="108" fill="url(#bg)"/>
+  <!-- Fuel pump body -->
+  <rect x="128" y="160" width="180" height="232" rx="20" ry="20" fill="url(#pump)"/>
+  <!-- Fuel pump screen -->
+  <rect x="156" y="192" width="124" height="72" rx="10" ry="10" fill="#2575EA" opacity="0.15"/>
+  <!-- Price display on screen -->
+  <text x="218" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="36" fill="#2575EA">1.65</text>
+  <!-- Euro symbol -->
+  <text x="218" y="256" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="14" fill="#2575EA" opacity="0.6">EUR/L</text>
+  <!-- Fuel nozzle hose -->
+  <path d="M308 200 Q340 200 340 232 L340 300 Q340 320 360 320 L380 320 Q396 320 396 304 L396 220 Q396 188 372 172" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <!-- Nozzle head -->
+  <rect x="352" y="304" width="52" height="32" rx="8" ry="8" fill="#FFFFFF" opacity="0.5"/>
+  <!-- Navigation pin dot (bottom center of pump) -->
+  <circle cx="218" cy="340" r="16" fill="#F59E0B"/>
+  <!-- Star in pin -->
+  <text x="218" y="347" text-anchor="middle" font-size="20" fill="#FFFFFF">&#9733;</text>
+  <!-- Base line -->
+  <rect x="112" y="392" width="212" height="12" rx="6" ry="6" fill="#FFFFFF" opacity="0.3"/>
+</svg>

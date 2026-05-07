@@ -1,0 +1,58 @@
+## ── Node / Next ─────────────────────────────
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+.turbo/
+**/.turbo/
+*.tsbuildinfo
+**/*.tsbuildinfo
+.cache/
+
+## ── Java ────────────────────────────────────
+target/
+**/target/
+*.class
+*.jar
+*.war
+hs_err_pid*
+
+## ── Tests / Coverage ────────────────────────
+coverage/
+**/coverage/
+*.lcov
+.nyc_output
+
+## ── Logs ────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+
+## ── Env / Secrets ───────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+!apps/web/certificates/*.example.pem
+
+## ── DB / data ───────────────────────────────
+backend/price-service/data/
+backend/*/data/
+*.h2.db
+*.mv.db
+*.trace.db
+
+## ── IDE / Tooling ───────────────────────────
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+.claude/
+
+## ── OS ──────────────────────────────────────
+.DS_Store
+Thumbs.db

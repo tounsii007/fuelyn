@@ -1,0 +1,16 @@
+{
+  "name": "TankPilot — Günstig & schlau tanken",
+  "short_name": "TankPilot",
+  "description": "Finde die beste Tankstelle in deiner Nähe. Nicht nur die billigste — die sinnvollste.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2575EA",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
