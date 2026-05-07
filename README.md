@@ -61,6 +61,49 @@ Alle Container kommunizieren intern per HTTP über das Docker-Bridge-Network.
 Caddy terminiert TLS am Edge mit einer eigenen internen CA (Auto-Renew).
 HTTP-Anfragen auf `:49080` werden 301 nach HTTPS umgeleitet, HSTS preload ist gesetzt.
 
+### Optional: `tankpilot.de` als lokaler Alias
+
+Statt `https://localhost:49443` kann der Stack auch unter
+`https://tankpilot.de:49443` laufen. Das ist eine reine Loopback-
+Umleitung in der lokalen Hosts-Datei — die echte Internet-DNS
+für `tankpilot.de` bleibt unberührt.
+
+```powershell
+# Windows (PowerShell als Administrator)
+.\scripts\setup-tankpilot-host.ps1
+
+# Linux / macOS
+sudo ./scripts/setup-tankpilot-host.sh
+```
+
+Beide Skripte fügen `127.0.0.1 tankpilot.de` und
+`127.0.0.1 api.tankpilot.de` zur Hosts-Datei hinzu. Caddy hat die
+neuen Hostnames bereits konfiguriert und liefert dafür automatisch
+ein Zertifikat aus dem internen CA aus. Zum Rückgängig-Machen
+denselben Befehl mit `-Remove` (Windows) bzw. `--remove` (Bash)
+aufrufen.
+
+### Antivirus / Endpoint-Schutz: HTTPS-Inspection
+
+Suiten wie **Kaspersky Plus**, **Bitdefender** oder **ESET** machen
+TLS-Interception und haben einen eigenen Trust-Store, der den
+Caddy-Root-CA nicht kennt. Sichtbares Symptom: „Die Zertifikatkette
+ist unvollständig" obwohl Windows den Caddy-Root vertraut. Drei
+Optionen:
+
+1. **Hostname-Ausnahme** (schnellster Fix) — in der Antivirus-GUI
+   `https://localhost:49443`, `https://tankpilot.de:49443` und die
+   `api.*`-Pendants als vertrauenswürdige Adressen eintragen.
+2. **Caddy-Root in den Antivirus-Trust-Store importieren**:
+   ```bash
+   docker exec tankpilot-caddy-1 \
+     cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt
+   ```
+   Diese Datei dann in der AV-Software unter „Vertrauenswürdige
+   Stamm-Zertifikate" hinzufügen.
+3. **HTTPS-Scan komplett deaktivieren** — pragmatisch in dev,
+   nicht empfohlen für Produktiv-Browsing.
+
 ### Port-Plan (alle non-default)
 
 | Schicht       | Service          | Port                 |

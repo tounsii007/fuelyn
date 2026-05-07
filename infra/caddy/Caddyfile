@@ -5,17 +5,27 @@
 #   HTTPS: 49443
 #   HTTP:  49080  (always 301-redirects to HTTPS)
 #
-# Caddy generates and renews a TLS cert for `localhost` using its
-# built-in self-signed CA. Run `./scripts/trust-caddy-cert.sh` once
-# to install the root CA in the OS trust store.
+# Caddy generates and renews a TLS cert via its built-in self-
+# signed CA. Run `./scripts/trust-caddy-cert.sh` once to install
+# the root CA in the OS trust store. (Some endpoint-protection
+# suites — Kaspersky, Bitdefender, ESET — TLS-intercept HTTPS
+# and have their own trust store; you may need to add Caddy's
+# root there too OR exclude these hostnames from HTTPS scanning.)
 #
 # Public surface:
 #   https://localhost:49443           → web (Next.js)
-#   https://api.localhost:49443       → gateway (Spring Cloud Gateway)
+#   https://tankpilot.de:49443        → web (Next.js, dev alias)
+#   https://api.localhost:49443       → gateway
+#   https://api.tankpilot.de:49443    → gateway (dev alias)
+#
+# DEV-ONLY hostname: `tankpilot.de` is mapped to 127.0.0.1 via the
+# OS hosts file. See README — this does NOT touch the real
+# tankpilot.de domain on the public DNS, it's a loopback override
+# only on the developer's own machine.
 #
 # Internal traffic (between containers on the docker network) stays
-# HTTP — they're on a private bridge network so TLS termination here
-# is sufficient.
+# HTTP — they're on a private bridge network so TLS termination
+# here is sufficient.
 # ============================================================
 
 {
@@ -29,7 +39,8 @@
 }
 
 # ─── Public web app ──────────────────────────────────────
-localhost, https://localhost {
+localhost, https://localhost,
+tankpilot.de, https://tankpilot.de {
     tls internal
 
     encode zstd gzip
@@ -49,7 +60,8 @@ localhost, https://localhost {
 }
 
 # ─── Public Gateway ──────────────────────────────────────
-api.localhost, https://api.localhost {
+api.localhost, https://api.localhost,
+api.tankpilot.de, https://api.tankpilot.de {
     tls internal
 
     encode zstd gzip
@@ -67,6 +79,7 @@ api.localhost, https://api.localhost {
 }
 
 # ─── Plain-HTTP redirect ─────────────────────────────────
-http://localhost, http://api.localhost {
+http://localhost, http://api.localhost,
+http://tankpilot.de, http://api.tankpilot.de {
     redir https://{host}:49443{uri} permanent
 }
