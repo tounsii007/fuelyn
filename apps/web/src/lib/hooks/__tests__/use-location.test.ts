@@ -143,6 +143,72 @@ describe('useGeolocation', () => {
     expect(result.current.userLocation).toBeNull();
   });
 
+  it('requestLocation({highAccuracy:true}) forwards GPS options to navigator', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    // Mock that immediately resolves so the in-flight guard releases
+    // and the second (high-accuracy) call gets to the navigator.
+    const getCurrentPosition = vi.fn().mockImplementation((success: PositionCallback) => {
+      success({
+        coords: {
+          latitude: 50.5867,
+          longitude: 8.6783,
+          accuracy: 5,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'permissions', {
+      value: undefined,
+      configurable: true,
+    });
+
+    const { result } = renderHook(() => useGeolocation());
+
+    // Drain the auto-mount coarse call so we can isolate the explicit
+    // high-accuracy click below.
+    await waitFor(() => expect(getCurrentPosition).toHaveBeenCalled());
+    getCurrentPosition.mockClear();
+
+    act(() => {
+      result.current.requestLocation({ highAccuracy: true });
+    });
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    const opts = getCurrentPosition.mock.calls[0]?.[2] as PositionOptions | undefined;
+    expect(opts?.enableHighAccuracy).toBe(true);
+    expect(opts?.timeout).toBe(20_000);
+    expect(opts?.maximumAge).toBe(0);
+  });
+
+  it('requestLocation with default options uses coarse mode (battery friendly)', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    const getCurrentPosition = vi.fn();
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'permissions', {
+      value: undefined,
+      configurable: true,
+    });
+
+    renderHook(() => useGeolocation());
+
+    expect(getCurrentPosition).toHaveBeenCalled();
+    const opts = getCurrentPosition.mock.calls[0]?.[2] as PositionOptions | undefined;
+    expect(opts?.enableHighAccuracy).toBe(false);
+    expect(opts?.maximumAge).toBe(60_000);
+    expect(opts?.timeout).toBe(10_000);
+  });
+
   it('requestLocation is idempotent under rapid double-clicks', async () => {
     Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
     // The mock never calls success/error, so the in-flight flag stays

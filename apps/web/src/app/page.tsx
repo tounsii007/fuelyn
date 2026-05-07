@@ -57,12 +57,57 @@ const NavigationView = dynamic(
 
 interface ReverseGeocodeResponse {
   readonly address?: {
+    readonly road?: string;
+    readonly house_number?: string;
+    readonly postcode?: string;
+    readonly suburb?: string;
     readonly city?: string;
     readonly town?: string;
     readonly village?: string;
     readonly municipality?: string;
   };
   readonly display_name?: string;
+}
+
+/**
+ * Build the label that lands in the "Letzte Suchen" pill.
+ *
+ * Goal: every entry should be visually distinguishable from the
+ * others, so two pins inside Marburg never collapse to two
+ * identical "Marburg" pills.
+ *
+ * Priority order (best → degraded):
+ *   1. road [house_number], postcode city  — full street address
+ *   2. road, postcode city                  — no house number
+ *   3. road, city                           — no PLZ
+ *   4. road                                 — pin in the middle of nowhere
+ *   5. postcode city                        — building data not available
+ *   6. suburb, city                         — pin in a park / unnamed road
+ *   7. city                                 — only the city name resolved
+ *   8. fallbackLabel (lat, lng)             — Nominatim returned nothing
+ *
+ * Exported only so tests can hammer all the partial-shape paths.
+ */
+export function composeHistoryLabel(
+  data: ReverseGeocodeResponse,
+  fallbackLabel: string,
+): string {
+  const a = data.address ?? {};
+  const cityLike = a.city ?? a.town ?? a.village ?? a.municipality ?? '';
+  const street = a.road ? `${a.road}${a.house_number ? ' ' + a.house_number : ''}` : '';
+  // Only treat as "postcode + city" when BOTH fields are present —
+  // otherwise we'd shortcut a bare city before having a chance to
+  // surface a richer suburb-or-display_name fallback.
+  const postcodeCity = a.postcode && cityLike ? `${a.postcode} ${cityLike}` : '';
+
+  if (street && postcodeCity) return `${street}, ${postcodeCity}`;
+  if (street && cityLike) return `${street}, ${cityLike}`;
+  if (street) return street;
+  if (postcodeCity) return postcodeCity;
+  if (a.suburb && cityLike) return `${a.suburb}, ${cityLike}`;
+  if (cityLike) return cityLike;
+  return data.display_name?.split(',').slice(0, 3).map((s) => s.trim()).filter(Boolean).join(', ')
+    || fallbackLabel;
 }
 
 export default function HomePage() {
@@ -229,7 +274,15 @@ export default function HomePage() {
     useAppStore.getState().setUserLocation({ lat: 52.52, lng: 13.405 });
   }, []);
 
-  // Reverse-geocode for search history
+  // Reverse-geocode for search history.
+  //
+  // We ask Nominatim for `addressdetails=1` at building-level zoom
+  // (18) so we get road + house_number + postcode whenever the
+  // location is precise enough. The label that lands in the
+  // "letzte suchen" pill therefore distinguishes addresses within
+  // the same city ("Hauptstraße 12, 35037 Marburg" vs.
+  // "Bahnhofstraße 5, 35037 Marburg") instead of collapsing them
+  // both to a generic "Marburg".
   useEffect(() => {
     if (!userLocation) return;
     const { lat, lng } = userLocation;
@@ -239,7 +292,8 @@ export default function HomePage() {
       lat: String(lat),
       lon: String(lng),
       format: 'json',
-      zoom: '12',
+      addressdetails: '1',
+      zoom: '18',
       'accept-language': 'de',
     });
     fetchJson<ReverseGeocodeResponse>(
@@ -247,18 +301,10 @@ export default function HomePage() {
       { signal: controller.signal, timeoutMs: 8000 },
     )
       .then((data) => {
-        const addr = data?.address;
-        const label =
-          addr?.city ||
-          addr?.town ||
-          addr?.village ||
-          addr?.municipality ||
-          data.display_name?.split(',')[0] ||
-          fallbackLabel;
         useAppStore.getState().addSearchHistory({
           lat,
           lng,
-          label,
+          label: composeHistoryLabel(data, fallbackLabel),
           timestamp: new Date().toISOString(),
         });
       })

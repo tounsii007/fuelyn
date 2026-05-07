@@ -28,7 +28,18 @@ export function useGeolocation() {
   const requestInFlightRef = useRef(false);
   const [insecureContext, setInsecureContext] = useState(false);
 
-  const requestLocation = useCallback(() => {
+  /**
+   * Request the device location.
+   *
+   * @param options.highAccuracy
+   *   When `true` we ask the OS to use GPS (vs. coarse network/Wi-Fi
+   *   triangulation), waive cached fixes, and give the radio more
+   *   time. Use it for explicit user-initiated requests (e.g. the
+   *   crosshair button in the search bar) so the resulting fix is
+   *   precise enough for street-level reverse-geocoding. Auto-mount
+   *   keeps the cheap path so we don't burn battery on every load.
+   */
+  const requestLocation = useCallback((options?: { highAccuracy?: boolean }) => {
     if (typeof navigator === 'undefined' || requestInFlightRef.current) {
       return;
     }
@@ -48,6 +59,8 @@ export function useGeolocation() {
       return;
     }
 
+    const highAccuracy = options?.highAccuracy ?? false;
+
     requestInFlightRef.current = true;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -64,9 +77,13 @@ export function useGeolocation() {
         setPermission('denied');
       },
       {
-        enableHighAccuracy: false,
-        timeout: 10_000,
-        maximumAge: 60_000,
+        // High-accuracy uses GPS hardware where available; coarse mode
+        // is fine for the auto-mount fallback.
+        enableHighAccuracy: highAccuracy,
+        // Longer wait when going to GPS — first cold fix can take 15+ s
+        timeout: highAccuracy ? 20_000 : 10_000,
+        // Always force a fresh fix when the user explicitly asks
+        maximumAge: highAccuracy ? 0 : 60_000,
       },
     );
   }, [setUserLocation, setPermission]);

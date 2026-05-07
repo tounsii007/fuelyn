@@ -395,14 +395,38 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Search History
   searchHistory: [],
   addSearchHistory: (entry) =>
-    set((s) => ({
-      searchHistory: [
-        entry,
-        ...s.searchHistory.filter((h) => !(h.lat === entry.lat && h.lng === entry.lng)),
-      ]
-        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng) && item.label.trim().length > 0)
-        .slice(0, MAX_SEARCH_HISTORY),
-    })),
+    set((s) => {
+      // Dedupe strategy:
+      //   1. Round each coord to 3 decimals (~110 m bucket) so
+      //      Nominatim's slightly-different lat/lng on repeat
+      //      lookups don't create visual duplicates.
+      //   2. Compare labels case-insensitively after trimming so
+      //      "Marburg" / " marburg " collapse into one.
+      // An entry is "the same" if EITHER bucket-coords OR
+      // normalised-label match the new entry.
+      const round = (n: number) => Math.round(n * 1000) / 1000;
+      const norm = (s: string) => s.trim().toLowerCase();
+      const newBucket = `${round(entry.lat)},${round(entry.lng)}`;
+      const newLabel = norm(entry.label);
+
+      return {
+        searchHistory: [
+          entry,
+          ...s.searchHistory.filter((h) => {
+            const sameBucket = `${round(h.lat)},${round(h.lng)}` === newBucket;
+            const sameLabel = norm(h.label) === newLabel;
+            return !(sameBucket || sameLabel);
+          }),
+        ]
+          .filter(
+            (item) =>
+              Number.isFinite(item.lat) &&
+              Number.isFinite(item.lng) &&
+              item.label.trim().length > 0,
+          )
+          .slice(0, MAX_SEARCH_HISTORY),
+      };
+    }),
   clearSearchHistory: () => set({ searchHistory: [] }),
 
   // Price History

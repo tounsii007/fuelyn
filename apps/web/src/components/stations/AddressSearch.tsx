@@ -55,18 +55,44 @@ const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
 /**
  * Format a reverse-geocode hit into a single-line label that fits the
  * search input. Prefers structured pieces in this order:
- *   road [house_number], postcode city, state
- * Falls back to display_name for unknown shapes.
+ *   road [house_number], postcode city
+ *
+ * Falls back through degraded shapes when fields are missing:
+ *   • road + city only (no PLZ)        → "Hauptstraße, Berlin"
+ *   • PLZ + city                        → "35037 Marburg"
+ *   • suburb + city                     → "Mitte, Berlin"
+ *   • last resort: first three Nominatim display_name segments
+ *
+ * Exported so the test suite can hammer all the partial-shape paths.
  */
-function formatReverseLabel(r: ReverseGeocodeResult): string {
+export function formatReverseLabel(r: ReverseGeocodeResult): string {
   const a = r.address ?? {};
   const cityLike = a.city ?? a.town ?? a.village ?? a.municipality ?? '';
-  const street = a.road ? `${a.road}${a.house_number ? ' ' + a.house_number : ''}` : '';
-  const tail = [a.postcode, cityLike].filter(Boolean).join(' ');
-  const main = [street, tail].filter(Boolean).join(', ');
-  if (main) return main;
-  // Last resort: trim Nominatim's chatty display_name to first 3 segments.
-  return r.display_name.split(',').slice(0, 3).map((s) => s.trim()).filter(Boolean).join(', ');
+  const houseSuffix = a.house_number ? ' ' + a.house_number : '';
+  const street = a.road ? `${a.road}${houseSuffix}` : '';
+  // Postcode-prefixed city only when both fields exist; otherwise we
+  // continue down the cascade to surface a more informative label
+  // (e.g. suburb + city) instead of just "Berlin".
+  const postcodeCity = a.postcode && cityLike ? `${a.postcode} ${cityLike}` : '';
+
+  // Best case: road + postcode + city
+  if (street && postcodeCity) return `${street}, ${postcodeCity}`;
+  // Road but no postcode — still surface the city
+  if (street && cityLike) return `${street}, ${cityLike}`;
+  if (street) return street;
+  // No road but we have postcode + city
+  if (postcodeCity) return postcodeCity;
+  // Suburb fallback (pin in a park / unnamed road)
+  if (a.suburb && cityLike) return `${a.suburb}, ${cityLike}`;
+  // Just the city / village name
+  if (cityLike) return cityLike;
+  // Last resort: first three display_name segments
+  return r.display_name
+    .split(',')
+    .slice(0, 3)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 type ResultGroup = 'Adresse' | 'PLZ' | 'Stadt' | 'Ort';
@@ -345,6 +371,10 @@ export function AddressSearch() {
    * Reverse-geocode a coordinate pair and write a human-readable
    * label into the search input so the user sees what was detected.
    * Best-effort: failures fall back to the existing query state.
+   *
+   * `zoom=18` requests building-level resolution from Nominatim so we
+   * get road + house_number whenever the GPS fix is precise enough,
+   * not just postcode + city (which was the case at zoom 14).
    */
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     const params = new URLSearchParams({
@@ -353,7 +383,7 @@ export function AddressSearch() {
       format: 'json',
       addressdetails: '1',
       'accept-language': 'de',
-      zoom: '14', // city-block level
+      zoom: '18', // building level
     });
     try {
       const data = await fetchJson<ReverseGeocodeResult>(
@@ -377,9 +407,11 @@ export function AddressSearch() {
     setGeoMessage(null);
     geoRequestedAtRef.current = Date.now();
     setIsOpen(false);
-    // Delegate to the shared hook, which handles permission states,
-    // insecure-context fallback (Berlin) and store updates.
-    requestLocation();
+    // Delegate to the shared hook with high-accuracy GPS so the
+    // resulting fix is precise enough for street-level reverse
+    // geocoding (zoom=18 in our reverseGeocode helper expects
+    // building-resolution coords).
+    requestLocation({ highAccuracy: true });
   }, [geoState, requestLocation]);
 
   // Watch for location changes triggered by our button click and
