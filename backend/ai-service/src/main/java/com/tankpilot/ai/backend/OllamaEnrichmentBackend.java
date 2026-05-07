@@ -60,12 +60,15 @@ public class OllamaEnrichmentBackend implements EnrichmentBackend {
             RestTemplateBuilder builder,
             ObjectMapper objectMapper,
             @Value("${tankpilot.ai.ollama.base-url:http://ollama:11434}") String baseUrl,
-            @Value("${tankpilot.ai.ollama.model:qwen2.5:3b-instruct}") String model,
+            @Value("${tankpilot.ai.ollama.model:qwen2.5:7b-instruct}") String model,
             @Value("${tankpilot.ai.ollama.temperature:0.4}") double temperature,
-            @Value("${tankpilot.ai.ollama.timeout-ms:30000}") int timeoutMs
+            @Value("${tankpilot.ai.ollama.timeout-ms:60000}") int timeoutMs
     ) {
+        // Read-timeout follows the configured budget. Connect-timeout
+        // is a fixed short window because the model load happens after
+        // TCP — if we can't open a socket in 5 s the container is gone.
         this.restTemplate = builder
-                .connectTimeout(Duration.ofMillis(Math.min(5_000, timeoutMs)))
+                .connectTimeout(Duration.ofSeconds(5))
                 .readTimeout(Duration.ofMillis(timeoutMs))
                 .build();
         this.objectMapper = objectMapper;

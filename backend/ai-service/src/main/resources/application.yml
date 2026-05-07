@@ -32,9 +32,13 @@ tankpilot:
     ollama:
       enabled: ${OLLAMA_ENABLED:true}
       base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
-      model: ${OLLAMA_MODEL:qwen2.5:3b-instruct}
+      # Default = Premium-local profile (~5 GB disk, ~8–10 GB RAM).
+      # Switch to qwen2.5:3b-instruct via env for the slim profile.
+      model: ${OLLAMA_MODEL:qwen2.5:7b-instruct}
       temperature: ${OLLAMA_TEMPERATURE:0.4}
-      timeout-ms: ${OLLAMA_TIMEOUT_MS:30000}
+      # 7B model on CPU: 60 s gives headroom for cold inference;
+      # warm calls return in 2–6 s.
+      timeout-ms: ${OLLAMA_TIMEOUT_MS:60000}
 
     openai:
       enabled: ${OPENAI_ENABLED:false}

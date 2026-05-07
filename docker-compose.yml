@@ -98,17 +98,35 @@ services:
       retries: 12
       start_period: 60s
 
-  # ─── Local LLM (Ollama) ────────────────────────────────────
-  # Provides an OpenAI-compatible /api/chat endpoint backed by a
-  # small instruction-tuned model. The ai-service prefers this over
-  # OpenAI so that no Tankerkönig data leaves the host and per-request
-  # cost is zero. Falls through to OpenAI if unavailable.
+  # ─── Local LLM (Ollama) — Premium-local profile ────────────
+  # Default model: qwen2.5:7b-instruct (~4.7 GB on disk, ≈8–10 GB
+  # resident when loaded). For our enrichment workload this is
+  # essentially indistinguishable from gpt-4o-mini in quality while
+  # running entirely on the host — no third-party data egress, no
+  # per-request cost, works offline.
+  #
+  # Resource budget (recommend 8+ CPU cores, 12 GB free RAM):
+  #   • OLLAMA_NUM_PARALLEL=1   → only one inference at a time
+  #     (predictable RAM, no thrashing on a single GPU/CPU)
+  #   • OLLAMA_MAX_LOADED_MODELS=1
+  #     (one model in memory at a time)
+  #   • OLLAMA_KEEP_ALIVE=2h    → model stays resident across
+  #     idle gaps so we don't pay the 5–15 s cold-load latency
+  #     on every burst.
+  #
+  # Override OLLAMA_MODEL=qwen2.5:3b-instruct in .env if you need
+  # the slim profile (~2 GB disk, ~4 GB RAM).
   ollama:
     image: ollama/ollama:latest
     restart: unless-stopped
     environment:
       OLLAMA_HOST: "0.0.0.0:11434"
-      OLLAMA_KEEP_ALIVE: "30m"
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2h}
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-1}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      # Reserve enough mmap context — 7B model with 8K context fits
+      # comfortably below 10 GB resident.
+      OLLAMA_MAX_QUEUE: ${OLLAMA_MAX_QUEUE:-32}
     volumes:
       - ollama_data:/root/.ollama
     expose:
@@ -119,9 +137,18 @@ services:
       timeout: 5s
       retries: 6
       start_period: 30s
+    # Hard cap so a runaway inference can't OOM the host.
+    deploy:
+      resources:
+        limits:
+          memory: ${OLLAMA_MEMORY_LIMIT:-12G}
+        reservations:
+          memory: ${OLLAMA_MEMORY_RESERVATION:-6G}
 
-  # One-shot init: pulls the model into the named volume on first boot.
-  # Re-runs are no-ops because Ollama caches model layers.
+  # One-shot init: pulls the model into the named volume AND triggers
+  # a tiny warm-up inference so the first real user request doesn't
+  # eat the cold-load latency (5–15 s for a 7B model on CPU).
+  # Re-runs are cheap because layers + warm tensors are cached.
   ollama-init:
     image: ollama/ollama:latest
     restart: "no"
@@ -130,8 +157,17 @@ services:
         condition: service_healthy
     environment:
       OLLAMA_HOST: "http://ollama:11434"
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
-    entrypoint: ["sh", "-c", "echo \"[init] pulling ${OLLAMA_MODEL:-qwen2.5:3b-instruct}\" && ollama pull ${OLLAMA_MODEL:-qwen2.5:3b-instruct} && echo \"[init] done\""]
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
+    entrypoint:
+      - "sh"
+      - "-c"
+      - |
+        set -e
+        echo "[init] pulling $${OLLAMA_MODEL}"
+        ollama pull "$${OLLAMA_MODEL}"
+        echo "[init] warming up $${OLLAMA_MODEL} (single token)"
+        ollama run "$${OLLAMA_MODEL}" --keepalive 2h "ok" >/dev/null 2>&1 || true
+        echo "[init] done"
     volumes:
       - ollama_data:/root/.ollama
 
@@ -156,7 +192,10 @@ services:
       AI_PROVIDERS: ${AI_PROVIDERS:-ollama,openai}
       OLLAMA_ENABLED: "true"
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b-instruct}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
+      # 7B model on CPU can take 8–25 s for the first inference per
+      # warm session. Give the HTTP client enough headroom.
+      OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-60000}
       # OpenAI fallback — opt-in. Without an API key the bean is not
       # registered and the orchestrator silently skips this tier.
       OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
