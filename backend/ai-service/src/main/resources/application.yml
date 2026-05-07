@@ -48,6 +48,14 @@ tankpilot:
       temperature: 0.6
       timeout-ms: ${OPENAI_TIMEOUT_MS:30000}
 
+  # ─── Streaming bus consumer ────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:redpanda:29092}
+    prices-topic: ${KAFKA_PRICES_TOPIC:tankpilot.prices.v1}
+    consumer:
+      enabled: ${KAFKA_CONSUMER_ENABLED:true}
+      group-id: ${KAFKA_CONSUMER_GROUP:ai-service}
+
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,https://localhost:3000}
 

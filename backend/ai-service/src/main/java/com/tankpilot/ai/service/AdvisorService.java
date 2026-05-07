@@ -114,6 +114,16 @@ public class AdvisorService {
      * heuristic baseline, which is guaranteed to produce a usable
      * response even with empty inputs.</p>
      */
+    /**
+     * Drop every cached response. Called by the Kafka listener when
+     * any station's price moved — guarantees the next request runs
+     * the heuristic against fresh data instead of serving a stale
+     * verdict. Cheap at our scale (cache holds ≤ 200 entries).
+     */
+    public void invalidateCache() {
+        responseCache.invalidateAll();
+    }
+
     public AIAdvisorResponse getRecommendation(AIAdvisorRequest request) {
         // [1] Cache
         String cacheKey = buildCacheKey(request);

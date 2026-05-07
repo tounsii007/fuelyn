@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link PriceSnapshot} entities.
@@ -25,6 +26,14 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
      */
     List<PriceSnapshot> findByStationIdAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
             String stationId, String fuelType, LocalDateTime after);
+
+    /**
+     * Returns the most recent snapshot for a (station, fuel) pair, if any.
+     * Used by the streaming layer to compute price-change deltas without
+     * loading the full history.
+     */
+    Optional<PriceSnapshot> findFirstByStationIdAndFuelTypeOrderByTimestampDesc(
+            String stationId, String fuelType);
 
     /**
      * Computes average price for a station and fuel type within a time window.

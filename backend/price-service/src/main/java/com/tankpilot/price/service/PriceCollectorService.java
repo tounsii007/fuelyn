@@ -1,5 +1,6 @@
 package com.tankpilot.price.service;
 
+import com.tankpilot.common.events.PriceUpdatedEvent;
 import com.tankpilot.price.model.dto.CollectionResult;
 import com.tankpilot.price.model.dto.TankerkoenigResponse;
 import com.tankpilot.price.model.entity.CollectionRun;
@@ -8,6 +9,7 @@ import com.tankpilot.price.model.entity.StationMeta;
 import com.tankpilot.price.repository.CollectionRunRepository;
 import com.tankpilot.price.repository.PriceSnapshotRepository;
 import com.tankpilot.price.repository.StationMetaRepository;
+import com.tankpilot.price.stream.PriceEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Orchestrates periodic price collection from Tankerkoenig API.
@@ -46,6 +50,7 @@ public class PriceCollectorService {
     private final PriceSnapshotRepository snapshotRepo;
     private final StationMetaRepository stationRepo;
     private final CollectionRunRepository runRepo;
+    private final PriceEventPublisher priceEventPublisher;
     private final double radiusKm;
     private final int maxHistoryDays;
 
@@ -54,6 +59,7 @@ public class PriceCollectorService {
             PriceSnapshotRepository snapshotRepo,
             StationMetaRepository stationRepo,
             CollectionRunRepository runRepo,
+            PriceEventPublisher priceEventPublisher,
             @Value("${tankpilot.collection.radius-km:10}") double radiusKm,
             @Value("${tankpilot.collection.max-history-days:90}") int maxHistoryDays
     ) {
@@ -61,6 +67,7 @@ public class PriceCollectorService {
         this.snapshotRepo = snapshotRepo;
         this.stationRepo = stationRepo;
         this.runRepo = runRepo;
+        this.priceEventPublisher = priceEventPublisher;
         this.radiusKm = radiusKm;
         this.maxHistoryDays = maxHistoryDays;
     }
@@ -130,18 +137,16 @@ public class PriceCollectorService {
             meta.setLastSeen(now);
             stationRepo.save(meta);
 
-            // Save price snapshots for each fuel type
+            // Save price snapshots and emit a delta event when the
+            // value actually changed vs. the most recent persisted price.
             if (s.diesel() != null && s.diesel() > 0) {
-                snapshotRepo.save(new PriceSnapshot(s.id(), "diesel", s.diesel(), now));
-                priceCount++;
+                if (persistAndPublishIfChanged(s, "diesel", s.diesel(), now, meta)) priceCount++;
             }
             if (s.e5() != null && s.e5() > 0) {
-                snapshotRepo.save(new PriceSnapshot(s.id(), "e5", s.e5(), now));
-                priceCount++;
+                if (persistAndPublishIfChanged(s, "e5", s.e5(), now, meta)) priceCount++;
             }
             if (s.e10() != null && s.e10() > 0) {
-                snapshotRepo.save(new PriceSnapshot(s.id(), "e10", s.e10(), now));
-                priceCount++;
+                if (persistAndPublishIfChanged(s, "e10", s.e10(), now, meta)) priceCount++;
             }
         }
 
@@ -149,6 +154,48 @@ public class PriceCollectorService {
         log.info("Collected {} prices from {} stations in {} ({}ms)",
                 priceCount, stations.size(), cityName, duration);
         return CollectionResult.success(stations.size(), priceCount, duration);
+    }
+
+    /**
+     * Persist a snapshot and emit a {@link PriceUpdatedEvent} only if
+     * the new value differs from the most recent persisted price for
+     * the same (station, fuel) pair. This stops the streaming bus from
+     * being filled with repeats — Tankerkönig polls every 5 minutes
+     * but actual prices change far less often.
+     *
+     * <p>The event is sent <i>after</i> the snapshot is persisted, so
+     * a successful event implies a successful save. Order of operations
+     * matters: if Kafka throws (it won't — the publisher is defensive)
+     * the snapshot still landed and a subsequent poll would re-emit.</p>
+     *
+     * @return true if a snapshot was persisted (always, currently)
+     */
+    private boolean persistAndPublishIfChanged(
+            TankerkoenigResponse.Station s, String fuelType, double newPrice,
+            LocalDateTime now, StationMeta meta) {
+
+        Optional<PriceSnapshot> previous =
+                snapshotRepo.findFirstByStationIdAndFuelTypeOrderByTimestampDesc(s.id(), fuelType);
+
+        snapshotRepo.save(new PriceSnapshot(s.id(), fuelType, newPrice, now));
+
+        Double prevPrice = previous.map(PriceSnapshot::getPrice).orElse(null);
+        boolean changed = (prevPrice == null) || Math.abs(prevPrice - newPrice) > 0.0009;
+        if (changed) {
+            priceEventPublisher.publish(PriceUpdatedEvent.forUpdate(
+                    s.id(),
+                    meta.getName(),
+                    meta.getBrand() == null ? "" : meta.getBrand().toLowerCase(),
+                    fuelType,
+                    newPrice,
+                    prevPrice,
+                    now.toInstant(ZoneOffset.UTC),
+                    meta.getLat(),
+                    meta.getLng(),
+                    meta.getPostCode()
+            ));
+        }
+        return true;
     }
 
     /**

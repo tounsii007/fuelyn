@@ -48,6 +48,49 @@ services:
       retries: 3
       start_period: 15s
 
+  # ─── Streaming bus (Redpanda) ──────────────────────────────
+  # Kafka-protocol-compatible single-binary broker. ~256 MB RAM
+  # idle, zero ZooKeeper, schema registry built-in. Used to fan
+  # out price updates from price-service to every consumer
+  # (ai-service cache invalidation, alerts, future SSE bridge).
+  #
+  # Topics are auto-created with sensible defaults; for production
+  # we'd manage them via terraform / rpk.
+  redpanda:
+    image: redpandadata/redpanda:v24.3.4
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=redpanda:8082
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+    expose:
+      - "29092"   # Kafka API (in-cluster)
+      - "8082"    # Pandaproxy
+      - "9644"    # Admin
+    healthcheck:
+      # Greps the cluster-health overview for "Healthy: true" — robust
+      # across rpk versions and doesn't depend on flag conventions.
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${REDPANDA_MEMORY_LIMIT:-768M}
+
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -75,6 +118,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redpanda:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "28810"
@@ -83,6 +128,9 @@ services:
       SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
       SPRING_DATASOURCE_USERNAME: tankpilot
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
+      KAFKA_PRICES_TOPIC: tankpilot.prices.v1
+      KAFKA_PUBLISHER_ENABLED: ${KAFKA_PUBLISHER_ENABLED:-true}
       HMAC_SECRET: ${HMAC_SECRET:?HMAC_SECRET required}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY required}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY required}
@@ -179,6 +227,8 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+      redpanda:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "28820"
@@ -200,6 +250,10 @@ services:
       # registered and the orchestrator silently skips this tier.
       OPENAI_ENABLED: ${OPENAI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # Streaming consumer
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
+      KAFKA_PRICES_TOPIC: tankpilot.prices.v1
+      KAFKA_CONSUMER_ENABLED: ${KAFKA_CONSUMER_ENABLED:-true}
     expose:
       - "28820"
     healthcheck:

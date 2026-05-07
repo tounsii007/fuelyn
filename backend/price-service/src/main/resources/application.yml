@@ -50,6 +50,16 @@ tankpilot:
     cron: "0 */30 * * * *"
     radius-km: 10
     max-history-days: 90
+  # ─── Streaming bus (Kafka / Redpanda) ─────────────────────
+  # Producer is auto-configured only when publisher.enabled=true.
+  # When disabled (or no broker reachable), the price-service runs
+  # exactly like before — events become silent no-ops.
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:redpanda:29092}
+    prices-topic: ${KAFKA_PRICES_TOPIC:tankpilot.prices.v1}
+    publisher:
+      enabled: ${KAFKA_PUBLISHER_ENABLED:true}
+
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,https://localhost:3000}
 
