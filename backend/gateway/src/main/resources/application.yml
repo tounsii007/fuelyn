@@ -18,6 +18,17 @@ spring:
                 name: priceService
                 fallbackUri: forward:/fallback/price-service
 
+        # --- Price Stream (SSE) ---
+        # Server-Sent Events bridge for live price updates. Routed
+        # through Spring Cloud Gateway's Netty proxy which streams
+        # the chunked response without buffering. Intentionally NOT
+        # wrapped in a circuit breaker — this connection is meant
+        # to be long-lived (browser keeps it open).
+        - id: price-stream
+          uri: ${PRICE_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/stream/**
+
         # --- AI Service ---
         - id: ai-service
           uri: ${AI_SERVICE_URI:http://localhost:8082}
