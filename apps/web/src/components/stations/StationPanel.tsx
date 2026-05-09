@@ -67,6 +67,11 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
   const isFavorite = useAppStore((state) => (routeTarget ? state.isFavorite(routeTarget.id) : false));
   const addFavorite = useAppStore((state) => state.addFavorite);
   const removeFavorite = useAppStore((state) => state.removeFavorite);
+  // Compare-tray membership lives in the same store; pulling it
+  // here lets the toggle button reflect the current state without
+  // navigating to /compare just to find out.
+  const compareIds = useAppStore((state) => state.compareStationIds);
+  const toggleCompareStation = useAppStore((state) => state.toggleCompareStation);
 
   // Market context derived from the candidate set. Memoised because
   // computeMarketStats walks every fuel × every station.
@@ -453,6 +458,15 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
               </svg>
               {routeLoading ? 'Route wird geladen...' : 'Navigation starten'}
             </button>
+            {/*
+              Action rail: Favoriten-toggle, Vergleichs-toggle,
+              Teilen. Each is a square icon button (44 × 44 — same
+              size as the navigation primary, which is fine because
+              they only need to be tap-targets, not text-anchored).
+              The compare button is new; it adds/removes the current
+              station to the global compare tray (max 3) without
+              having to scroll to the list-card or open /compare.
+            */}
             <button
               type="button"
               onClick={handleFavoriteToggle}
@@ -461,6 +475,8 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                   ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
               }`}
+              aria-label={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten'}
+              title={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill={isFavorite ? 'currentColor' : 'none'}>
                 <path
@@ -472,10 +488,35 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
             </button>
             <button
               type="button"
+              onClick={() => toggleCompareStation(station.id)}
+              className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                compareIds.includes(station.id)
+                  ? 'bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+              aria-label={
+                compareIds.includes(station.id)
+                  ? 'Aus Vergleich entfernen'
+                  : 'Zum Vergleich hinzufügen'
+              }
+              title={
+                compareIds.includes(station.id)
+                  ? 'Aus Vergleich entfernen'
+                  : `Zum Vergleich hinzufügen (${compareIds.length}/3)`
+              }
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+              </svg>
+            </button>
+            <button
+              type="button"
               onClick={handleShare}
               className="rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors
                          hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               aria-label="Teilen"
+              title="Teilen"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
