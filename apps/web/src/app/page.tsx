@@ -374,7 +374,7 @@ export default function HomePage() {
                   onReload={handleReload}
                   onRequestLocation={requestLocation}
                 />
-                <StationPanel />
+                <StationPanel recommendations={recommendations} />
               </div>
 
               {/* Side panel — modern glass surface */}
@@ -384,7 +384,12 @@ export default function HomePage() {
                   'flex-col w-full lg:w-[420px] xl:w-[460px]',
                   'border-l border-[var(--color-border-subtle)]',
                   'bg-[var(--color-bg)]/85 backdrop-blur-md',
-                  'overflow-y-auto scrollbar-hide',
+                  // `scrollbar-thin` (vs the previous `scrollbar-hide`)
+                  // gives users a visible affordance that more content
+                  // sits below the fold — without this they were seeing
+                  // "18 Tankstellen gefunden" but only the top two cards
+                  // and assumed the rest were missing.
+                  'overflow-y-auto scrollbar-thin',
                 ].join(' ')}
               >
                 <div className="sticky top-0 z-10 bg-[var(--color-bg)]/85 backdrop-blur-md border-b border-[var(--color-border-subtle)]">

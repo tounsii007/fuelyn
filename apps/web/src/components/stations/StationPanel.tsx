@@ -1,8 +1,9 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
-import type { FuelType } from '@fuelyn/core';
+import type { FuelType, StationRecommendation } from '@fuelyn/core';
 import {
   AVERAGE_SPEED_KMH,
   estimateDriveTime,
@@ -17,7 +18,46 @@ import {
 } from '@fuelyn/core';
 import { BrandBadge } from '../ui/BrandBadge';
 
-export function StationPanel() {
+interface StationPanelProps {
+  /**
+   * Current set of recommended stations. Used to contextualise the
+   * panel's prices ("−5 ct vs. Markt", "günstigster der Liste") and
+   * to highlight the best deal. Optional — when omitted (e.g. a
+   * deep-link station with no other context), the contextual chips
+   * are simply suppressed.
+   */
+  readonly recommendations?: readonly StationRecommendation[];
+}
+
+/**
+ * Per-fuel market context derived from the candidate set.
+ *   • min  → cheapest price across stations for the fuel
+ *   • avg  → arithmetic mean (used for the ±ct chip)
+ *   • count→ number of stations contributing (chip suppresses
+ *            below 3 because comparing against 1–2 samples is
+ *            misleading more than informative)
+ */
+type MarketStat = { readonly min: number; readonly avg: number; readonly count: number };
+type MarketStats = Partial<Record<FuelType, MarketStat>>;
+
+function computeMarketStats(recs: readonly StationRecommendation[] | undefined): MarketStats {
+  if (!recs || recs.length === 0) return {};
+  const stats: MarketStats = {};
+  for (const fuel of FUEL_TYPES) {
+    const prices: number[] = [];
+    for (const r of recs) {
+      const p = r.station.prices?.[fuel];
+      if (typeof p === 'number' && p > 0) prices.push(p);
+    }
+    if (prices.length === 0) continue;
+    const min = Math.min(...prices);
+    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+    stats[fuel] = { min, avg, count: prices.length };
+  }
+  return stats;
+}
+
+export function StationPanel({ recommendations }: StationPanelProps = {}) {
   const routeTarget = useAppStore((state) => state.routeTarget);
   const activeRoute = useAppStore((state) => state.activeRoute);
   const routeLoading = useAppStore((state) => state.routeLoading);
@@ -27,6 +67,10 @@ export function StationPanel() {
   const isFavorite = useAppStore((state) => (routeTarget ? state.isFavorite(routeTarget.id) : false));
   const addFavorite = useAppStore((state) => state.addFavorite);
   const removeFavorite = useAppStore((state) => state.removeFavorite);
+
+  // Market context derived from the candidate set. Memoised because
+  // computeMarketStats walks every fuel × every station.
+  const marketStats = useMemo(() => computeMarketStats(recommendations), [recommendations]);
 
   if (!routeTarget) return null;
 
@@ -73,9 +117,9 @@ export function StationPanel() {
   };
 
   const handleShare = async () => {
-    const text = `${station.brand || station.name}\n${address}\n${FUEL_TYPE_LABELS[fuelType]}: ${price != null ? `${formatPrice(price)} \u20ac` : '\u2014'}`;
+    const text = `${station.brand || station.name}\n${address}\n${FUEL_TYPE_LABELS[fuelType]}: ${price != null ? `${formatPrice(price)} €` : '—'}`;
     const shareData = {
-      title: `${station.brand || station.name} \u2014 Fuelyn`,
+      title: `${station.brand || station.name} — Fuelyn`,
       text,
     };
 
@@ -148,6 +192,21 @@ export function StationPanel() {
             {FUEL_TYPES.map((ft: FuelType) => {
               const stationPrice = station.prices?.[ft];
               const isSelected = ft === fuelType;
+              const stat = marketStats[ft];
+
+              // Compute the ±ct delta vs. the candidate-set mean.
+              // Suppressed when:
+              //   • we have no station price (nothing to compare),
+              //   • we have no market stats (no candidate set),
+              //   • the candidate set is too small to be informative
+              //     (count < 3 — comparing against 1–2 values is
+              //     statistically meaningless and misleading UX).
+              let deltaCt: number | null = null;
+              let isCheapest = false;
+              if (stationPrice != null && stat && stat.count >= 3) {
+                deltaCt = Math.round((stationPrice - stat.avg) * 100);
+                isCheapest = stationPrice <= stat.min + 0.0005;
+              }
 
               return (
                 <div
@@ -170,8 +229,44 @@ export function StationPanel() {
                       isSelected ? 'text-brand-700 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
-                    {stationPrice != null ? `${formatPrice(stationPrice)} \u20ac` : '\u2014'}
+                    {stationPrice != null ? `${formatPrice(stationPrice)} €` : '—'}
                   </p>
+                  {/*
+                    Market context chip — fed by the candidate set
+                    that's currently visible in the right panel. Two
+                    visual states:
+                      green   → ≥1 ct cheaper than the average
+                      red     → ≥1 ct more expensive
+                      neutral → within ±1 ct (suppressed entirely
+                                so the row stays compact)
+                    A separate "günstigster" chip wins over the
+                    delta when this station IS the cheapest in the
+                    set — that's a stronger signal than "−5 ct".
+                  */}
+                  {isCheapest ? (
+                    <span
+                      className="mt-0.5 inline-flex items-center gap-0.5 rounded-full px-1.5
+                                 text-[9px] font-semibold leading-tight
+                                 bg-emerald-100 text-emerald-700
+                                 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      title={`Günstigster ${FUEL_TYPE_LABELS[ft]}-Preis in der aktuellen Liste`}
+                    >
+                      ★ günstigster
+                    </span>
+                  ) : deltaCt !== null && Math.abs(deltaCt) >= 1 ? (
+                    <span
+                      className={`mt-0.5 inline-flex items-center rounded-full px-1.5
+                                  text-[9px] font-semibold leading-tight ${
+                                    deltaCt < 0
+                                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                      : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                                  }`}
+                      title={`${Math.abs(deltaCt)} ct ${deltaCt < 0 ? 'unter' : 'über'} dem Schnitt der angezeigten Tankstellen`}
+                    >
+                      {deltaCt > 0 ? '+' : ''}
+                      {deltaCt} ct
+                    </span>
+                  ) : null}
                 </div>
               );
             })}
@@ -195,7 +290,7 @@ export function StationPanel() {
                 <div className="text-center">
                   <p className="text-xs text-gray-400 dark:text-gray-500">Volltanken</p>
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    {(price * vehicle.tankCapacity).toFixed(2)} \u20ac
+                    {(price * vehicle.tankCapacity).toFixed(2)} €
                   </p>
                 </div>
               )}
@@ -204,7 +299,7 @@ export function StationPanel() {
           </div>
 
           {/*
-            Route detail \u2014 secondary line, only shown when the actual
+            Route detail — secondary line, only shown when the actual
             road route differs noticeably from the airline heuristic
             (typically: detours, ferries, dense city blocks). Keeps
             the headline strecke/fahrzeit values aligned with the
@@ -221,7 +316,7 @@ export function StationPanel() {
                 <span className="font-medium text-gray-700 dark:text-gray-200">
                   {formatDistance(routeDistanceKm)}
                 </span>
-                &nbsp;\u00b7&nbsp;
+                &nbsp;·&nbsp;
                 <span className="font-medium text-gray-700 dark:text-gray-200">
                   {routeDurationMin < 1 ? '<1 min' : `${routeDurationMin} min`}
                 </span>
