@@ -113,10 +113,16 @@ public class StationProxyController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> batchPrices(
             @RequestParam @NotBlank @Size(max = 400, message = "ids parameter too long") String ids
     ) {
-        List<String> idList = List.of(ids.split(","));
+        // Trim + drop empties so "a,,b" becomes ["a","b"] and an empty
+        // segment is never sent upstream to Tankerkönig (it would be
+        // interpreted as a wildcard or rejected as malformed).
+        List<String> idList = java.util.Arrays.stream(ids.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
         if (idList.isEmpty() || idList.size() > 10) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Provide 1-10 station IDs"));
+                    .body(ApiResponse.error("Provide 1-10 non-empty station IDs"));
         }
 
         log.info("Batch price fetch: {} stations", idList.size());
