@@ -26,8 +26,18 @@ export interface PriceRecommendation {
   readonly fillUpLiters: number;
   readonly confidence: Confidence;
   readonly trend: number;
-  readonly cheapestDay: string;
-  readonly expensiveDay: string;
+  /**
+   * Day of the week with the cheapest historical average. `null`
+   * when the data is too thin to identify a meaningful pattern —
+   * e.g. only one weekday has samples, or the price is essentially
+   * flat across the week. Surfacing a non-null value when the data
+   * is noise leads to contradictions like "Preise fallen typischer-
+   * weise Samstags. Vermeide Samstags." (a real bug that prompted
+   * this nullable signature).
+   */
+  readonly cheapestDay: string | null;
+  /** Counterpart to {@link cheapestDay}; same null semantics. */
+  readonly expensiveDay: string | null;
 }
 
 export interface PriceDataInput {
@@ -117,12 +127,23 @@ export function analyzePrices(
   } else {
     action = 'wait';
     headline = 'Warten lohnt sich';
-    explanation = `Der Preis liegt über dem Durchschnitt. Versuche es an einem ${cheapestDay} erneut.`;
+    // Only suggest the cheap day when we actually have one —
+    // otherwise we'd be inviting the user back on a guess.
+    explanation = cheapestDay
+      ? `Der Preis liegt über dem Durchschnitt. Versuche es an einem ${cheapestDay} erneut.`
+      : 'Der Preis liegt über dem Durchschnitt. Es lohnt sich, später erneut zu prüfen.';
   }
 
   const savingsEstimate = computeSavingsEstimate(sorted, fillUpLiters);
   const confidence = classifyConfidence(sorted.length, trend);
-  const bestTimePrediction = `Preise fallen typischerweise ${cheapestDay}s. Vermeide ${expensiveDay}s.`;
+  // Only emit the day-pair tip when both are present AND distinct.
+  // Otherwise fall back to the generic Tankerkönig pattern so we
+  // never produce contradictions like "fallen Samstags. Vermeide
+  // Samstags." (the bug that motivated nullable cheapest/expensive).
+  const bestTimePrediction =
+    cheapestDay && expensiveDay && cheapestDay !== expensiveDay
+      ? `Preise fallen typischerweise ${cheapestDay}s. Vermeide ${expensiveDay}s.`
+      : 'Preise fallen typischerweise dienstags und mittwochs.';
 
   return {
     action,
@@ -192,18 +213,59 @@ function computeTrend(sorted: readonly PriceDataInput[]): { trend: number } {
   return { trend: recentAvg - earlierAvg };
 }
 
-function dayOfWeekExtremes(
+/**
+ * Minimum prices per weekday before we trust the bucket's average.
+ * One sample can be an outlier (a sale, a misreport); two starts to
+ * smooth that out enough for a directional comparison.
+ */
+const MIN_SAMPLES_PER_DAY = 2;
+/**
+ * How many distinct weekdays must have at least {@link MIN_SAMPLES_PER_DAY}
+ * samples before we attempt to compare them at all. Below this we
+ * couldn't tell "Saturday is cheapest" from "Saturday is the only
+ * day we have data for".
+ */
+const MIN_POPULATED_DAYS = 3;
+/**
+ * Cheapest-vs-most-expensive average has to differ by at least this
+ * much (in EUR) before we surface the pattern. Below 0.5 ct the
+ * "best day" is just noise.
+ */
+const MIN_DAY_VARIANCE = 0.005;
+
+/**
+ * Identify the cheapest and most expensive weekdays from the price
+ * history. Returns {@code null} for either field when the data is
+ * too sparse / noisy to make a meaningful claim — the call site
+ * then falls back to a generic tip instead of producing a
+ * self-contradicting message.
+ *
+ * Visible for tests via the export.
+ */
+export function dayOfWeekExtremes(
   sorted: readonly PriceDataInput[],
-): { cheapestDay: string; expensiveDay: string } {
+): { cheapestDay: string | null; expensiveDay: string | null } {
   const dowBuckets: number[][] = Array.from({ length: 7 }, () => []);
   for (const d of sorted) {
     const day = new Date(d.timestamp).getDay();
     dowBuckets[day]!.push(d.price);
   }
-  const dowAvg = dowBuckets.map((b) => (b.length > 0 ? mean(b) : null));
+  // Only count a weekday's average if it has enough samples to
+  // dampen a single outlier. With <2 samples per day we can't
+  // distinguish a real pattern from one fluke reading.
+  const dowAvg = dowBuckets.map((b) =>
+    b.length >= MIN_SAMPLES_PER_DAY ? mean(b) : null,
+  );
+  const populatedDays = dowAvg.filter((v) => v !== null).length;
+  if (populatedDays < MIN_POPULATED_DAYS) {
+    return { cheapestDay: null, expensiveDay: null };
+  }
 
-  let cheapestIdx = 0;
-  let expensiveIdx = 0;
+  // -1 sentinels: the previous version initialised to 0, which
+  // meant "no data → blame Sonntag" — a silent way for the bug to
+  // surface. Sentinels make the "no result" case explicit.
+  let cheapestIdx = -1;
+  let expensiveIdx = -1;
   let cheapestVal = Number.POSITIVE_INFINITY;
   let expensiveVal = Number.NEGATIVE_INFINITY;
   for (let i = 0; i < dowAvg.length; i++) {
@@ -218,6 +280,19 @@ function dayOfWeekExtremes(
       expensiveIdx = i;
     }
   }
+
+  // Same day on both ends, or near-zero variance → no real pattern.
+  // We'd rather stay silent than emit "fallen Samstags. Vermeide
+  // Samstags." which the user (rightfully) read as broken.
+  if (
+    cheapestIdx < 0 ||
+    expensiveIdx < 0 ||
+    cheapestIdx === expensiveIdx ||
+    expensiveVal - cheapestVal < MIN_DAY_VARIANCE
+  ) {
+    return { cheapestDay: null, expensiveDay: null };
+  }
+
   return {
     cheapestDay: DAY_NAMES_DE[cheapestIdx]!,
     expensiveDay: DAY_NAMES_DE[expensiveIdx]!,
