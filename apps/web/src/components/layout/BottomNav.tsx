@@ -9,8 +9,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 interface Tab {
   readonly href: string;
@@ -25,20 +27,25 @@ interface Tab {
   readonly badge?: () => number;
 }
 
-const TABS: Tab[] = [
-  { href: '/',          label: 'Karte',     title: 'Karte und Tankstellen-Übersicht',                icon: <MapIcon /> },
-  { href: '/compare',   label: 'Vergleich', title: 'Tankstellen-Vergleich',                          icon: <CompareIcon /> },
-  { href: '/fuel-log',  label: 'Logbuch',   title: 'Tank-Logbuch — Verbrauch & Kosten',              icon: <BookIcon /> },
-  { href: '/favorites', label: 'Favoriten', title: 'Gespeicherte Tankstellen',                       icon: <HeartIcon />, badge: () => useAppStore.getState().favorites.length },
-  { href: '/settings',  label: 'Mehr',      title: 'Einstellungen, Privatsphäre & weitere Optionen', icon: <DotsIcon /> },
-];
-
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useTranslations();
   // Subscribe to favourites so the badge re-renders when the user
   // saves/removes a station. Reading via a selector instead of
   // store.getState() inside the badge fn so React knows to re-render.
   const favoritesCount = useAppStore((s) => s.favorites.length);
+
+  // Tab definitions are now i18n-driven — labels and titles
+  // come from the active locale via the nav.* keys (de/en/en-US/fr).
+  // Memoised so re-renders don't rebuild the array unless the
+  // translation function identity changes.
+  const TABS: Tab[] = useMemo(() => [
+    { href: '/',          label: t('nav.map'),       title: t('nav.mapTitle'),       icon: <MapIcon /> },
+    { href: '/compare',   label: t('nav.compare'),   title: t('nav.compareTitle'),   icon: <CompareIcon /> },
+    { href: '/fuel-log',  label: t('nav.fuelLog'),   title: t('nav.fuelLogTitle'),   icon: <BookIcon /> },
+    { href: '/favorites', label: t('nav.favorites'), title: t('nav.favoritesTitle'), icon: <HeartIcon />, badge: () => useAppStore.getState().favorites.length },
+    { href: '/settings',  label: t('nav.more'),      title: t('nav.moreTitle'),      icon: <DotsIcon /> },
+  ], [t]);
 
   return (
     <nav

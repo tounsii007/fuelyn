@@ -35,6 +35,16 @@ export const de = {
     favorites: 'Favoriten',
     vehicle: 'Fahrzeug',
     more: 'Mehr',
+    // Long-form tab titles for BottomNav (visible label is the
+    // short string above; these are the tooltip + screen-reader
+    // label).
+    compare: 'Vergleich',
+    fuelLog: 'Logbuch',
+    mapTitle: 'Karte und Tankstellen-Übersicht',
+    compareTitle: 'Tankstellen-Vergleich',
+    fuelLogTitle: 'Tank-Logbuch — Verbrauch & Kosten',
+    favoritesTitle: 'Gespeicherte Tankstellen',
+    moreTitle: 'Einstellungen, Privatsphäre & weitere Optionen',
   },
 
   map: {

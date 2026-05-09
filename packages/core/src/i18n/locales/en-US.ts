@@ -43,6 +43,13 @@ export const enUS: TranslationKeys = {
     favorites: 'Favorites',
     vehicle: 'Vehicle',
     more: 'More',
+    compare: 'Compare',
+    fuelLog: 'Log',
+    mapTitle: 'Map & stations overview',
+    compareTitle: 'Stations side-by-side',
+    fuelLogTitle: 'Fuel log — usage & cost',
+    favoritesTitle: 'Saved stations',
+    moreTitle: 'Settings, privacy & more options',
   },
 
   map: {
