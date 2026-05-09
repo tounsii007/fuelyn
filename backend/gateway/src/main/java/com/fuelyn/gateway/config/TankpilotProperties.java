@@ -29,6 +29,13 @@ public class TankpilotProperties {
         private String jwtSecret = "change-this-jwt-secret-in-production-min-32-chars!!";
         private String serviceId = "gateway";
         private List<String> apiKeys = new ArrayList<>();
+        /**
+         * CIDRs from which X-Forwarded-For will be honoured. Empty by
+         * default — direct callers cannot spoof their source IP for
+         * rate-limit purposes. Configure with the upstream LB / CDN
+         * ranges when running behind one.
+         */
+        private List<String> trustedProxies = new ArrayList<>();
 
         public String getHmacSecret() { return hmacSecret; }
         public void setHmacSecret(String hmacSecret) { this.hmacSecret = hmacSecret; }
@@ -38,6 +45,8 @@ public class TankpilotProperties {
         public void setServiceId(String serviceId) { this.serviceId = serviceId; }
         public List<String> getApiKeys() { return apiKeys; }
         public void setApiKeys(List<String> apiKeys) { this.apiKeys = apiKeys; }
+        public List<String> getTrustedProxies() { return trustedProxies; }
+        public void setTrustedProxies(List<String> trustedProxies) { this.trustedProxies = trustedProxies; }
     }
 
     public static class Gateway {

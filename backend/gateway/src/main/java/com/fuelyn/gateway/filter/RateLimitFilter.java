@@ -1,5 +1,6 @@
 package com.fuelyn.gateway.filter;
 
+import com.fuelyn.gateway.security.GatewayGatewayTrustedProxyResolver;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.fuelyn.gateway.config.TankpilotProperties;
@@ -28,9 +29,11 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     private final int burstCapacity;
     private final Cache<String, AtomicInteger> requestCounts;
+    private final GatewayTrustedProxyResolver trustedProxyResolver;
 
-    public RateLimitFilter(TankpilotProperties properties) {
+    public RateLimitFilter(TankpilotProperties properties, GatewayTrustedProxyResolver trustedProxyResolver) {
         this.burstCapacity = properties.getGateway().getRateLimit().getBurstCapacity();
+        this.trustedProxyResolver = trustedProxyResolver;
         this.requestCounts = Caffeine.newBuilder()
                 .maximumSize(10_000)
                 .expireAfterWrite(1, TimeUnit.SECONDS)
@@ -59,17 +62,16 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     }
 
     private String extractClientIp(ServerWebExchange exchange) {
-        // Check X-Forwarded-For first (behind reverse proxy)
-        String forwarded = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-
         InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-        if (remoteAddress != null) {
-            return remoteAddress.getAddress().getHostAddress();
-        }
-        return "unknown";
+        String remoteAddr = remoteAddress != null
+                ? remoteAddress.getAddress().getHostAddress()
+                : null;
+        // X-Forwarded-For only counts when the immediate remote is in the
+        // configured trusted-proxy CIDR list. Otherwise an attacker could
+        // spoof the header to rotate through fake IPs and bypass the cap.
+        return trustedProxyResolver.resolve(
+                remoteAddr,
+                exchange.getRequest().getHeaders().getFirst("X-Forwarded-For"));
     }
 
     @Override

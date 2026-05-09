@@ -54,6 +54,14 @@ public class SecurityProperties {
     /** Optional list of API keys for external-client authentication. */
     private List<String> apiKeys = new ArrayList<>();
 
+    /**
+     * CIDRs from which the {@code X-Forwarded-For} header may be trusted.
+     * Empty by default — direct callers cannot spoof their source IP for
+     * rate-limiting purposes. Configure with the upstream LB / CDN ranges
+     * when running behind one (e.g. {@code 10.0.0.0/8, 192.168.0.0/16}).
+     */
+    private List<String> trustedProxies = new ArrayList<>();
+
     @PostConstruct
     void validateSecrets() {
         SecretPolicy.requireStrong("fuelyn.security.hmac-secret", hmacSecret);
@@ -117,5 +125,13 @@ public class SecurityProperties {
 
     public void setApiKeys(List<String> apiKeys) {
         this.apiKeys = apiKeys;
+    }
+
+    public List<String> getTrustedProxies() {
+        return trustedProxies;
+    }
+
+    public void setTrustedProxies(List<String> trustedProxies) {
+        this.trustedProxies = trustedProxies;
     }
 }

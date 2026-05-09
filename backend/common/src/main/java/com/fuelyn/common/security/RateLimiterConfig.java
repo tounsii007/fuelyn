@@ -1,5 +1,6 @@
 package com.fuelyn.common.security;
 
+import com.fuelyn.common.config.SecurityProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.servlet.FilterChain;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -56,11 +58,24 @@ public class RateLimiterConfig {
      * @param enabled           whether rate limiting is active
      * @return the configured rate limiter filter
      */
-    @org.springframework.context.annotation.Bean
+    @Bean
     public RateLimiterFilter rateLimiterFilter(
             @Value("${fuelyn.rate-limit.requests-per-minute:60}") int requestsPerMinute,
-            @Value("${fuelyn.rate-limit.enabled:true}") boolean enabled) {
-        return new RateLimiterFilter(requestsPerMinute, enabled);
+            @Value("${fuelyn.rate-limit.enabled:true}") boolean enabled,
+            TrustedProxyResolver trustedProxyResolver) {
+        return new RateLimiterFilter(requestsPerMinute, enabled, trustedProxyResolver);
+    }
+
+    /**
+     * Shared {@link TrustedProxyResolver} bean used by every IP-based filter
+     * across the backend. Defining it here (a {@code @Configuration} that's
+     * already on every service's classpath via {@code common}) means each
+     * service automatically picks up the same trusted-proxies list from
+     * {@code fuelyn.security.trusted-proxies} without per-service wiring.
+     */
+    @Bean
+    public TrustedProxyResolver trustedProxyResolver(SecurityProperties securityProperties) {
+        return new TrustedProxyResolver(securityProperties.getTrustedProxies());
     }
 
     /**
@@ -83,6 +98,7 @@ public class RateLimiterConfig {
 
         private final int maxRequestsPerMinute;
         private final boolean enabled;
+        private final TrustedProxyResolver trustedProxyResolver;
 
         /**
          * Cache mapping client IP addresses to their request counters.
@@ -90,15 +106,11 @@ public class RateLimiterConfig {
          */
         private final Cache<String, AtomicLong> requestCounts;
 
-        /**
-         * Constructs a new rate limiter filter.
-         *
-         * @param maxRequestsPerMinute maximum requests per minute per IP
-         * @param enabled              whether rate limiting is active
-         */
-        public RateLimiterFilter(int maxRequestsPerMinute, boolean enabled) {
+        public RateLimiterFilter(int maxRequestsPerMinute, boolean enabled,
+                                 TrustedProxyResolver trustedProxyResolver) {
             this.maxRequestsPerMinute = maxRequestsPerMinute;
             this.enabled = enabled;
+            this.trustedProxyResolver = trustedProxyResolver;
             this.requestCounts = Caffeine.newBuilder()
                     .expireAfterWrite(Duration.ofMinutes(1))
                     .maximumSize(10_000) // Limit memory usage
@@ -136,21 +148,15 @@ public class RateLimiterConfig {
         }
 
         /**
-         * Resolves the real client IP address, accounting for reverse proxies.
-         *
-         * <p>Checks the {@code X-Forwarded-For} header first (for clients behind
-         * load balancers/proxies), falling back to the remote address.</p>
-         *
-         * @param request the HTTP servlet request
-         * @return the resolved client IP address
+         * Resolves the real client IP via {@link TrustedProxyResolver}.
+         * X-Forwarded-For is now only honoured when the immediate remote
+         * address is itself in the configured trusted-proxy CIDR list,
+         * defeating header-spoof bypass of the rate limit.
          */
         private String resolveClientIp(HttpServletRequest request) {
-            String xForwardedFor = request.getHeader("X-Forwarded-For");
-            if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-                // Take the first IP in the chain (original client)
-                return xForwardedFor.split(",")[0].trim();
-            }
-            return request.getRemoteAddr();
+            return trustedProxyResolver.resolve(
+                    request.getRemoteAddr(),
+                    request.getHeader("X-Forwarded-For"));
         }
 
         /**
