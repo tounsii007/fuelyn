@@ -223,12 +223,59 @@ public class AdvisorService {
                 .toList();
     }
 
+    /**
+     * Build a collision-resistant cache key.
+     *
+     * <p>Old key was {@code fuelType:rLat:rLng:count}, so two requests with
+     * the same bucket and same station count but completely different
+     * stations / prices collided — a user querying station set A might
+     * receive the verdict computed for set B if both happened to bucket
+     * to the same 0.01° grid square. Even within a single user's session,
+     * two refreshes seconds apart (with the same N stations but a price
+     * just changed at one of them) used to short-circuit to the stale
+     * verdict.</p>
+     *
+     * <p>The new key folds in a deterministic SHA-256 of the sorted
+     * station list (name + price-rounded + distance-rounded), so a
+     * change in any station triggers a fresh verdict. Sorted ordering
+     * keeps the digest stable when the upstream returns the same set in
+     * a different order.</p>
+     */
     private static String buildCacheKey(AIAdvisorRequest request) {
         double lat = request.lat() == null ? 0 : request.lat();
         double lng = request.lng() == null ? 0 : request.lng();
         double rLat = Math.round(lat * 100.0) / 100.0;
         double rLng = Math.round(lng * 100.0) / 100.0;
-        int sig = request.prices() == null ? 0 : request.prices().size();
-        return request.fuelType() + ":" + rLat + ":" + rLng + ":" + sig;
+        String pricesDigest = digestStations(request.prices());
+        return request.fuelType() + ":" + rLat + ":" + rLng + ":" + pricesDigest;
+    }
+
+    private static String digestStations(java.util.List<AIAdvisorRequest.StationPrice> prices) {
+        if (prices == null || prices.isEmpty()) {
+            return "0";
+        }
+        StringBuilder canonical = new StringBuilder(prices.size() * 32);
+        prices.stream()
+                .sorted(java.util.Comparator
+                        .comparing(AIAdvisorRequest.StationPrice::stationName,
+                                java.util.Comparator.nullsLast(String::compareTo))
+                        .thenComparingDouble(AIAdvisorRequest.StationPrice::price))
+                .forEach(p -> canonical.append(p.stationName()).append('|')
+                        .append(Math.round(p.price() * 1000.0)).append('|')
+                        .append(Math.round(p.distance() * 100.0)).append(';'));
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            // 12 hex chars = 48 bits = ~280 trillion buckets — comfortable
+            // for our cache size of a few hundred entries.
+            StringBuilder hex = new StringBuilder(12);
+            for (int i = 0; i < 6; i++) {
+                hex.append(String.format("%02x", hash[i]));
+            }
+            return prices.size() + "_" + hex;
+        } catch (java.security.NoSuchAlgorithmException unreachable) {
+            // SHA-256 is mandated by the JCA spec — every JDK ships it.
+            return prices.size() + "_fallback";
+        }
     }
 }
