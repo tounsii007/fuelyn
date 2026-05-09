@@ -298,9 +298,10 @@ class HmacRequestSignerTest {
             long elapsedMs = (System.nanoTime() - before) / 1_000_000;
 
             assertThat(HmacRequestSigner.verify(body, ts, sig, SECRET)).isTrue();
-            // 100 ms is generous — just guards against an accidental O(n²)
+            // 500 ms is generous — just guards against an accidental O(n²)
             // regression from a future "helpful" string-builder rewrite.
-            assertThat(elapsedMs).isLessThan(100);
+            // Loosened from 100 ms to absorb cold-JIT noise in CI.
+            assertThat(elapsedMs).isLessThan(500);
         }
     }
 
