@@ -58,7 +58,15 @@ export function BrandQuickFilter({ recommendations, maxBrands = 8 }: BrandQuickF
 
   return (
     <div
-      className="flex items-center gap-1.5 px-4 pb-2 -mt-1 overflow-x-auto scrollbar-hide"
+      // No `-mt-1` here: the previous negative margin pulled the
+      // chip row up into the SortBar's territory, which made the
+      // active-tab badge ("Geöffnet 4" etc.) visually collide with
+      // the brand chips below. Now the row sits cleanly underneath
+      // the SortBar with 6px breathing room above and 12px below
+      // (matching the SortBar internal sub-rows so adjacent rows
+      // line up consistently).
+      className="flex items-center gap-1.5 px-4 pt-1.5 pb-3 overflow-x-auto scrollbar-hide
+                 border-t border-[var(--color-border-subtle)]/50"
       role="group"
       aria-label="Marken-Schnellfilter"
     >
