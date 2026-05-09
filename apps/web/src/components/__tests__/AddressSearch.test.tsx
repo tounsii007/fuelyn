@@ -28,6 +28,8 @@ vi.mock('@/lib/hooks/use-location', () => {
       permission: 'prompt',
       requestLocation,
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     })),
   };
 });
@@ -47,6 +49,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'prompt',
       requestLocation: vi.fn(),
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     });
     // Reset zustand store between tests
     useAppStore.setState({ userLocation: null });
@@ -71,6 +75,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'prompt',
       requestLocation,
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     });
 
     render(<AddressSearch />);
@@ -96,6 +102,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'denied',
       requestLocation,
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     });
     rerender(<AddressSearch />);
 
@@ -114,6 +122,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'prompt',
       requestLocation: vi.fn(),
       insecureContext: true,
+      isRefining: false,
+      accuracyMeters: null,
     });
 
     const { rerender } = render(<AddressSearch />);
@@ -124,6 +134,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'denied',
       requestLocation: vi.fn(),
       insecureContext: true,
+      isRefining: false,
+      accuracyMeters: null,
     });
     rerender(<AddressSearch />);
 
@@ -152,6 +164,8 @@ describe('AddressSearch — geolocate button', () => {
       permission: 'granted',
       requestLocation: vi.fn(),
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     });
     useAppStore.setState({ userLocation: { lat: 50.5867, lng: 8.6783 } });
     rerender(<AddressSearch />);
@@ -177,6 +191,8 @@ describe('AddressSearch — text-search & clear', () => {
       permission: 'prompt',
       requestLocation: vi.fn(),
       insecureContext: false,
+      isRefining: false,
+      accuracyMeters: null,
     });
   });
 

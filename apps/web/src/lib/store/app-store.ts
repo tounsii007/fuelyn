@@ -54,8 +54,23 @@ function dedupeById<T extends { id: string }>(items: readonly T[]): T[] {
 interface AppState {
   // Location
   userLocation: Coordinates | null;
+  /** Horizontal accuracy of the latest GPS fix in metres. `null`
+   *  when the source is non-GPS (search-bar pick, demo fallback) or
+   *  the platform didn't report it. Drives the uncertainty circle
+   *  on the map and the "±NN m" hint in the search bar. */
+  userLocationAccuracy: number | null;
+  /** True while a continuous watchPosition is active and pushing
+   *  updates into the store — drives the "live" pulsing dot on the
+   *  map and lets consumers know coords may shift soon. */
+  liveTracking: boolean;
   locationPermission: 'prompt' | 'granted' | 'denied';
   setUserLocation: (coords: Coordinates | null) => void;
+  setUserLocationAccuracy: (meters: number | null) => void;
+  setLiveTracking: (live: boolean) => void;
+  /** Update coords + accuracy atomically — the GPS hook uses this
+   *  so the map never paints a new dot with the old uncertainty
+   *  circle (or vice-versa) for a single frame. */
+  setGeolocatedPosition: (coords: Coordinates, accuracyMeters: number | null) => void;
   setLocationPermission: (status: 'prompt' | 'granted' | 'denied') => void;
 
   // Search & Filter
@@ -203,8 +218,35 @@ export interface GeoFenceState {
 export const useAppStore = create<AppState>((set, get) => ({
   // Location
   userLocation: null,
+  userLocationAccuracy: null,
+  liveTracking: false,
   locationPermission: 'prompt',
-  setUserLocation: (coords) => set({ userLocation: isFiniteCoordinate(coords) ? coords : null }),
+  setUserLocation: (coords) =>
+    set({
+      userLocation: isFiniteCoordinate(coords) ? coords : null,
+      // Non-GPS location sources (search-bar pick, demo fallback)
+      // have no meaningful accuracy radius — clearing avoids
+      // painting a stale uncertainty circle from the previous fix
+      // around a freshly-picked address.
+      userLocationAccuracy: null,
+    }),
+  setUserLocationAccuracy: (meters) =>
+    set({
+      userLocationAccuracy:
+        meters !== null && Number.isFinite(meters) && meters >= 0 ? meters : null,
+    }),
+  setLiveTracking: (live) => set({ liveTracking: live }),
+  setGeolocatedPosition: (coords, accuracyMeters) =>
+    set({
+      userLocation: isFiniteCoordinate(coords) ? coords : null,
+      userLocationAccuracy:
+        isFiniteCoordinate(coords) &&
+        accuracyMeters !== null &&
+        Number.isFinite(accuracyMeters) &&
+        accuracyMeters >= 0
+          ? accuracyMeters
+          : null,
+    }),
   setLocationPermission: (status) => set({ locationPermission: status }),
 
   // Search & Filter
