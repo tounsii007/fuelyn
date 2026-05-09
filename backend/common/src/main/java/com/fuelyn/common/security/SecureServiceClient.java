@@ -17,7 +17,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.UUID;
+import java.util.Map;
 
 /**
  * HTTP client that automatically signs outgoing requests with HMAC
@@ -159,23 +159,17 @@ public class SecureServiceClient {
     /**
      * Creates HTTP headers with full service authentication credentials.
      *
-     * <p>Includes both JWT token and HMAC signature for dual-layer authentication.
-     * The request ID enables distributed tracing across the service mesh.</p>
+     * <p>Delegates to {@link ServiceAuthHeaders#build} so the wire signatures
+     * stay aligned with the reactive {@code SecureWebClient}.</p>
      *
      * @param body the request body string (used for HMAC signing; empty string for GET)
      * @return headers populated with all authentication fields
      */
     private HttpHeaders createAuthHeaders(String body) {
         HttpHeaders headers = new HttpHeaders();
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String requestId = UUID.randomUUID().toString();
-
-        headers.set(ServiceAuthFilter.HEADER_SERVICE_ID, serviceId);
-        headers.set(ServiceAuthFilter.HEADER_SERVICE_TOKEN, jwtTokenProvider.generateServiceToken(serviceId));
-        headers.set(ServiceAuthFilter.HEADER_TIMESTAMP, timestamp);
-        headers.set(ServiceAuthFilter.HEADER_SIGNATURE, HmacRequestSigner.sign(body, timestamp, hmacSecret));
-        headers.set(ServiceAuthFilter.HEADER_REQUEST_ID, requestId);
-
+        Map<String, String> authHeaders = ServiceAuthHeaders.build(
+                body, serviceId, hmacSecret, jwtTokenProvider);
+        authHeaders.forEach(headers::set);
         return headers;
     }
 }

@@ -24,6 +24,20 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!--
+            WebFlux as <optional>: SecureWebClient compiles against
+            WebClient but the dependency is NOT transitively imposed on
+            consuming services. A service that wants the reactive variant
+            must add spring-boot-starter-webflux explicitly; otherwise the
+            class is loaded with @ConditionalOnClass, never instantiated,
+            and the servlet stack stays clean.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
