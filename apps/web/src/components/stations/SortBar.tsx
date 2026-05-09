@@ -30,6 +30,7 @@ export function SortBar({ counts }: SortBarProps = {}) {
   const sortMode = useAppStore((s) => s.sortMode);
   const setSortMode = useAppStore((s) => s.setSortMode);
   const setFilterOpen = useAppStore((s) => s.setFilterOpen);
+  const setFilter = useAppStore((s) => s.setFilter);
   const filter = useAppStore((s) => s.filter);
 
   const activeFilterCount =
@@ -38,7 +39,40 @@ export function SortBar({ counts }: SortBarProps = {}) {
     (filter.priceMin != null ? 1 : 0) +
     (filter.priceMax != null ? 1 : 0);
 
+  // Build a list of removable chips reflecting every active filter.
+  // Each chip carries an `onRemove` that calls setFilter with just
+  // the field needed to clear it — no full filter rewrite. The list
+  // is empty when nothing is active, in which case the chips row
+  // is suppressed entirely.
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
+  if (filter.onlyOpen) {
+    activeChips.push({ key: 'open', label: 'Nur geöffnet', onRemove: () => setFilter({ onlyOpen: false }) });
+  }
+  if (filter.priceMin != null) {
+    activeChips.push({
+      key: 'min',
+      label: `≥ ${filter.priceMin.toFixed(2)} €`,
+      onRemove: () => setFilter({ priceMin: null }),
+    });
+  }
+  if (filter.priceMax != null) {
+    activeChips.push({
+      key: 'max',
+      label: `≤ ${filter.priceMax.toFixed(2)} €`,
+      onRemove: () => setFilter({ priceMax: null }),
+    });
+  }
+  for (const brand of filter.brands) {
+    activeChips.push({
+      key: `brand:${brand}`,
+      label: brand,
+      onRemove: () =>
+        setFilter({ brands: filter.brands.filter((b) => b !== brand) }),
+    });
+  }
+
   return (
+    <>
     <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
       {SORT_OPTIONS.map((opt) => {
         const count = counts ? counts[opt.value] : undefined;
@@ -100,5 +134,38 @@ export function SortBar({ counts }: SortBarProps = {}) {
         )}
       </button>
     </div>
+
+    {/*
+      Active-filter chips row — renders only when at least one
+      filter is set. Each chip shows the filter's friendly label
+      (e.g. "Nur geöffnet", "≥ 1,80 €", "Aral") and an "×" button
+      to clear THAT specific filter without opening the full
+      filter sheet. Beats the previous "filter-pill with a count"
+      pattern because users see WHAT is active, not just HOW MANY.
+    */}
+    {activeChips.length > 0 && (
+      <div className="flex items-center gap-1.5 px-4 pb-3 -mt-1 overflow-x-auto scrollbar-hide">
+        {activeChips.map((chip) => (
+          <button
+            key={chip.key}
+            type="button"
+            onClick={chip.onRemove}
+            className="flex-shrink-0 inline-flex items-center gap-1 pl-2.5 pr-1.5 py-0.5 rounded-full
+                       bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300
+                       text-[11px] font-medium
+                       ring-1 ring-brand-200 dark:ring-brand-800/60
+                       hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
+            aria-label={`Filter "${chip.label}" entfernen`}
+            title={`Filter "${chip.label}" entfernen`}
+          >
+            <span>{chip.label}</span>
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        ))}
+      </div>
+    )}
+    </>
   );
 }
