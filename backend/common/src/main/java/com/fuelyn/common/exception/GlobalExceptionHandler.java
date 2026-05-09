@@ -11,6 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Global exception handler providing consistent error responses across all
@@ -89,11 +90,35 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * {@link ResponseStatusException} carries an explicit HTTP status —
+     * Spring already knows how to map it to a response, but the catch-all
+     * below would shadow it with a generic 500. Handle it first so the
+     * carefully-chosen status (e.g. 413 from HmacSigningFilter, 404 from
+     * a controller that already classified the failure) reaches the client.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatus(ResponseStatusException ex) {
+        log.warn("ResponseStatusException: {} [{}]", ex.getReason(), ex.getStatusCode());
+        return ResponseEntity
+                .status(ex.getStatusCode())
+                .body(ApiResponse.error(ex.getReason() != null ? ex.getReason() : "Request failed"));
+    }
+
+    /**
      * Catch-all for any unhandled exception. Returns a generic 500 error to
      * avoid leaking internal details to the client.
+     *
+     * <p>Specifically does NOT widen to {@link Throwable} — {@link Error}
+     * subclasses (OutOfMemoryError, StackOverflowError, AssertionError) MUST
+     * propagate so the JVM / container can take appropriate action (heap
+     * dump, restart pod, etc.). Catching them here would silently mask
+     * fatal conditions and turn a quick crash-loop into a slow zombie.</p>
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex) {
+        // Do not echo the raw exception message back — it can include
+        // user-supplied input or internal paths. The full stack stays in
+        // the log for operators; the response stays opaque to clients.
         log.error("Unhandled exception", ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
