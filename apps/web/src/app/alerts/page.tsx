@@ -22,10 +22,25 @@ export default function AlertsPage() {
   const addPriceAlert = useAppStore((s) => s.addPriceAlert);
   const removePriceAlert = useAppStore((s) => s.removePriceAlert);
   const togglePriceAlert = useAppStore((s) => s.togglePriceAlert);
+  const setPriceAlerts = useAppStore((s) => s.setPriceAlerts);
 
   const [isAdding, setIsAdding] = useState(false);
   const [fuelType, setFuelType] = useState<FuelType>('e10');
   const [targetPrice, setTargetPrice] = useState(1.6);
+
+  // Quick aggregates for the summary strip + bulk actions.
+  const armedCount = alerts.filter((a) => a.enabled).length;
+  const pausedCount = alerts.length - armedCount;
+
+  /** Toggle every alert ON or OFF in one go. Used by the
+   *  "Alle aktivieren" / "Alle pausieren" bulk button so the
+   *  user can flip the whole set without N taps. */
+  const setAllEnabled = useCallback(
+    (enabled: boolean) => {
+      setPriceAlerts(alerts.map((a) => ({ ...a, enabled })));
+    },
+    [alerts, setPriceAlerts],
+  );
 
   const handleAdd = useCallback(() => {
     if (!Number.isFinite(targetPrice) || targetPrice <= 0) return;
@@ -106,16 +121,54 @@ export default function AlertsPage() {
           message="Erstelle einen Alarm und werde benachrichtigt, wenn der Preis unter deinen Wunschpreis fällt."
         />
       ) : (
-        <div className="space-y-3">
-          {alerts.map((alert) => (
-            <AlertCard
-              key={alert.id}
-              alert={alert}
-              onToggle={() => togglePriceAlert(alert.id)}
-              onRemove={() => removePriceAlert(alert.id)}
-            />
-          ))}
-        </div>
+        <>
+          {/*
+            Summary strip — at-a-glance "wie viele Alarme laufen
+            gerade" plus a one-tap bulk toggle. Beats N individual
+            toggles when the user goes on holiday / wants to mute
+            everything for a while.
+          */}
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl
+                          bg-gray-50 dark:bg-gray-800/60 px-3 py-2">
+            <div className="text-xs text-gray-600 dark:text-gray-300 tabular-nums">
+              <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                {armedCount}
+              </span>{' '}
+              aktiv
+              {pausedCount > 0 && (
+                <>
+                  {' · '}
+                  <span className="text-gray-500 dark:text-gray-400">{pausedCount} pausiert</span>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setAllEnabled(armedCount === 0)}
+              className="text-xs font-semibold text-brand-700 dark:text-brand-300
+                         hover:bg-brand-50 dark:hover:bg-brand-900/30
+                         rounded-lg px-2 py-1 transition-colors"
+              title={
+                armedCount === 0
+                  ? 'Alle Alarme aktivieren'
+                  : 'Alle Alarme vorübergehend pausieren'
+              }
+            >
+              {armedCount === 0 ? 'Alle aktivieren' : 'Alle pausieren'}
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                onToggle={() => togglePriceAlert(alert.id)}
+                onRemove={() => removePriceAlert(alert.id)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-6 text-center">
