@@ -19,6 +19,16 @@ spring:
         format_sql: true
         jdbc:
           batch_size: 50
+        # batch_size on its own only batches statements that are
+        # *contiguous* in the action queue. Without ordering flags
+        # Hibernate emits inserts in the order of EntityManager.persist
+        # calls — which for the collection hot path interleaves
+        # PriceSnapshot and StationMeta and shrinks the effective batch
+        # back to ~1. order_inserts/order_updates groups the action
+        # queue by entity type so the JDBC driver gets long runs of
+        # same-shape statements that can actually be batched.
+        order_inserts: true
+        order_updates: true
     open-in-view: false
   flyway:
     enabled: true
