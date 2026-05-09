@@ -17,6 +17,7 @@ import { HeroEmptyState } from '@/components/layout/HeroEmptyState';
 import { StationList } from '@/components/stations/StationList';
 import { StationPanel } from '@/components/stations/StationPanel';
 import { SortBar } from '@/components/stations/SortBar';
+import { BrandQuickFilter } from '@/components/stations/BrandQuickFilter';
 import { FilterPanel } from '@/components/stations/FilterPanel';
 import { PriceStats } from '@/components/stations/PriceStats';
 import { SearchHistory } from '@/components/stations/SearchHistory';
@@ -419,6 +420,13 @@ export default function HomePage() {
               >
                 <div className="sticky top-0 z-10 bg-[var(--color-bg)]/85 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
                   <SortBar counts={sortCounts} />
+                  {/*
+                    Brand quick-pick chips — only renders when there
+                    are brands present in the candidate set, so it
+                    self-suppresses for empty results without an
+                    explicit conditional here.
+                  */}
+                  <BrandQuickFilter recommendations={recommendations} />
                   <div className="px-4 pt-3 pb-3">
                     <AddressSearch />
                   </div>
