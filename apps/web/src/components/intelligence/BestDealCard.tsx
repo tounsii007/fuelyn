@@ -36,11 +36,21 @@ export interface BestDealCardProps {
 
 export function BestDealCard({ recommendations }: BestDealCardProps) {
   const fuelType = useAppStore((s) => s.filter.fuelType);
+  const vehicle = useAppStore((s) => s.vehicle);
 
   // Pick the canonical "best deal" — lowest price among open stations.
-  const { best, savingsCt, marketAvg } = useMemo(() => {
+  // Plus the full price distribution for the live-index visualisation
+  // and the per-fill savings projection.
+  const { best, savingsCt, marketAvg, marketMin, marketMax, allPrices } = useMemo(() => {
     if (recommendations.length === 0) {
-      return { best: null, savingsCt: 0, marketAvg: null };
+      return {
+        best: null,
+        savingsCt: 0,
+        marketAvg: null,
+        marketMin: null,
+        marketMax: null,
+        allPrices: [] as number[],
+      };
     }
     const open = recommendations.filter((r) => r.station.isOpen);
     const pool = open.length > 0 ? open : recommendations;
@@ -48,15 +58,44 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
       .map((r) => r.station.prices?.[fuelType])
       .filter((p): p is number => Number.isFinite(p as number));
     if (prices.length === 0) {
-      return { best: null, savingsCt: 0, marketAvg: null };
+      return {
+        best: null,
+        savingsCt: 0,
+        marketAvg: null,
+        marketMin: null,
+        marketMax: null,
+        allPrices: [] as number[],
+      };
     }
     const min = Math.min(...prices);
+    const max = Math.max(...prices);
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
     const best = pool.find((r) => r.station.prices?.[fuelType] === min) ?? null;
-    return { best, savingsCt: (avg - min) * 100, marketAvg: avg };
+    return {
+      best,
+      savingsCt: (avg - min) * 100,
+      marketAvg: avg,
+      marketMin: min,
+      marketMax: max,
+      allPrices: prices,
+    };
   }, [recommendations, fuelType]);
 
-  if (!best || marketAvg == null) return null;
+  if (!best || marketAvg == null || marketMin == null || marketMax == null) return null;
+
+  // Per-fill savings projection. Uses vehicle tank capacity when set,
+  // otherwise the conventional 50 L default. The number is what the
+  // user saves PER TANK by going to the best deal vs. the market avg.
+  const tankL = vehicle?.tankCapacity ?? 50;
+  const savingsPerFillEur = ((marketAvg - marketMin) * tankL);
+
+  /**
+   * Position helper for the index bar: maps a price into 0..100
+   * based on the visible spread. Saturates at 0 when spread is
+   * zero (all prices identical) so we never divide by zero.
+   */
+  const spread = marketMax - marketMin;
+  const positionPct = (p: number) => (spread > 0 ? ((p - marketMin) / spread) * 100 : 0);
 
   const station = best.station;
   const driveTime = estimateDriveTime(station.dist, AVERAGE_SPEED_KMH);
@@ -150,6 +189,84 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
             {isOpen ? 'Geöffnet' : 'Geschlossen'}
           </Stat>
         </dl>
+
+        {/*
+          Live-Preisindex — horizontal gradient bar from green
+          (cheapest in the visible market) through amber to red
+          (most expensive). Each station's price is drawn as a
+          vertical tick along the bar, the avg is marked white,
+          and this best deal sits at the leftmost edge by
+          definition. Gives the user instant "where in the
+          distribution does my best deal sit?" intuition.
+
+          Suppressed when there are < 3 priced stations (a tick
+          for two prices is just two dots, not a distribution).
+        */}
+        {allPrices.length >= 3 && spread > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-[10px] mb-1.5">
+              <span className="text-emerald-300 font-semibold tabular-nums">
+                {marketMin.toFixed(3).replace('.', ',')} €
+              </span>
+              <span className="text-[var(--color-fg-subtle)] uppercase tracking-wider">
+                Live-Preisindex · {allPrices.length} Tankstellen
+              </span>
+              <span className="text-rose-300 font-semibold tabular-nums">
+                {marketMax.toFixed(3).replace('.', ',')} €
+              </span>
+            </div>
+            <div
+              className="relative h-2 rounded-full overflow-visible
+                         bg-gradient-to-r from-emerald-400/70 via-amber-400/60 to-rose-500/70"
+              role="img"
+              aria-label={`Preisindex: günstig ${marketMin.toFixed(3)} €, teuer ${marketMax.toFixed(3)} €`}
+            >
+              {/* Per-station ticks — drawn under markers so they
+                  don't overlap the headline best/avg indicators. */}
+              {allPrices.map((p, i) => (
+                <span
+                  key={`tick-${i}`}
+                  aria-hidden="true"
+                  className="absolute top-0 bottom-0 w-px bg-white/35"
+                  style={{ left: `${positionPct(p)}%` }}
+                />
+              ))}
+              {/* Avg marker — white pill */}
+              <span
+                aria-hidden="true"
+                className="absolute top-1/2 -translate-y-1/2 -ml-1 w-2 h-3 rounded-sm
+                           bg-white/90 ring-1 ring-black/30"
+                style={{ left: `${positionPct(marketAvg)}%` }}
+                title={`Markt-⌀: ${marketAvg.toFixed(3)} €`}
+              />
+              {/* Best marker — green dot at the leftmost edge with
+                  a soft glow, label sits below for clarity. */}
+              <span
+                aria-hidden="true"
+                className="absolute top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3 rounded-full
+                           bg-emerald-400 ring-2 ring-emerald-200/60
+                           shadow-[0_0_10px_rgba(52,211,153,0.6)]"
+                style={{ left: `${positionPct(marketMin)}%` }}
+                title="Bester Preis"
+              />
+            </div>
+            {/*
+              Per-fill savings line — turns the abstract "−ct vs ⌀"
+              into a concrete € figure based on the user's tank
+              capacity (50 L default when no profile). This is the
+              "should I drive here?" anchor.
+            */}
+            {savingsPerFillEur > 0.05 && (
+              <p className="mt-2 text-[10px] text-emerald-200/90 text-center">
+                Spar bis zu{' '}
+                <span className="font-bold text-emerald-300">
+                  {savingsPerFillEur.toFixed(2)} €
+                </span>{' '}
+                pro Tankfüllung ({Math.round(tankL)} L)
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
