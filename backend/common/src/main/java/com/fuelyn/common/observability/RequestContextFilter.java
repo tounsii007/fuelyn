@@ -2,6 +2,7 @@ package com.fuelyn.common.observability;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,6 +34,15 @@ public class RequestContextFilter extends OncePerRequestFilter {
     public static final String MDC_REQUEST_ID = "requestId";
     public static final String MDC_SERVICE_ID = "serviceId";
 
+    /**
+     * Allow-list for caller-supplied request IDs: hex / dash / underscore /
+     * dot, 1..128 chars. Anything else (CRLF, control chars, JSON, …) gets
+     * a fresh UUID. Without this constraint a header value with embedded
+     * CR/LF could split log lines into attacker-controlled rows — the
+     * classic log-injection vector.
+     */
+    private static final Pattern SAFE_REQUEST_ID = Pattern.compile("[A-Za-z0-9._\\-]{1,128}");
+
     private final String serviceId;
 
     public RequestContextFilter(
@@ -46,7 +56,11 @@ public class RequestContextFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String requestId = request.getHeader(HEADER_REQUEST_ID);
-        if (requestId == null || requestId.isBlank() || requestId.length() > 128) {
+        // Reject anything that isn't a clean tracing-id shape. The previous
+        // length-only guard accepted CRLF and other log-injection vectors —
+        // a malicious caller could split log lines or smuggle ANSI escapes
+        // into operator dashboards by sending crafted X-Request-Id values.
+        if (requestId == null || !SAFE_REQUEST_ID.matcher(requestId).matches()) {
             requestId = UUID.randomUUID().toString();
         }
         MDC.put(MDC_REQUEST_ID, requestId);
