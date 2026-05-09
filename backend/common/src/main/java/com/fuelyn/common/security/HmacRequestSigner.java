@@ -51,8 +51,19 @@ public final class HmacRequestSigner {
      * @throws HmacSigningException if the HMAC computation fails
      */
     public static String sign(String body, String timestamp, String secret) {
+        if (timestamp == null || timestamp.isEmpty()) {
+            throw new HmacSigningException("timestamp must not be null/empty", null);
+        }
+        if (secret == null || secret.isEmpty()) {
+            throw new HmacSigningException("secret must not be null/empty", null);
+        }
+        // Null body → empty string. Without this, "ts:null" is signed, and a
+        // caller passing null gets a different signature than one passing ""
+        // even though the wire request looks identical. Normalising on the
+        // signing side keeps both sides of the boundary consistent.
+        String safeBody = body == null ? "" : body;
         try {
-            String payload = timestamp + ":" + body;
+            String payload = timestamp + ":" + safeBody;
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
             SecretKeySpec keySpec = new SecretKeySpec(
                     secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM
@@ -83,6 +94,16 @@ public final class HmacRequestSigner {
      * @return {@code true} if the signature is valid and the request is fresh
      */
     public static boolean verify(String body, String timestamp, String signature, String secret) {
+        // Null/empty timestamp or signature → reject without computing anything.
+        // The previous code NPE'd on signature.getBytes() and bubbled to the
+        // catch-all 500 instead of the deterministic "401 unauthorized" the
+        // caller expects.
+        if (timestamp == null || timestamp.isEmpty()
+                || signature == null || signature.isEmpty()
+                || secret == null || secret.isEmpty()) {
+            return false;
+        }
+
         // 1. Parse and validate timestamp
         long requestTime;
         try {
@@ -97,12 +118,23 @@ public final class HmacRequestSigner {
             return false;
         }
 
-        // 3. Compute expected signature and compare in constant time
-        String expected = sign(body, timestamp, secret);
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                signature.getBytes(StandardCharsets.UTF_8)
-        );
+        // 3. Compute expected signature and compare in constant time.
+        // Wrapping in try/catch so that a malformed secret on this side
+        // (sign throws HmacSigningException) becomes "verification failed"
+        // instead of a leaked 500.
+        String expected;
+        try {
+            expected = sign(body, timestamp, secret);
+        } catch (HmacSigningException e) {
+            return false;
+        }
+        byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+        byte[] suppliedBytes = signature.getBytes(StandardCharsets.UTF_8);
+        // MessageDigest.isEqual short-circuits on length mismatch BEFORE the
+        // constant-time loop in the JDK implementation, which technically
+        // leaks length info — fine here since signature length is fixed by
+        // the algorithm (SHA-256 = 32 bytes → 44 base64 chars).
+        return MessageDigest.isEqual(expectedBytes, suppliedBytes);
     }
 
     /**
