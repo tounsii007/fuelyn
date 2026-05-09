@@ -52,27 +52,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       />
 
-      {/* Header — sticky, glass-morphic, shrinks subtly on scroll */}
+      {/* Header — sticky, glass-morphic, premium minimal.
+          Tesla/Linear/Raycast-style: brand, primary tools, view toggle,
+          everything else in a single floating overflow menu. The previous
+          11-icon strip felt like a 90s app toolbar; we now present 5 visible
+          actions, each with deliberate breathing room. */}
       <header
         className={[
-          'sticky top-0 z-30 transition-all duration-200',
+          'sticky top-0 z-30 transition-all duration-300',
           scrolled
             ? 'fy-glass shadow-[var(--shadow-sm)] border-b border-[var(--color-border-subtle)]'
             : 'bg-transparent border-b border-transparent',
         ].join(' ')}
       >
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <Brand />
 
-          {/* Three logical groups separated by dividers:
-              ┌─────────┐ │ ┌──────────────────┐ │ ┌──────────┐ │ ┌──────────────┐ │ ┌─────┐
-              │ Search  │ │ │ Fuel · Radius    │ │ │ View     │ │ │ Personal     │ │ │ More│
-              └─────────┘ │ └──────────────────┘ │ └──────────┘ │ └──────────────┘ │ └─────┘ */}
-          <nav aria-label="Hauptnavigation" className="flex items-center gap-1.5">
+          <nav aria-label="Hauptnavigation" className="flex items-center gap-2">
+            {/* Primary: command palette + universal search */}
             <CommandTrigger />
 
             <Divider />
 
+            {/* Primary: fuel selectors — always visible because they
+                gate every result on the page. */}
             <PopoverSelect
               icon={<FuelIcon />}
               value={fuelType}
@@ -93,6 +96,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <Divider />
 
+            {/* Map / list toggle — primary because it changes the
+                visual mode of the entire app. */}
             <IconButton
               onClick={toggleView}
               label={isMapView ? 'Listenansicht anzeigen' : 'Kartenansicht anzeigen'}
@@ -100,31 +105,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {isMapView ? <ListIcon /> : <MapIcon />}
             </IconButton>
 
-            <Divider />
-
-            <IconLink href="/vehicle" label="Fahrzeug">
-              <CarIcon />
-            </IconLink>
-            <IconLink href="/favorites" label="Favoriten">
-              <HeartIcon />
-            </IconLink>
-
+            {/* Notifications: kept visible because the badge IS the value.
+                Theme + nav links are inside the More menu now. */}
             <NotificationBell />
-
-            <Divider />
-
-            <ThemeQuickToggle />
-
-            <IconLink href="/settings" label="Einstellungen">
-              <CogIcon />
-            </IconLink>
 
             <MoreMenu />
           </nav>
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
     </div>
   );
 }
@@ -456,21 +446,34 @@ function MoreMenu() {
   }, [open]);
 
   // Group menu items so the dropdown is scannable instead of a long list.
+  // After the header de-clutter, four secondary nav items moved here:
+  // Fahrzeug, Favoriten, Einstellungen — each labelled to make their
+  // purpose explicit (icons alone in the header forced the user to
+  // mouseover-and-guess).
   const groups = [
+    {
+      title: 'Mein Konto',
+      items: [
+        { href: '/vehicle',      label: 'Fahrzeug',     desc: 'Verbrauch, Tankgröße, Reichweite' },
+        { href: '/favorites',    label: 'Favoriten',    desc: 'Deine gespeicherten Stationen' },
+        { href: '/achievements', label: 'Achievements', desc: 'Badges fürs Sparen, Erkunden, Mitwirken' },
+        { href: '/settings',     label: 'Einstellungen', desc: 'Theme, Sprache, Daten' },
+      ],
+    },
     {
       title: 'Verwalten',
       items: [
-        { href: '/alerts', label: 'Preisalarme', desc: 'Benachrichtigungen bei Preissprüngen' },
+        { href: '/alerts',   label: 'Preisalarme',  desc: 'Benachrichtigungen bei Preissprüngen' },
         { href: '/fuel-log', label: 'Tank-Logbuch', desc: 'Dein Verbrauch im Überblick' },
-        { href: '/locations', label: 'Meine Orte', desc: 'Gespeicherte Standorte' },
+        { href: '/locations', label: 'Meine Orte',  desc: 'Gespeicherte Standorte' },
       ],
     },
     {
       title: 'Analysieren',
       items: [
-        { href: '/compare', label: 'Vergleich', desc: 'Stationen direkt nebeneinander' },
-        { href: '/stats', label: 'Statistiken', desc: 'Preisverläufe analysieren' },
-        { href: '/route-planner', label: 'Routenplaner', desc: 'Tank-Stopp auf der Strecke' },
+        { href: '/compare',       label: 'Vergleich',     desc: 'Stationen direkt nebeneinander' },
+        { href: '/stats',         label: 'Statistiken',   desc: 'Preisverläufe analysieren' },
+        { href: '/route-planner', label: 'Routenplaner',  desc: 'Tank-Stopp auf der Strecke' },
       ],
     },
     {

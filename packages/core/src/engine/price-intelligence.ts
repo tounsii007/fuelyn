@@ -117,12 +117,28 @@ export function analyzePrices(
   } else {
     action = 'wait';
     headline = 'Warten lohnt sich';
-    explanation = `Der Preis liegt über dem Durchschnitt. Versuche es an einem ${cheapestDay} erneut.`;
+    // Avoid telling the user to come back on a day that is today.
+    const todayName =
+      DAY_NAMES_DE[
+        new Date(sorted[sorted.length - 1]!.timestamp).getDay()
+      ]!;
+    explanation =
+      cheapestDay === todayName || cheapestDay === expensiveDay
+        ? 'Der Preis liegt über dem Durchschnitt. Es lohnt sich, ein paar Stunden zu warten.'
+        : `Der Preis liegt über dem Durchschnitt. Versuche es an einem ${cheapestDay} erneut.`;
   }
 
   const savingsEstimate = computeSavingsEstimate(sorted, fillUpLiters);
   const confidence = classifyConfidence(sorted.length, trend);
-  const bestTimePrediction = `Preise fallen typischerweise ${cheapestDay}s. Vermeide ${expensiveDay}s.`;
+  const todayDay =
+    DAY_NAMES_DE[
+      new Date(sorted[sorted.length - 1]!.timestamp).getDay()
+    ]!;
+  const bestTimePrediction = buildBestTimePrediction(
+    cheapestDay,
+    expensiveDay,
+    todayDay,
+  );
 
   return {
     action,
@@ -190,6 +206,35 @@ function computeTrend(sorted: readonly PriceDataInput[]): { trend: number } {
   const recentAvg = mean(recent.map((d) => d.price));
   const earlierAvg = earlier.length > 0 ? mean(earlier.map((d) => d.price)) : recentAvg;
   return { trend: recentAvg - earlierAvg };
+}
+
+/**
+ * Build a non-contradictory wochentags hint, taking today into account.
+ *
+ * The previous template ("Preise fallen typischerweise ${a}s. Vermeide ${b}s.")
+ * could collapse into a self-contradiction when `cheapestDay === expensiveDay`
+ * (e.g., only one calendar day of data) and offered no situational context
+ * for today's day-of-week. The new logic explicitly handles four cases:
+ *   1. cheapest === expensive → not enough variance, hedge wording
+ *   2. today is the cheapest day → encourage tanking now
+ *   3. today is the most expensive day → suggest waiting until cheapest
+ *   4. otherwise → name both extremes neutrally
+ */
+function buildBestTimePrediction(
+  cheapestDay: string,
+  expensiveDay: string,
+  todayDay: string,
+): string {
+  if (cheapestDay === expensiveDay) {
+    return 'Noch nicht genug Datenpunkte über die Woche für eine Tages-Empfehlung.';
+  }
+  if (todayDay === cheapestDay) {
+    return `Heute (${todayDay}) ist typischerweise einer der günstigsten Tage — gute Gelegenheit.`;
+  }
+  if (todayDay === expensiveDay) {
+    return `Heute (${todayDay}) ist meist teuer. Günstiger wird's typischerweise ${cheapestDay}s.`;
+  }
+  return `Preise sind ${cheapestDay}s am günstigsten und ${expensiveDay}s am teuersten.`;
 }
 
 function dayOfWeekExtremes(

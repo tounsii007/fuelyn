@@ -14,6 +14,15 @@ interface FetchJsonOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
   headers?: HeadersInit;
+  /** HTTP method — defaults to GET. */
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  /**
+   * Request body. If a non-string value is passed, it is JSON-stringified
+   * automatically and `Content-Type: application/json` is set. Pass a
+   * pre-encoded string (e.g. FormData-as-text) verbatim if you need full
+   * control over the wire format.
+   */
+  body?: unknown;
 }
 
 export async function fetchJson<T>(
@@ -28,12 +37,28 @@ export async function fetchJson<T>(
   options.signal?.addEventListener('abort', onAbort, { once: true });
 
   try {
+    // Build headers, layering caller overrides on top of safe defaults.
+    // We auto-attach Content-Type for JSON bodies but never overwrite an
+    // explicit caller header (e.g. text/plain for an LLM streaming POST).
+    const baseHeaders: Record<string, string> = { Accept: 'application/json' };
+    let serialisedBody: BodyInit | undefined;
+    if (options.body != null) {
+      if (typeof options.body === 'string') {
+        serialisedBody = options.body;
+      } else {
+        serialisedBody = JSON.stringify(options.body);
+        baseHeaders['Content-Type'] = 'application/json';
+      }
+    }
+
     const response = await fetch(input, {
+      method: options.method ?? 'GET',
       signal: controller.signal,
       headers: {
-        Accept: 'application/json',
+        ...baseHeaders,
         ...options.headers,
       },
+      body: serialisedBody,
     });
 
     if (!response.ok) {

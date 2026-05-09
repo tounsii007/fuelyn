@@ -1,0 +1,84 @@
+{
+  "$meta": {
+    "locale": "en-GB",
+    "name": "English",
+    "owner": "Fuelyn"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "back": "Back",
+    "more": "More",
+    "less": "Less",
+    "yes": "Yes",
+    "no": "No",
+    "off": "Off",
+    "on": "On",
+    "ok": "OK",
+    "close": "Close"
+  },
+  "filter": {
+    "diesel": "Diesel",
+    "e5": "Super E5",
+    "e10": "Super E10",
+    "open": "Open",
+    "top3": "Top 3",
+    "underAvg": "≤ market avg.",
+    "safe": "Safe",
+    "reset": "Reset",
+    "fuelType": "Fuel type",
+    "radius": "Search radius",
+    "sortBy": "Sort by",
+    "sortPrice": "Price",
+    "sortDistance": "Distance",
+    "sortValue": "Best value"
+  },
+  "stationCard": {
+    "navigateAria": "Start navigation to {name}",
+    "details": "Details",
+    "compare": "Compare",
+    "removeCompare": "Remove from compare",
+    "favorite": "Favourite",
+    "removeFavorite": "Remove favourite",
+    "report": "Report price",
+    "delta": "{delta} vs. avg",
+    "savings": "Save up to {amount}",
+    "open": "open",
+    "closed": "closed"
+  },
+  "advisor": {
+    "title": "AI recommendation",
+    "verdictBuy": "Refuel now",
+    "verdictWait": "Better wait",
+    "verdictNeutral": "No strong signal",
+    "confidenceLow": "Low confidence",
+    "confidenceMedium": "Medium confidence",
+    "confidenceHigh": "High confidence",
+    "explanation": "Explanation",
+    "tip": "Tip",
+    "outlook": "Outlook"
+  },
+  "empty": {
+    "noStations": "No stations found",
+    "tryWiderRadius": "Try a larger search radius or change your filters.",
+    "noLocation": "Location required",
+    "noLocationHelp": "Enable location permission or enter a demo address."
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "genericHelp": "This page couldn't load. Often it's just a transient blip — try again.",
+    "offline": "Offline",
+    "offlineHelp": "We cached your last data — once you're back online, Fuelyn will refresh.",
+    "rateLimit": "Too many requests — please try again later.",
+    "unauthenticated": "Please sign in to use this feature."
+  },
+  "install": {
+    "title": "Install Fuelyn as an app",
+    "subtitle": "Faster startup, offline map, push alerts on price drops.",
+    "accept": "Install",
+    "later": "Later"
+  }
+}

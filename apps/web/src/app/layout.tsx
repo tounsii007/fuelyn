@@ -5,6 +5,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
 import { NO_FLASH_SCRIPT } from '@/lib/theme/ThemeProvider';
+import { WebVitalsReporter } from '@/components/observability/WebVitalsReporter';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -67,7 +69,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-surface-secondary dark:bg-surface-dark text-gray-900 dark:text-gray-100">
+        <WebVitalsReporter />
         <Providers>{children}</Providers>
+        <InstallPrompt />
       </body>
     </html>
   );

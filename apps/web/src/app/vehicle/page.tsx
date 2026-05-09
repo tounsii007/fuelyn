@@ -8,7 +8,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { VehicleForm } from '@/components/vehicle/VehicleForm';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@fuelyn/core';
 import { computeRemainingRange } from '@fuelyn/core';
 
@@ -112,20 +111,8 @@ export default function VehiclePage() {
             </div>
           </div>
 
-          {!vehicle && (
-            <EmptyState
-              icon="🚗"
-              title="Kein Fahrzeug hinterlegt"
-              message="Trage dein Fahrzeug ein, um intelligente Tankempfehlungen zu erhalten."
-              action={{
-                label: 'Fahrzeug hinzufügen',
-                onClick: () => setVehicleFormOpen(true),
-              }}
-            />
-          )}
-
           {/* Fuel Cost Calculator */}
-          {vehicle && <FuelCostCalculator consumption={vehicle.consumption} />}
+          <FuelCostCalculator consumption={vehicle.consumption} />
         </div>
       )}
     </div>

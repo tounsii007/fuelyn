@@ -57,7 +57,7 @@ export default function StationDetailPage({
           icon={'\u26a0\ufe0f'}
           title="Tankstelle nicht gefunden"
           message="Die Daten konnten nicht geladen werden."
-          action={{ label: 'Zur\u00fcck', onClick: () => window.history.back() }}
+          action={{ label: 'Zurück', onClick: () => window.history.back() }}
         />
       </div>
     );
@@ -87,7 +87,7 @@ export default function StationDetailPage({
   const handleShare = async () => {
     const text = `${station.brand || station.name}\n${address}\n${FUEL_TYPES.map((ft: FuelType) => {
       const stationPrice = station.prices?.[ft];
-      return `${FUEL_TYPE_LABELS[ft]}: ${stationPrice != null ? `${formatPrice(stationPrice)} \u20ac` : '\u2014'}`;
+      return `${FUEL_TYPE_LABELS[ft]}: ${stationPrice != null ? `${formatPrice(stationPrice)} €` : '\u2014'}`;
     }).join('\n')}`;
 
     try {
@@ -123,7 +123,7 @@ export default function StationDetailPage({
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
-          Zur\u00fcck
+          Zurück
         </Link>
 
         <div className="relative flex items-start justify-between">
@@ -150,7 +150,7 @@ export default function StationDetailPage({
               station.isOpen ? 'bg-white/20 text-white' : 'bg-black/20 text-white/70'
             }`}
           >
-            {station.isOpen ? 'Ge\u00f6ffnet' : 'Geschlossen'}
+            {station.isOpen ? 'Geöffnet' : 'Geschlossen'}
           </span>
         </div>
       </div>

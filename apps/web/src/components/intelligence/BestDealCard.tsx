@@ -65,7 +65,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
   return (
     <article
       aria-label="Bester Treffer"
-      className="relative mx-4 mt-3 mb-4 overflow-hidden rounded-2xl
+      className="relative mx-3 mt-2 mb-2 overflow-hidden rounded-2xl
                  border border-[color:oklch(0.45_0.18_250/0.45)]
                  bg-gradient-to-br from-[color:oklch(0.20_0.05_250/0.95)]
                                   via-[color:oklch(0.18_0.07_255/0.85)]
@@ -90,9 +90,9 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                    bg-[radial-gradient(circle,_oklch(0.58_0.25_295/0.35)_0%,_transparent_70%)]"
       />
 
-      <div className="relative p-4">
+      <div className="relative p-3">
         {/* Header row — eyebrow + live indicator */}
-        <header className="flex items-center justify-between mb-3">
+        <header className="flex items-center justify-between mb-2">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
             <SparkleIcon />
             Top Deal
@@ -120,7 +120,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
         </Link>
 
         {/* Price hero */}
-        <div className="mt-4 flex items-baseline gap-3">
+        <div className="mt-2.5 flex items-baseline gap-3">
           <PriceTag price={station.prices?.[fuelType] ?? null} fuelType={fuelType} size="lg" />
           {savingsCt > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
@@ -135,7 +135,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
         </div>
 
         {/* Stat strip */}
-        <dl className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
+        <dl className="mt-2.5 grid grid-cols-3 gap-1.5 text-[11px]">
           <Stat icon={<RouteIcon />} label="Distanz">
             {formatDistance(station.dist)}
           </Stat>
@@ -175,7 +175,7 @@ function Stat({
         ? 'text-amber-300'
         : 'text-white/95';
   return (
-    <div className="flex flex-col gap-0.5 px-2.5 py-2 rounded-xl bg-white/5 border border-white/10">
+    <div className="flex flex-col gap-0.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10">
       <div className="flex items-center gap-1.5 text-[var(--color-fg-subtle)]">
         <span className="w-3 h-3 inline-flex">{icon}</span>
         <span className="text-[9px] font-medium uppercase tracking-wider">{label}</span>

@@ -221,7 +221,7 @@ export interface FavoriteStation {
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type AppLocale = 'de' | 'en' | 'en-US' | 'fr';
-export type MapStyle = 'standard' | 'dark' | 'satellite' | 'terrain';
+export type MapStyle = 'standard' | 'premium' | 'dark' | 'satellite' | 'terrain';
 export type BackgroundVariant = 'aurora' | 'sunset' | 'ocean' | 'forest' | 'cyber' | 'minimal';
 
 export interface AppSettings {

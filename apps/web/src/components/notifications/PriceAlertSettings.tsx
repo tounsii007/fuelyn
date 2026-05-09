@@ -71,7 +71,7 @@ export function PriceAlertSettings() {
   // Permission status label
   // ------------------------------------------------------------------
   const permissionLabel = (() => {
-    if (!isSupported) return 'Nicht unterst\u00FCtzt';
+    if (!isSupported) return 'Nicht unterstützt';
     if (permission === 'granted') return 'Erlaubt';
     if (permission === 'denied') return 'Blockiert';
     return 'Nicht angefragt';
@@ -92,7 +92,7 @@ export function PriceAlertSettings() {
             Preisalarme
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Push-Benachrichtigungen bei Preis\u00E4nderungen
+            Push-Benachrichtigungen bei Preisänderungen
           </p>
         </div>
         <button
@@ -173,9 +173,9 @@ export function PriceAlertSettings() {
                            dark:text-gray-100 focus:outline-none focus:ring-2
                            ${FUEL_RING_MAP[ft]}
                            disabled:opacity-40 disabled:cursor-not-allowed`}
-                aria-label={`Wunschpreis f\u00FCr ${FUEL_TYPE_LABELS[ft]}`}
+                aria-label={`Wunschpreis für ${FUEL_TYPE_LABELS[ft]}`}
               />
-              <span className="text-xs text-gray-400">\u20AC/L</span>
+              <span className="text-xs text-gray-400">€/L</span>
             </div>
           </div>
         ))}
@@ -184,7 +184,7 @@ export function PriceAlertSettings() {
       {/* ── Monitoring radius (read-only, from global filter) ── */}
       <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800/60 rounded-xl">
         <span className="text-xs text-gray-600 dark:text-gray-300">
-          \u00DCberwachungsradius
+          Überwachungsradius
         </span>
         <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">
           {radiusKm} km

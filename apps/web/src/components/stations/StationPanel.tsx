@@ -163,7 +163,7 @@ export function StationPanel() {
                 <div className="text-center">
                   <p className="text-xs text-gray-400 dark:text-gray-500">Volltanken</p>
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    {(price * vehicle.tankCapacity).toFixed(2)} \u20ac
+                    {(price * vehicle.tankCapacity).toFixed(2)} €
                   </p>
                 </div>
               )}

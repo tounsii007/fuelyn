@@ -25,6 +25,9 @@ import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
+import { AIInsightsHero } from '@/components/intelligence/AIInsightsHero';
+import { AIAssistant } from '@/components/intelligence/AIAssistant';
+import { SmartFilterChips, applySmartChips, type SmartFilterId } from '@/components/stations/SmartFilterChips';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
@@ -33,7 +36,7 @@ import type {
   UnifiedFuelStation,
   ChargingStation as CoreChargingStation,
 } from '@fuelyn/core';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Leaflet requires browser APIs — load dynamically with no SSR
 const StationMap = dynamic(
@@ -122,6 +125,38 @@ export default function HomePage() {
   const mapCenter = useAppStore((s) => s.mapCenter);
   const mapRadiusKm = useAppStore((s) => s.mapRadiusKm);
   const setMapView = useAppStore((s) => s.setMapView);
+
+  /**
+   * Phase 6 — Mobile bottom-sheet state.
+   *
+   * On screens < lg the side-panel is repositioned as a floating
+   * bottom drawer over the map with two snap-points:
+   *   • peek (default) — ~16 vh, just enough to show the AI verdict
+   *     headline + price-stats summary
+   *   • full — ~88 vh, full station list + intelligence cards
+   *
+   * `bottomSheetFull` toggles between them. Drag-to-resize is left
+   * for a future iteration; the tap-handle keeps this MVP simple.
+   * On desktop (lg+) this state is ignored — the aside renders as
+   * the existing fixed-width side rail.
+   */
+  const [bottomSheetFull, setBottomSheetFull] = useState(false);
+
+  /**
+   * Phase 7 — Smart-filter chip state.
+   * Multi-select, persisted only for this session; toggling a chip
+   * narrows the visible recommendations list without a backend
+   * round-trip.
+   */
+  const [smartFilters, setSmartFilters] = useState<Set<SmartFilterId>>(() => new Set());
+  const toggleSmartFilter = useCallback((id: SmartFilterId) => {
+    setSmartFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSmartFilters = useCallback(() => setSmartFilters(new Set()), []);
 
   const searchLat = mapCenter?.lat ?? userLocation?.lat ?? null;
   const searchLng = mapCenter?.lng ?? userLocation?.lng ?? null;
@@ -357,9 +392,9 @@ export default function HomePage() {
           <>
             {insecureContext && <InsecureContextBanner />}
 
-            <div className="flex h-full">
+            <div className="flex h-full min-h-0">
               {/* Map Panel */}
-              <div className={`${isMapView ? 'flex-1' : 'hidden lg:flex lg:flex-1'} relative`}>
+              <div className={`${isMapView ? 'flex-1' : 'hidden lg:flex lg:flex-1'} relative min-h-0`}>
                 <StationMap
                   recommendations={recommendations}
                   chargingStations={showCharging ? chargingStations : []}
@@ -372,45 +407,99 @@ export default function HomePage() {
                 <StationPanel />
               </div>
 
-              {/* Side panel — modern glass surface */}
+              {/* Side panel — modern glass surface
+                  Mobile + map view: bottom-sheet (Tesla/Uber style)
+                  with peek/full snap-points, sliding height transition.
+                  Desktop: fixed-width side rail (unchanged).         */}
               <aside
                 className={[
-                  isMapView ? 'hidden lg:flex' : 'flex',
+                  isMapView
+                    ? 'flex fixed lg:static inset-x-0 bottom-0 z-30 lg:z-auto rounded-t-3xl lg:rounded-none'
+                    : 'flex',
                   'flex-col w-full lg:w-[420px] xl:w-[460px]',
-                  'border-l border-[var(--color-border-subtle)]',
-                  'bg-[var(--color-bg)]/85 backdrop-blur-md',
-                  'overflow-y-auto scrollbar-hide',
+                  // Mobile: dynamic height switches between peek / full.
+                  // Desktop: full column height as before.
+                  isMapView
+                    ? bottomSheetFull
+                      ? 'h-[88vh] lg:h-full'
+                      : 'h-[16vh] lg:h-full'
+                    : 'h-full',
+                  'min-h-0',
+                  'border-t lg:border-t-0 lg:border-l border-[var(--color-border-subtle)]',
+                  'bg-[var(--color-bg)]/92 lg:bg-[var(--color-bg)]/85 backdrop-blur-xl',
+                  'shadow-[0_-12px_40px_rgba(0,0,0,0.20)] lg:shadow-none',
+                  'transition-[height] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+                  // Thin custom scrollbar (defined in globals.css) so the
+                  // user sees the scroll affordance without it visually
+                  // dominating the panel.
+                  'overflow-y-auto overscroll-contain fy-scroll-thin',
                 ].join(' ')}
               >
-                <div className="sticky top-0 z-10 bg-[var(--color-bg)]/85 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
+                {/* Mobile drag-handle (tap to toggle peek/full).
+                    Hidden on lg+ where the aside is a side rail. */}
+                {isMapView && (
+                  <button
+                    type="button"
+                    onClick={() => setBottomSheetFull((v) => !v)}
+                    aria-label={bottomSheetFull ? 'Bottom-Sheet einklappen' : 'Bottom-Sheet ausklappen'}
+                    className="lg:hidden sticky top-0 z-20 w-full flex items-center justify-center
+                               py-2 bg-transparent"
+                  >
+                    <span className="block w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  </button>
+                )}
+
+                <div className="sticky top-0 lg:top-0 z-10 bg-[var(--color-bg)]/85 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
                   <SortBar />
                   <div className="px-4 pt-3 pb-3">
                     <AddressSearch />
                   </div>
                 </div>
+                <AIInsightsHero recommendations={recommendations} />
                 <SearchHistory />
                 <BestDealCard recommendations={recommendations} />
                 <PriceStats recommendations={recommendations} />
 
-                {recommendations.length > 0 && (
-                  <div className="px-4 space-y-3 pb-2 fy-enter">
-                    <FuelAdvisor />
-                    <SavingsCalculator recommendations={recommendations} />
-                  </div>
-                )}
-
-                <StationList
+                {/* Phase 7 — Smart filter chip-bar. Sticky to keep the
+                    chips visible while the user scrolls the list. */}
+                <SmartFilterChips
                   recommendations={recommendations}
+                  active={smartFilters}
+                  onToggle={toggleSmartFilter}
+                  fuelType={filter.fuelType}
+                  onClear={clearSmartFilters}
+                />
+
+                {/* Station list comes right after the stats so the user sees
+                    every nearby station immediately without having to scroll
+                    past the AI advisor + savings calculator first. The
+                    intelligence section sits below — it's "context" once
+                    you've already seen the data. */}
+                <StationList
+                  recommendations={
+                    applySmartChips(recommendations, smartFilters, filter.fuelType) as typeof recommendations
+                  }
                   isLoading={isLoading}
                   isError={isError}
                   onStationClick={handleStationClick}
                   onRetry={() => void refetch()}
                 />
+
+                {recommendations.length > 0 && (
+                  <div className="px-4 space-y-3 pb-2 pt-2 border-t border-[var(--color-border-subtle)] fy-enter">
+                    <FuelAdvisor />
+                    <SavingsCalculator recommendations={recommendations} />
+                  </div>
+                )}
               </aside>
             </div>
           </>
         )}
       </AppShell>
+
+      {/* AI Assistant FAB + Drawer — sits above everything,
+          available even when the sidebar is collapsed on mobile. */}
+      <AIAssistant />
 
       {/* Mobile floating bottom nav */}
       {!isNavigating && <BottomNav />}

@@ -41,7 +41,7 @@ function buildCsp(): string {
     // Map tiles fetched by the service worker via fetch() go through
     // `connect-src`, not `img-src`. List every tile CDN the StationMap
     // can switch between (light / dark / satellite / terrain).
-    "connect-src 'self' https://creativecommons.tankerkoenig.de https://api.openchargemap.io https://api.openai.com https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com",
+    "connect-src 'self' https://creativecommons.tankerkoenig.de https://api.openchargemap.io https://api.openai.com https://nominatim.openstreetmap.org https://router.project-osrm.org https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

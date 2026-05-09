@@ -51,8 +51,9 @@ export function priceMarkerKey(
   isOpen: boolean,
   reachability: 'safe' | 'tight' | 'unreachable',
   brand: string,
+  priceTier: 'low' | 'mid' | 'high' = 'mid',
 ): string {
-  return buildKey('price', price, isBest, isOpen, reachability, brand);
+  return buildKey('price', price, isBest, isOpen, reachability, brand, priceTier);
 }
 
 /**

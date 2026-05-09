@@ -1,6 +1,29 @@
 import path from 'node:path';
 import type { NextConfig } from 'next';
 
+// Phase A3 — Bundle analyzer.
+// Wraps the config only when ANALYZE=true is set, so the production
+// build path stays unchanged. Run via:
+//   ANALYZE=true npm run build --workspace=@fuelyn/web
+// Then open .next/analyze/{client,nodejs,edge}.html
+//
+// We `require()` lazily so the dependency is optional — if it's not
+// installed (e.g. in the container build), the call no-ops instead
+// of throwing at import time.
+type AnalyzerWrapper = (cfg: NextConfig) => NextConfig;
+function loadAnalyzer(): AnalyzerWrapper {
+  if (process.env.ANALYZE !== 'true') return (c) => c;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const wrap = require('@next/bundle-analyzer')({ enabled: true });
+    return wrap as AnalyzerWrapper;
+  } catch {
+    // Dependency not installed — silently fall back to identity wrapper.
+    // Add @next/bundle-analyzer to devDependencies to enable.
+    return (c) => c;
+  }
+}
+
 const nextConfig: NextConfig = {
   // Required for the production Docker image: emits a self-contained server
   // bundle in `.next/standalone/` (with all its node_modules) that the
@@ -47,4 +70,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default loadAnalyzer()(nextConfig);

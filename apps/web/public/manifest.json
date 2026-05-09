@@ -2,15 +2,54 @@
   "name": "Fuelyn — Günstig & schlau tanken",
   "short_name": "Fuelyn",
   "description": "Finde die beste Tankstelle in deiner Nähe. Nicht nur die billigste — die sinnvollste.",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "background_color": "#FFFFFF",
   "theme_color": "#2575EA",
+  "lang": "de-DE",
+  "dir": "ltr",
+  "categories": ["navigation", "travel", "utilities", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Tankstellen in der Nähe",
+      "short_name": "In der Nähe",
+      "description": "Geh direkt zur Karte mit den Stationen in deinem Umkreis.",
+      "url": "/?intent=nearby",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Routenplanung",
+      "short_name": "Route",
+      "description": "Plane eine Route mit optimalen Tank-Stopps.",
+      "url": "/route-planner",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Statistiken",
+      "short_name": "Stats",
+      "description": "Preisverläufe und Tank-Trends in deiner Region.",
+      "url": "/stats",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
+  "related_applications": []
 }
