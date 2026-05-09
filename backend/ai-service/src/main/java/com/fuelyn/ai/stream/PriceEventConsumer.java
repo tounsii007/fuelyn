@@ -1,5 +1,7 @@
 package com.fuelyn.ai.stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fuelyn.ai.service.AdvisorService;
 import com.fuelyn.common.events.EventEnvelope;
 import com.fuelyn.common.events.PriceUpdatedEvent;
@@ -32,6 +34,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PriceEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(PriceEventConsumer.class);
+
+    /**
+     * Shared, thread-safe Jackson mapper for the {@link #unwrap} hot path.
+     * Constructing an ObjectMapper and registering JavaTimeModule per
+     * event was wasteful — module registration walks reflection metadata
+     * and ObjectMapper allocation triggers a non-trivial graph of
+     * deserializer caches. Sharing one immutable, post-configuration
+     * mapper is the documented best practice (see jackson-databind
+     * "Reusable" section).
+     */
+    private static final ObjectMapper SHARED_MAPPER =
+            new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final AdvisorService advisorService;
     /** Total events received since startup (exposed for /actuator/metrics). */
@@ -92,9 +106,7 @@ public class PriceEventConsumer {
         if (raw == null) return null;
         if (raw instanceof PriceUpdatedEvent already) return already;
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper()
-                    .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-                    .convertValue(raw, PriceUpdatedEvent.class);
+            return SHARED_MAPPER.convertValue(raw, PriceUpdatedEvent.class);
         } catch (Exception e) {
             log.warn("Could not coerce payload to PriceUpdatedEvent: {}", e.getMessage());
             return null;
