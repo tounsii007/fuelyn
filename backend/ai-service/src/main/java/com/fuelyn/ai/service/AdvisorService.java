@@ -6,6 +6,7 @@ import com.fuelyn.ai.backend.EnrichmentBackend;
 import com.fuelyn.ai.fallback.LocalHeuristicFallback;
 import com.fuelyn.ai.model.AIAdvisorRequest;
 import com.fuelyn.ai.model.AIAdvisorResponse;
+import com.fuelyn.ai.stream.PriceHistoryBuffer;
 import com.fuelyn.ai.telemetry.RegretLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,10 +71,13 @@ public class AdvisorService {
     private final List<EnrichmentBackend> orderedBackends;
     private final boolean enrichmentEnabled;
     private final RegretLogger regretLogger;
+    /** Per-station rolling history fed by the Kafka consumer; nullable for tests. */
+    private final PriceHistoryBuffer historyBuffer;
 
     /**
-     * Test-friendly overload — RegretLogger is optional so unit tests
-     * can construct the service without wiring up SLF4J marker plumbing.
+     * Test-friendly overload — RegretLogger and PriceHistoryBuffer are
+     * optional so unit tests can construct the service without wiring
+     * up Kafka or SLF4J marker plumbing.
      */
     public AdvisorService(
             List<EnrichmentBackend> backends,
@@ -81,7 +86,18 @@ public class AdvisorService {
             long cacheMaxSize,
             long cacheTtlMinutes
     ) {
-        this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, null);
+        this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, null, null);
+    }
+
+    public AdvisorService(
+            List<EnrichmentBackend> backends,
+            boolean enrichmentEnabled,
+            String providersCsv,
+            long cacheMaxSize,
+            long cacheTtlMinutes,
+            RegretLogger regretLogger
+    ) {
+        this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, regretLogger, null);
     }
 
     @Autowired(required = false)
@@ -91,9 +107,11 @@ public class AdvisorService {
             @Value("${fuelyn.ai.providers:ollama,openai}") String providersCsv,
             @Value("${fuelyn.ai.cache.max-size:200}") long cacheMaxSize,
             @Value("${fuelyn.ai.cache.ttl-minutes:15}") long cacheTtlMinutes,
-            RegretLogger regretLogger
+            RegretLogger regretLogger,
+            PriceHistoryBuffer historyBuffer
     ) {
         this.regretLogger = regretLogger;
+        this.historyBuffer = historyBuffer;
         this.enrichmentEnabled = enrichmentEnabled;
         this.responseCache = Caffeine.newBuilder()
                 .maximumSize(cacheMaxSize)
@@ -101,10 +119,11 @@ public class AdvisorService {
                 .build();
         this.orderedBackends = orderBackends(backends, providersCsv);
 
-        log.info("AdvisorService ready — enrichment={}, providers={}, cache={}min×{}",
+        log.info("AdvisorService ready — enrichment={}, providers={}, cache={}min×{}, buffer={}",
                 enrichmentEnabled,
                 orderedBackends.stream().map(EnrichmentBackend::name).toList(),
-                cacheTtlMinutes, cacheMaxSize);
+                cacheTtlMinutes, cacheMaxSize,
+                historyBuffer != null ? "ON" : "OFF");
     }
 
     /**
@@ -133,26 +152,126 @@ public class AdvisorService {
             return cached.withFromCache(true);
         }
 
-        // [2] Heuristic baseline (always)
-        AIAdvisorResponse baseline = LocalHeuristicFallback.analyze(request);
+        // [2] Deep-analysis enrichment — pull stored Kafka history into
+        // the request before any signal runs, so EWMA / change-point /
+        // forecaster / Bayes prior all see real per-station observations
+        // instead of whatever the BFF happened to forward (often empty).
+        AIAdvisorRequest enrichedRequest = enrichWithHistory(request);
 
-        // [3] Optional LLM enrichment
+        // [3] Heuristic baseline (always)
+        AIAdvisorResponse baseline = LocalHeuristicFallback.analyze(enrichedRequest);
+
+        // [4] Optional LLM enrichment
         AIAdvisorResponse result = baseline;
         if (enrichmentEnabled && !orderedBackends.isEmpty()) {
-            result = tryEnrichmentChain(request, baseline);
+            result = tryEnrichmentChain(enrichedRequest, baseline);
         }
 
-        // [4] Cache final result
+        // [5] Cache final result
         responseCache.put(cacheKey, result);
 
-        // [5] Telemetry — non-blocking, never alters the response
+        // [6] Telemetry — non-blocking, never alters the response
         if (regretLogger != null) {
             try {
-                regretLogger.record(UUID.randomUUID().toString().substring(0, 8), request, result);
+                regretLogger.record(UUID.randomUUID().toString().substring(0, 8), enrichedRequest, result);
             } catch (Exception ignored) { /* never break the request path */ }
         }
 
         return result;
+    }
+
+    /**
+     * Augment {@code request.priceHistory()} with stored Kafka observations
+     * for the cheapest station in the request. Cheapest is what every
+     * signal — Ewma trend, change-point, forecaster — keys on, so giving
+     * it real history is the highest-impact lever per request.
+     *
+     * <p>Behaviour matrix:
+     * <ul>
+     *   <li>Buffer disabled / empty → return request unchanged</li>
+     *   <li>Caller already supplied ≥ 4 history points → return request unchanged
+     *       (caller knows their own data better than the broker)</li>
+     *   <li>Otherwise → return a new record with priceHistory built from
+     *       the buffer's cheapest-station tuple</li>
+     * </ul>
+     *
+     * Records are immutable; we copy via the canonical 8-arg constructor
+     * so future fields don't silently get dropped.</p>
+     */
+    private AIAdvisorRequest enrichWithHistory(AIAdvisorRequest request) {
+        if (historyBuffer == null) return request;
+        if (request.prices() == null || request.prices().isEmpty()) return request;
+
+        // We previously short-circuited on `priceHistory().size() >= 4`
+        // — but the caller's history might be a 4-point window of OLD
+        // (overnight) snapshots, while the buffer holds fresher Kafka
+        // events. Compare the latest timestamps and only skip when the
+        // request already has the freshest data we can offer.
+        AIAdvisorRequest.StationPrice cheapest = request.prices().stream()
+                .min(Comparator.comparingDouble(AIAdvisorRequest.StationPrice::price))
+                .orElse(null);
+        if (cheapest == null) return request;
+
+        // The Kafka payload uses the canonical Tankerkönig station UUID.
+        // The advisor request's StationPrice has only stationName, so we
+        // need a compatible identifier — fall back to stationName which
+        // is what the price-service publishes as the brand+street tuple.
+        String key = cheapest.stationName();
+        Optional<PriceHistoryBuffer.Aggregate> agg =
+                historyBuffer.aggregate(key, request.fuelType());
+        if (agg.isEmpty()) {
+            log.debug("Deep-analysis: no buffered history for {} ({})", key, request.fuelType());
+            return request;
+        }
+
+        // Caller already shipped a richer-and-fresher window? Trust it.
+        // We define "fresher" as: caller's last point's timestamp string
+        // sorts ≥ buffer's last observation. The advisor PricePoint
+        // schema serialises Instant as ISO-8601, which is lexicographic-
+        // sortable, so this is correct without parsing.
+        if (request.priceHistory() != null && request.priceHistory().size() >= 8) {
+            String callerLast = request.priceHistory()
+                    .get(request.priceHistory().size() - 1).timestamp();
+            String bufferLast = agg.get().last().toString();
+            if (callerLast != null && callerLast.compareTo(bufferLast) >= 0) {
+                log.debug("Deep-analysis: caller already supplied {} points up to {} "
+                                + "(buffer last={}) — leaving untouched",
+                        request.priceHistory().size(), callerLast, bufferLast);
+                return request;
+            }
+        }
+
+        List<AIAdvisorRequest.PricePoint> derived = historyBuffer
+                .recent(key, request.fuelType())
+                .stream()
+                .map(p -> new AIAdvisorRequest.PricePoint(p.price(), p.observedAt().toString()))
+                .toList();
+
+        if (derived.size() < 4) {
+            log.debug("Deep-analysis: only {} history points for {}, leaving untouched",
+                    derived.size(), key);
+            return request;
+        }
+
+        log.info("Deep-analysis: injecting {} buffered points for {} ({}) — "
+                        + "min={}, max={}, μ={}, σ={}, z={}",
+                derived.size(), key, request.fuelType(),
+                String.format("%.3f", agg.get().minPrice()),
+                String.format("%.3f", agg.get().maxPrice()),
+                String.format("%.3f", agg.get().meanPrice()),
+                String.format("%.4f", agg.get().stdDev()),
+                String.format("%.2f", agg.get().currentZ()));
+
+        return new AIAdvisorRequest(
+                request.prices(),
+                request.fuelType(),
+                derived,
+                request.lat(),
+                request.lng(),
+                request.fillUpLiters(),
+                request.vehicleProfile(),
+                request.destination()
+        );
     }
 
     /**
@@ -228,7 +347,43 @@ public class AdvisorService {
         double lng = request.lng() == null ? 0 : request.lng();
         double rLat = Math.round(lat * 100.0) / 100.0;
         double rLng = Math.round(lng * 100.0) / 100.0;
-        int sig = request.prices() == null ? 0 : request.prices().size();
-        return request.fuelType() + ":" + rLat + ":" + rLng + ":" + sig;
+
+        // Old key signature was just `prices.size()`, which produced false
+        // hits whenever the cohort kept the same count but the underlying
+        // values changed (price drop on the cheapest station, brand swap,
+        // etc.). We now fold in:
+        //   • cohort size      — drives the heuristic confidence band
+        //   • cheapest price   — anything that moves the recommendation
+        //   • average price    — stabilises the key against single-station
+        //                        outliers while still detecting cohort drift
+        // Both prices are bucketed at 0.5 ct/L granularity so micro jitter
+        // (Tankerkönig polls drift by 0.001 €/L) doesn't blow the cache.
+        int size = 0;
+        long cheapestBucket = 0;
+        long avgBucket = 0;
+        if (request.prices() != null && !request.prices().isEmpty()) {
+            size = request.prices().size();
+            double cheapest = Double.POSITIVE_INFINITY;
+            double sum = 0;
+            int n = 0;
+            for (var sp : request.prices()) {
+                double p = sp.price();
+                if (Double.isFinite(p) && p > 0) {
+                    if (p < cheapest) cheapest = p;
+                    sum += p;
+                    n++;
+                }
+            }
+            if (n > 0) {
+                cheapestBucket = Math.round(cheapest * 200.0); // 0.005 €/L
+                avgBucket = Math.round((sum / n) * 200.0);
+            }
+        }
+
+        return request.fuelType()
+                + ":" + rLat + ":" + rLng
+                + ":" + size
+                + ":" + cheapestBucket
+                + ":" + avgBucket;
     }
 }

@@ -87,6 +87,22 @@ resilience4j:
         retry-exceptions:
           - java.net.ConnectException
           - java.net.SocketTimeoutException
+  # ─── Bulkhead — Phase A2 ────────────────────────────────────
+  # Caps concurrent inference calls. Ollama default config is
+  # OLLAMA_NUM_PARALLEL=1, so multiple in-flight requests
+  # serialise on the model anyway — a 4-permit bulkhead just
+  # absorbs short bursts before excess waits or gets rejected.
+  # OpenAI is paid per-token, so we let more parallel calls
+  # through (8) but still cap to avoid runaway billing on a
+  # bot storm.
+  bulkhead:
+    instances:
+      ollama-enrich:
+        max-concurrent-calls: ${BULKHEAD_OLLAMA_MAX:4}
+        max-wait-duration: ${BULKHEAD_OLLAMA_WAIT:2s}
+      openai-enrich:
+        max-concurrent-calls: ${BULKHEAD_OPENAI_MAX:8}
+        max-wait-duration: ${BULKHEAD_OPENAI_WAIT:2s}
 
 management:
   server:

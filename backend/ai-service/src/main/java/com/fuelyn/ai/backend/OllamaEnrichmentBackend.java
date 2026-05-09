@@ -3,6 +3,7 @@ package com.fuelyn.ai.backend;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fuelyn.ai.model.AIAdvisorRequest;
 import com.fuelyn.ai.model.AIAdvisorResponse;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,8 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Local LLM enrichment via Ollama
@@ -83,21 +86,52 @@ public class OllamaEnrichmentBackend implements EnrichmentBackend {
         return "ollama:" + model;
     }
 
+    /**
+     * Phase A2 — cached liveness probe.
+     *
+     * <p>Hot path: every advisor request used to do a fresh /api/tags HTTP
+     * call to {@code isAvailable()}. With request-level concurrency that's
+     * O(N) probes for an LLM that goes cold for hours at a time — wasted
+     * connections, wasted latency, and worse: each failed probe costs a
+     * full TCP timeout. We now cache the last result for {@value #LIVENESS_CACHE_MS}
+     * ms; failures invalidate immediately so the next request retries.</p>
+     */
+    private static final long LIVENESS_CACHE_MS = 5_000L;
+    private final AtomicReference<Boolean> lastLiveness = new AtomicReference<>();
+    private final AtomicLong lastLivenessAt = new AtomicLong(0);
+
     @Override
     public boolean isAvailable() {
-        // Cheap reachability probe — Ollama exposes /api/tags listing
-        // installed models. We don't care about content; HTTP 200 is
-        // enough proof of life. A failure here is logged but does NOT
-        // throw — the orchestrator will simply skip this backend.
+        long now = System.currentTimeMillis();
+        Boolean cached = lastLiveness.get();
+        // Cache only POSITIVE results — a negative outcome retries every
+        // request so transient outages clear quickly. The Resilience4j
+        // CircuitBreaker handles the case where Ollama stays down for a
+        // long time (open state short-circuits without HTTP).
+        if (cached != null && cached && (now - lastLivenessAt.get()) < LIVENESS_CACHE_MS) {
+            return true;
+        }
         try {
             ResponseEntity<String> probe = restTemplate.getForEntity(baseUrl + "/api/tags", String.class);
-            return probe.getStatusCode().is2xxSuccessful();
+            boolean ok = probe.getStatusCode().is2xxSuccessful();
+            lastLiveness.set(ok);
+            if (ok) lastLivenessAt.set(now);
+            return ok;
         } catch (Exception e) {
             log.debug("Ollama unreachable at {}: {}", baseUrl, e.getMessage());
+            lastLiveness.set(false);
             return false;
         }
     }
 
+    /**
+     * Phase A2 — Bulkhead. Caps concurrent Ollama calls to a small number
+     * so a slow inference (cold-load can take 15 s on CPU) doesn't tie up
+     * the whole HTTP thread pool. Tuned via {@code resilience4j.bulkhead.
+     * instances.ollama-enrich.*} in {@code application.yml}; falls through
+     * to the next backend in the chain if the bulkhead rejects the call.
+     */
+    @Bulkhead(name = "ollama-enrich", fallbackMethod = "bulkheadRejected")
     @Override
     public AIAdvisorResponse enrich(AIAdvisorRequest request, AIAdvisorResponse baseline) {
         long start = System.currentTimeMillis();
@@ -153,5 +187,19 @@ public class OllamaEnrichmentBackend implements EnrichmentBackend {
             throw new IllegalStateException(
                     "Failed to parse Ollama JSON content: " + parseError.getMessage(), parseError);
         }
+    }
+
+    /**
+     * Bulkhead-rejection fallback. Signature mirrors the original method
+     * plus a trailing {@code Throwable}. We surface the rejection as a
+     * runtime exception so {@code AdvisorService.tryEnrichmentChain} treats
+     * us as failed and tries the next provider. Returning the baseline
+     * here would silently swallow the over-capacity signal — bad for
+     * observability.
+     */
+    @SuppressWarnings("unused")
+    private AIAdvisorResponse bulkheadRejected(AIAdvisorRequest request, AIAdvisorResponse baseline, Throwable t) {
+        log.warn("[Ollama bulkhead] over capacity — falling through to next backend ({})", t.getMessage());
+        throw new IllegalStateException("ollama bulkhead rejected", t);
     }
 }

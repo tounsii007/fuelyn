@@ -107,8 +107,33 @@ public final class LlmPromptBuilder {
                             .append("\n"));
         }
         if (request.priceHistory() != null && !request.priceHistory().isEmpty()) {
+            // Aggregated summary first — gives the LLM a one-glance read
+            // on the buffered window before it parses the raw points.
+            // Mean ± stddev + min/max bound the noise floor; the latest
+            // price's z-score tells the model whether the current price
+            // is unusual *for this station*, not just vs. its neighbours.
+            var hist = request.priceHistory();
+            double sum = 0, min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+            for (var h : hist) {
+                sum += h.price();
+                if (h.price() < min) min = h.price();
+                if (h.price() > max) max = h.price();
+            }
+            double mean = sum / hist.size();
+            double sumSq = 0;
+            for (var h : hist) {
+                double d = h.price() - mean;
+                sumSq += d * d;
+            }
+            double stdDev = hist.size() > 1 ? Math.sqrt(sumSq / (hist.size() - 1)) : 0;
+            double latest = hist.get(hist.size() - 1).price();
+            double z = stdDev > 1e-6 ? (latest - mean) / stdDev : 0;
+            sb.append(String.format(Locale.GERMANY,
+                    "- Preisverlauf-Aggregat (n=%d): min %.3f € / Ø %.3f € (σ %.4f) / max %.3f €. "
+                            + "Aktuell %.3f € → z=%.2f.%n",
+                    hist.size(), min, mean, stdDev, max, latest, z));
             sb.append("- Preisverlauf (Auszug):\n");
-            request.priceHistory().stream().limit(10).forEach(h ->
+            hist.stream().limit(10).forEach(h ->
                     sb.append("    • ").append(h.timestamp())
                             .append(": ").append(String.format(Locale.GERMANY, "%.3f €", h.price()))
                             .append("\n"));
