@@ -102,8 +102,35 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
 
     /**
      * Delete old snapshots for data retention compliance.
+     *
+     * <p>Used internally as the inner step of the chunked variant
+     * {@code PriceCollectorService.cleanupOldData}. A single unbounded
+     * DELETE on a 90-day-deep table can hold a Postgres lock on
+     * price_snapshots for minutes, blocking concurrent inserts from
+     * the collection cycle. Prefer {@link #deleteOldestBatch} from
+     * the service layer.</p>
      */
     @Modifying
     @Query("DELETE FROM PriceSnapshot p WHERE p.timestamp < :before")
     int deleteByTimestampBefore(@Param("before") LocalDateTime before);
+
+    /**
+     * Returns the IDs of up to {@code limit} oldest snapshots beyond
+     * the retention cutoff. The service deletes by ID in chunks so the
+     * whole purge fits inside short transactions that don't starve the
+     * polling writes.
+     */
+    @Query("SELECT p.id FROM PriceSnapshot p WHERE p.timestamp < :before ORDER BY p.timestamp ASC")
+    List<Long> findIdsBeforeTimestamp(
+            @Param("before") LocalDateTime before,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Bulk delete by primary-key list. Uses the implicit pk-index for
+     * O(log n) per row and stays well below typical Postgres lock-wait
+     * thresholds when the chunk size is conservative (~5k).
+     */
+    @Modifying
+    @Query("DELETE FROM PriceSnapshot p WHERE p.id IN :ids")
+    int deleteByIdIn(@Param("ids") Collection<Long> ids);
 }

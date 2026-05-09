@@ -295,14 +295,53 @@ public class PriceCollectorService {
     }
 
     /**
-     * Deletes price snapshots older than the configured retention period.
+     * Conservative chunk size for the chunked retention purge. 5 000 rows
+     * per DELETE keeps each transaction well under typical Postgres
+     * lock-wait timeouts and lets the polling writer interleave between
+     * chunks instead of getting blocked behind a multi-million-row purge.
      */
-    @Transactional
+    private static final int CLEANUP_CHUNK_SIZE = 5_000;
+
+    /**
+     * Deletes price snapshots older than the configured retention period.
+     *
+     * <p>Performed in {@value #CLEANUP_CHUNK_SIZE}-row chunks rather than
+     * a single unbounded {@code DELETE … WHERE timestamp &lt; ?}, because
+     * on a 90-day-deep table the unbounded statement can hold a write
+     * lock on {@code price_snapshots} for minutes — long enough to stall
+     * the collection cycle and trip the Tankerkönig RateLimiter into a
+     * timeout cascade. Each chunk runs in its own short transaction
+     * (REQUIRES_NEW) so the loop yields between chunks.</p>
+     *
+     * @return total number of rows deleted across all chunks.
+     */
     public int cleanupOldData() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(maxHistoryDays);
-        int deleted = snapshotRepo.deleteByTimestampBefore(cutoff);
-        log.info("Cleaned up {} old price snapshots (older than {} days)", deleted, maxHistoryDays);
-        return deleted;
+        int totalDeleted = 0;
+        int chunk;
+        do {
+            chunk = self.deleteRetentionChunk(cutoff, CLEANUP_CHUNK_SIZE);
+            totalDeleted += chunk;
+        } while (chunk == CLEANUP_CHUNK_SIZE);
+        log.info("Cleaned up {} old price snapshots (older than {} days, chunk={})",
+                totalDeleted, maxHistoryDays, CLEANUP_CHUNK_SIZE);
+        return totalDeleted;
+    }
+
+    /**
+     * Deletes one retention chunk in its own short-lived transaction.
+     * Public for the @Transactional proxy boundary; not part of the
+     * external API of the service.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
+        List<Long> ids = snapshotRepo.findIdsBeforeTimestamp(
+                cutoff,
+                org.springframework.data.domain.PageRequest.of(0, chunkSize));
+        if (ids.isEmpty()) {
+            return 0;
+        }
+        return snapshotRepo.deleteByIdIn(ids);
     }
 
     /** City coordinate record. */
