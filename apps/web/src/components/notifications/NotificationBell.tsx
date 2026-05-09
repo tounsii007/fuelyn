@@ -16,6 +16,14 @@ export function NotificationBell() {
 
   const priceAlertEnabled = useAppStore((s) => s.priceAlertEnabled);
   const notificationPermission = useAppStore((s) => s.notificationPermission);
+  // Count of price-alarm rules that are currently armed (enabled
+  // === true). Drives the numeric pill on the bell so the user
+  // can tell at a glance how many alarms they have running.
+  // Subscribes to the alerts array directly so the badge updates
+  // when rules are toggled in /alerts.
+  const armedAlertCount = useAppStore((s) =>
+    s.priceAlerts.reduce((acc, a) => acc + (a.enabled ? 1 : 0), 0),
+  );
 
   const isActive = priceAlertEnabled && notificationPermission === 'granted';
 
@@ -70,18 +78,42 @@ export function NotificationBell() {
           />
         </svg>
 
-        {/* Active indicator dot */}
-        {isActive && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-surface-dark-secondary" />
+        {/*
+          Two-tier indicator on the bell:
+            - When ≥1 alarm is armed → numeric pill (most useful
+              signal: "how many things am I tracking?"). Capped at
+              "9+" so the pill stays one digit wide.
+            - Else when push-notifications enabled → small dot
+              (existing behaviour, "alerts surface enabled but
+              you have no rules yet").
+          The pill wins over the dot because the count is more
+          informative and visually subsumes the "active" hint.
+        */}
+        {armedAlertCount > 0 ? (
+          <span
+            aria-label={`${armedAlertCount} aktive Preisalarme`}
+            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full
+                       bg-brand-600 text-white text-[9px] font-semibold leading-4 text-center
+                       ring-2 ring-white dark:ring-surface-dark-secondary"
+          >
+            {armedAlertCount > 9 ? '9+' : armedAlertCount}
+          </span>
+        ) : (
+          isActive && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-surface-dark-secondary" />
+          )
         )}
       </button>
 
-      {/* Dropdown Panel */}
+      {/* Dropdown Panel — z-[1100] sits above Leaflet's map controls
+           (z-[1000]). Without this the bell-popup renders BEHIND
+           the zoom/locate/refresh column on the right edge of the
+           map and you can read its content through the buttons. */}
       {open && (
         <div
           className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-surface-dark-secondary
                      rounded-2xl shadow-sheet border border-gray-100 dark:border-gray-700
-                     p-4 z-50 animate-slide-down"
+                     p-4 z-[1100] animate-slide-down"
         >
           <PriceAlertSettings />
         </div>
