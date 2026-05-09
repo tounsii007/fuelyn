@@ -3,6 +3,7 @@ package com.fuelyn.price.controller;
 import com.fuelyn.common.dto.ApiResponse;
 import com.fuelyn.price.model.dto.ChargingStationResponse.ChargingStation;
 import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.model.dto.UnifiedStationDto;
 import com.fuelyn.price.service.OpenChargeMapClient;
 import com.fuelyn.price.service.TankerkoenigClient;
 import jakarta.validation.constraints.Max;
@@ -21,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,9 +86,8 @@ public class UnifiedStationController {
         boolean needsFuel = energyTypes.stream().anyMatch(FUEL_TYPES::contains);
         boolean needsCharging = energyTypes.stream().anyMatch(EV_TYPES::contains);
 
-        List<CompletableFuture<List<Map<String, Object>>>> futures = new ArrayList<>();
+        List<CompletableFuture<List<UnifiedStationDto>>> futures = new ArrayList<>();
 
-        // Fuel stations
         if (needsFuel) {
             String fuelType = pickFuelType(energyTypes);
             futures.add(CompletableFuture.supplyAsync(() -> {
@@ -96,12 +97,11 @@ public class UnifiedStationController {
                     return stations.stream().map(s -> mapFuelStation(s, fuelType)).toList();
                 } catch (Exception e) {
                     log.error("Fuel station fetch failed: {}", e.getMessage());
-                    return Collections.emptyList();
+                    return Collections.<UnifiedStationDto>emptyList();
                 }
             }));
         }
 
-        // EV charging stations
         if (needsCharging) {
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
@@ -110,14 +110,13 @@ public class UnifiedStationController {
                     return stations.stream().map(this::mapChargingStation).toList();
                 } catch (Exception e) {
                     log.error("Charging station fetch failed: {}", e.getMessage());
-                    return Collections.emptyList();
+                    return Collections.<UnifiedStationDto>emptyList();
                 }
             }));
         }
 
-        // Collect all results
-        List<Map<String, Object>> allStations = new ArrayList<>();
-        for (CompletableFuture<List<Map<String, Object>>> future : futures) {
+        List<UnifiedStationDto> allStations = new ArrayList<>();
+        for (CompletableFuture<List<UnifiedStationDto>> future : futures) {
             try {
                 allStations.addAll(future.join());
             } catch (Exception e) {
@@ -125,12 +124,9 @@ public class UnifiedStationController {
             }
         }
 
-        // Sort
         if ("dist".equals(sort)) {
-            allStations.sort((a, b) -> Double.compare(
-                    ((Number) a.getOrDefault("dist", 999.0)).doubleValue(),
-                    ((Number) b.getOrDefault("dist", 999.0)).doubleValue()
-            ));
+            allStations.sort(Comparator.comparingDouble(
+                    s -> s.dist() != null ? s.dist() : 999.0));
         }
 
         return ResponseEntity.ok(ApiResponse.success(Map.of("stations", allStations)));
@@ -142,119 +138,107 @@ public class UnifiedStationController {
         return "e10";
     }
 
-    private Map<String, Object> mapFuelStation(TankerkoenigResponse.Station s, String fuelType) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", s.id());
-        map.put("name", s.name());
-        map.put("brand", s.brand() != null ? s.brand() : "");
-        map.put("lat", s.lat());
-        map.put("lng", s.lng());
-        map.put("dist", s.dist());
-        map.put("isOpen", s.isOpen());
-        map.put("stationType", "fuel");
-        map.put("source", "tankerkoenig");
+    private UnifiedStationDto mapFuelStation(TankerkoenigResponse.Station s, String fuelType) {
+        List<String> available = new ArrayList<>(3);
+        if (s.diesel() != null) available.add("diesel");
+        if (s.e5() != null) available.add("e5");
+        if (s.e10() != null) available.add("e10");
 
-        // Nested address object matching frontend StationAddress type
-        Map<String, Object> address = new HashMap<>();
-        address.put("street", s.street() != null ? s.street() : "");
-        address.put("houseNumber", s.houseNumber() != null ? s.houseNumber() : "");
-        address.put("postCode", s.postCode() != null ? s.postCode() : "");
-        address.put("city", s.place() != null ? s.place() : "");
-        map.put("address", address);
-
-        // Nested prices object matching frontend StationPrices type
-        Map<String, Object> prices = new HashMap<>();
-        prices.put("diesel", s.diesel());
-        prices.put("e5", s.e5());
-        prices.put("e10", s.e10());
-        map.put("prices", prices);
-
-        // Energy types array
-        List<String> energyTypes = new ArrayList<>();
-        if (s.diesel() != null) energyTypes.add("diesel");
-        if (s.e5() != null) energyTypes.add("e5");
-        if (s.e10() != null) energyTypes.add("e10");
-        map.put("energyTypes", energyTypes);
-
-        // Convenience price field for sorting
         Double price = switch (fuelType) {
             case "diesel" -> s.diesel();
             case "e5" -> s.e5();
             default -> s.e10();
         };
-        map.put("price", price);
 
-        return map;
+        return new UnifiedStationDto(
+                s.id(),
+                s.name(),
+                s.brand() != null ? s.brand() : "",
+                s.lat(),
+                s.lng(),
+                s.dist(),
+                s.isOpen(),
+                "fuel",
+                "tankerkoenig",
+                new UnifiedStationDto.AddressDto(
+                        s.street() != null ? s.street() : "",
+                        s.houseNumber() != null ? s.houseNumber() : "",
+                        s.postCode() != null ? s.postCode() : "",
+                        s.place() != null ? s.place() : ""
+                ),
+                available,
+                new UnifiedStationDto.PricesDto(s.diesel(), s.e5(), s.e10()),
+                price,
+                // EV-only fields below
+                null, null, null, null, null, null, null, null
+        );
     }
 
-    private Map<String, Object> mapChargingStation(ChargingStation s) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", "ev-" + s.id());
-        map.put("name", s.name());
-        map.put("brand", s.operator() != null ? s.operator() : "");
-        map.put("operator", s.operator() != null ? s.operator() : "");
-        map.put("lat", s.lat());
-        map.put("lng", s.lng());
-        map.put("dist", s.dist());
-        map.put("isOpen", s.isOperational());
-        map.put("isOperational", s.isOperational());
-        map.put("stationType", "charging");
-        map.put("source", "openchargemap");
-
-        // Nested address object
-        Map<String, Object> address = new HashMap<>();
-        address.put("street", s.address() != null ? s.address() : "");
-        address.put("houseNumber", "");
-        address.put("postCode", s.postCode() != null ? s.postCode() : "");
-        address.put("city", s.city() != null ? s.city() : "");
-        map.put("address", address);
-
-        // Map connections to frontend UnifiedChargingConnection format
+    private UnifiedStationDto mapChargingStation(ChargingStation s) {
         double maxPower = 0;
         int totalPoints = 0;
-        Set<String> chargingTypes = new java.util.LinkedHashSet<>();
-        List<Map<String, Object>> mappedConnections = new ArrayList<>();
+        Set<String> chargingSpeeds = new LinkedHashSet<>();
+        List<UnifiedStationDto.ConnectionDto> mappedConnections = new ArrayList<>();
 
         if (s.connections() != null) {
             for (var conn : s.connections()) {
-                Map<String, Object> c = new HashMap<>();
-                c.put("connectorType", conn.type() != null ? conn.type() : "unknown");
-                c.put("connectorLabel", conn.type() != null ? conn.type() : "Unbekannt");
-                c.put("powerKW", conn.powerKW());
-                c.put("quantity", conn.quantity());
-
                 String speed = "ac";
                 if (conn.powerKW() != null) {
                     if (conn.powerKW() >= 150) speed = "hpc";
                     else if (conn.powerKW() >= 22) speed = "dc";
                     if (conn.powerKW() > maxPower) maxPower = conn.powerKW();
                 }
-                c.put("chargingSpeed", speed);
-                chargingTypes.add(speed);
+                chargingSpeeds.add(speed);
                 totalPoints += conn.quantity();
-                mappedConnections.add(c);
+                mappedConnections.add(new UnifiedStationDto.ConnectionDto(
+                        conn.type() != null ? conn.type() : "unknown",
+                        conn.type() != null ? conn.type() : "Unbekannt",
+                        conn.powerKW(),
+                        conn.quantity(),
+                        speed
+                ));
             }
         }
 
-        map.put("connections", mappedConnections);
-        map.put("chargingTypes", new ArrayList<>(chargingTypes));
-        map.put("maxPowerKW", maxPower > 0 ? maxPower : null);
-        map.put("totalPoints", totalPoints);
-        map.put("usageCost", s.usageCost());
-        map.put("accessType", s.accessType());
-
-        // Energy types
-        List<String> energyTypes = new ArrayList<>();
-        for (String ct : chargingTypes) {
-            switch (ct) {
+        List<String> energyTypes = new ArrayList<>(chargingSpeeds.size());
+        for (String speed : chargingSpeeds) {
+            switch (speed) {
                 case "ac" -> energyTypes.add("ev_ac");
                 case "dc" -> energyTypes.add("ev_dc");
                 case "hpc" -> energyTypes.add("ev_hpc");
             }
         }
         if (energyTypes.isEmpty()) energyTypes.add("ev_ac");
-        map.put("energyTypes", energyTypes);
 
-        return map;
+        String operator = s.operator() != null ? s.operator() : "";
+
+        return new UnifiedStationDto(
+                "ev-" + s.id(),
+                s.name(),
+                operator,
+                s.lat(),
+                s.lng(),
+                s.dist(),
+                s.isOperational(),
+                "charging",
+                "openchargemap",
+                new UnifiedStationDto.AddressDto(
+                        s.address() != null ? s.address() : "",
+                        "",
+                        s.postCode() != null ? s.postCode() : "",
+                        s.city() != null ? s.city() : ""
+                ),
+                energyTypes,
+                // Fuel-only fields
+                null, null,
+                operator,
+                s.isOperational(),
+                mappedConnections,
+                new ArrayList<>(chargingSpeeds),
+                maxPower > 0 ? maxPower : null,
+                totalPoints,
+                s.usageCost(),
+                s.accessType()
+        );
     }
 }
