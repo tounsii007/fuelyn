@@ -341,6 +341,21 @@ export const de = {
     bulkPause: 'Alle pausieren',
     bulkActivateTitle: 'Alle Alarme aktivieren',
     bulkPauseTitle: 'Alle Alarme vorübergehend pausieren',
+    pageTitle: 'Preisalarme',
+    newAlertCta: 'Neuer Alarm',
+    newAlertHeading: 'Neuer Preisalarm',
+    fuelTypeLabel: 'Kraftstoff',
+    targetPriceLabel: 'Wunschpreis (€/L)',
+    createCta: 'Erstellen',
+    emptyTitle: 'Keine Preisalarme',
+    emptyMessage:
+      'Erstelle einen Alarm und werde benachrichtigt, wenn der Preis unter deinen Wunschpreis fällt.',
+    footnote: 'Alarme werden beim nächsten Öffnen der App geprüft.',
+    under: 'unter',
+    createdAt: 'Erstellt am',
+    toggleEnable: 'Alarm aktivieren',
+    toggleDisable: 'Alarm deaktivieren',
+    removeAria: 'Alarm löschen',
   },
 
   shortcuts: {

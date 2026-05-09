@@ -333,6 +333,21 @@ export const en: TranslationKeys = {
     bulkPause: 'Pause all',
     bulkActivateTitle: 'Activate all alarms',
     bulkPauseTitle: 'Temporarily pause all alarms',
+    pageTitle: 'Price alerts',
+    newAlertCta: 'New alert',
+    newAlertHeading: 'New price alert',
+    fuelTypeLabel: 'Fuel',
+    targetPriceLabel: 'Target price (€/L)',
+    createCta: 'Create',
+    emptyTitle: 'No price alerts',
+    emptyMessage:
+      'Create an alert and we’ll let you know when the price drops below your target.',
+    footnote: 'Alerts are re-checked the next time the app opens.',
+    under: 'under',
+    createdAt: 'Created on',
+    toggleEnable: 'Enable alarm',
+    toggleDisable: 'Disable alarm',
+    removeAria: 'Delete alarm',
   },
 
   shortcuts: {

@@ -339,6 +339,21 @@ export const fr: TranslationKeys = {
     bulkPause: 'Tout mettre en pause',
     bulkActivateTitle: 'Activer toutes les alertes',
     bulkPauseTitle: 'Mettre en pause toutes les alertes temporairement',
+    pageTitle: 'Alertes prix',
+    newAlertCta: 'Nouvelle alerte',
+    newAlertHeading: 'Nouvelle alerte prix',
+    fuelTypeLabel: 'Carburant',
+    targetPriceLabel: 'Prix cible (€/L)',
+    createCta: 'Créer',
+    emptyTitle: 'Aucune alerte prix',
+    emptyMessage:
+      'Créez une alerte et nous vous préviendrons lorsque le prix passe sous votre cible.',
+    footnote: 'Les alertes sont vérifiées à la prochaine ouverture de l’app.',
+    under: 'sous',
+    createdAt: 'Créée le',
+    toggleEnable: 'Activer l’alerte',
+    toggleDisable: 'Désactiver l’alerte',
+    removeAria: 'Supprimer l’alerte',
   },
 
   shortcuts: {

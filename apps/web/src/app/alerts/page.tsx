@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { FuelType, PriceAlert } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,6 +19,7 @@ import { IconButton } from '@/components/ui/IconButton';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 export default function AlertsPage() {
+  const { t } = useTranslations();
   const alerts = useAppStore((s) => s.priceAlerts);
   const addPriceAlert = useAppStore((s) => s.addPriceAlert);
   const removePriceAlert = useAppStore((s) => s.removePriceAlert);
@@ -57,11 +59,11 @@ export default function AlertsPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 animate-fade-in">
       <PageHeader
-        title="Preisalarme"
+        title={t('alerts.pageTitle')}
         action={
           !isAdding && (
             <Button onClick={() => setIsAdding(true)} size="sm" leadingIcon={<PlusIcon />}>
-              Neuer Alarm
+              {t('alerts.newAlertCta')}
             </Button>
           )
         }
@@ -79,11 +81,11 @@ export default function AlertsPage() {
             id="new-alert-heading"
             className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4"
           >
-            Neuer Preisalarm
+            {t('alerts.newAlertHeading')}
           </h3>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <Select
-              label="Kraftstoff"
+              label={t('alerts.fuelTypeLabel')}
               value={fuelType}
               onChange={(e) => setFuelType(e.target.value as FuelType)}
             >
@@ -94,7 +96,7 @@ export default function AlertsPage() {
               ))}
             </Select>
             <Input
-              label="Wunschpreis (€/L)"
+              label={t('alerts.targetPriceLabel')}
               type="number"
               value={targetPrice}
               onChange={(e) => setTargetPrice(Math.max(0, Number(e.target.value) || 0))}
@@ -105,10 +107,10 @@ export default function AlertsPage() {
           </div>
           <div className="flex gap-2">
             <Button onClick={handleAdd} fullWidth>
-              Erstellen
+              {t('alerts.createCta')}
             </Button>
             <Button variant="secondary" onClick={() => setIsAdding(false)}>
-              Abbrechen
+              {t('common.cancel')}
             </Button>
           </div>
         </section>
@@ -117,8 +119,8 @@ export default function AlertsPage() {
       {/* Alert List */}
       {alerts.length === 0 ? (
         <EmptyState
-          title="Keine Preisalarme"
-          message="Erstelle einen Alarm und werde benachrichtigt, wenn der Preis unter deinen Wunschpreis fällt."
+          title={t('alerts.emptyTitle')}
+          message={t('alerts.emptyMessage')}
         />
       ) : (
         <>
@@ -134,11 +136,13 @@ export default function AlertsPage() {
               <span className="font-semibold text-emerald-700 dark:text-emerald-300">
                 {armedCount}
               </span>{' '}
-              aktiv
+              {t('alerts.armedShort')}
               {pausedCount > 0 && (
                 <>
                   {' · '}
-                  <span className="text-gray-500 dark:text-gray-400">{pausedCount} pausiert</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {pausedCount} {t('alerts.pausedShort')}
+                  </span>
                 </>
               )}
             </div>
@@ -150,11 +154,11 @@ export default function AlertsPage() {
                          rounded-lg px-2 py-1 transition-colors"
               title={
                 armedCount === 0
-                  ? 'Alle Alarme aktivieren'
-                  : 'Alle Alarme vorübergehend pausieren'
+                  ? t('alerts.bulkActivateTitle')
+                  : t('alerts.bulkPauseTitle')
               }
             >
-              {armedCount === 0 ? 'Alle aktivieren' : 'Alle pausieren'}
+              {armedCount === 0 ? t('alerts.bulkActivate') : t('alerts.bulkPause')}
             </button>
           </div>
 
@@ -165,6 +169,7 @@ export default function AlertsPage() {
                 alert={alert}
                 onToggle={() => togglePriceAlert(alert.id)}
                 onRemove={() => removePriceAlert(alert.id)}
+                t={t}
               />
             ))}
           </div>
@@ -172,7 +177,7 @@ export default function AlertsPage() {
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-6 text-center">
-        Alarme werden beim nächsten Öffnen der App geprüft.
+        {t('alerts.footnote')}
       </p>
 
       {/* Geo-fenced alerts */}
@@ -187,10 +192,12 @@ function AlertCard({
   alert,
   onToggle,
   onRemove,
+  t,
 }: {
   alert: PriceAlert;
   onToggle: () => void;
   onRemove: () => void;
+  t: ReturnType<typeof useTranslations>['t'];
 }) {
   const fuelColor =
     alert.fuelType === 'diesel'
@@ -212,18 +219,18 @@ function AlertCard({
       />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {FUEL_TYPE_LABELS[alert.fuelType]} unter {alert.targetPrice.toFixed(2)} €
+          {FUEL_TYPE_LABELS[alert.fuelType]} {t('alerts.under')} {alert.targetPrice.toFixed(2)} €
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Erstellt am {new Date(alert.createdAt).toLocaleDateString('de-DE')}
+          {t('alerts.createdAt')} {new Date(alert.createdAt).toLocaleDateString()}
         </p>
       </div>
       <ToggleSwitch
         checked={alert.enabled}
         onChange={() => onToggle()}
-        aria-label={alert.enabled ? 'Alarm deaktivieren' : 'Alarm aktivieren'}
+        aria-label={alert.enabled ? t('alerts.toggleDisable') : t('alerts.toggleEnable')}
       />
-      <IconButton tone="danger" onClick={onRemove} aria-label="Alarm löschen">
+      <IconButton tone="danger" onClick={onRemove} aria-label={t('alerts.removeAria')}>
         <TrashIcon />
       </IconButton>
     </article>
