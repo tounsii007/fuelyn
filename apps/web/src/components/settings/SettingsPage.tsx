@@ -105,9 +105,28 @@ export function SettingsPage() {
         {t('settings.title')}
       </h1>
 
+      {/*
+        Inline current-value subtitles next to each section title
+        let users see what they currently have set without expanding
+        anything. Computed below using the same translation table
+        the section bodies use, so the labels stay in sync.
+      */}
+      {(() => null)()}
+
       <div className="space-y-6">
         {/* ── Section: Language ─────────────────────────── */}
-        <SettingsSection title={t('settings.language')}>
+        <SettingsSection
+          title={t('settings.language')}
+          currentValue={
+            settings.locale === 'de'
+              ? 'Deutsch'
+              : settings.locale === 'fr'
+                ? 'Français'
+                : settings.locale === 'en-US'
+                  ? 'English (US)'
+                  : 'English'
+          }
+        >
           <div className="grid grid-cols-2 gap-3">
             {(
               [
@@ -129,7 +148,14 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: Appearance ───────────────────────── */}
-        <SettingsSection title={t('settings.theme')}>
+        <SettingsSection
+          title={t('settings.theme')}
+          currentValue={
+            settings.theme === 'light' ? 'Hell'
+              : settings.theme === 'dark' ? 'Dunkel'
+              : 'System'
+          }
+        >
           <div className="grid grid-cols-3 gap-2">
             {(['light', 'dark', 'system'] as ThemeMode[]).map((mode) => (
               <button
@@ -196,7 +222,15 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: Map Style ───────────────────────── */}
-        <SettingsSection title={t('settings.mapStyle')}>
+        <SettingsSection
+          title={t('settings.mapStyle')}
+          currentValue={
+            settings.mapStyle === 'standard'   ? 'Standard'
+              : settings.mapStyle === 'dark'      ? 'Dark'
+              : settings.mapStyle === 'satellite' ? 'Satellit'
+              : 'Gelände'
+          }
+        >
           <div className="grid grid-cols-2 gap-3">
             {MAP_STYLE_OPTIONS.map((opt) => (
               <button
@@ -226,7 +260,10 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: Fuel Type ────────────────────────── */}
-        <SettingsSection title={t('settings.defaultFuelType')}>
+        <SettingsSection
+          title={t('settings.defaultFuelType')}
+          currentValue={FUEL_TYPE_LABELS[settings.defaultFuelType]}
+        >
           <div className="flex gap-2">
             {FUEL_TYPE_OPTIONS.map((opt) => (
               <button
@@ -249,7 +286,10 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: Search Radius ───────────────────── */}
-        <SettingsSection title={t('settings.searchRadius')}>
+        <SettingsSection
+          title={t('settings.searchRadius')}
+          currentValue={`${radiusValue} km`}
+        >
           <div className="px-1">
             <div className="flex items-center justify-between mb-3">
               <span className="text-2xl font-bold text-brand-600">
@@ -656,16 +696,32 @@ function PrivacySection() {
 
 function SettingsSection({
   title,
+  /** Optional current value displayed next to the title — useful
+   *  so the user sees their current selection without expanding
+   *  every section ("Sprache · Deutsch", "Standard-Kraftstoff ·
+   *  Super E10"). Long values truncate with ellipsis. */
+  currentValue,
   children,
 }: {
   title: string;
+  currentValue?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
-        {title}
-      </h2>
+      <div className="flex items-baseline justify-between gap-3 mb-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          {title}
+        </h2>
+        {currentValue && (
+          <span
+            className="truncate text-xs font-medium text-gray-600 dark:text-gray-300"
+            title={currentValue}
+          >
+            {currentValue}
+          </span>
+        )}
+      </div>
       {children}
     </section>
   );
