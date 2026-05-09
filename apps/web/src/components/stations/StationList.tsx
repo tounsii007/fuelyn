@@ -51,6 +51,36 @@ export function StationList({
     });
   }, []);
 
+  // ─── ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN ──────────
+  // The market-context selectors below USED to live below the
+  // isLoading/isError/empty early-returns, which violated React's
+  // Rules of Hooks: a render that hit an early return called only
+  // 5 hooks; a render that didn't called 7. React 19's stricter
+  // hydration-mismatch detection bubbled this up as a hard #310
+  // ("Rendered more hooks than during the previous render") plus
+  // a #418 hydration crash on every page load — the Homepage
+  // mounts <StationList isLoading={true} /> first, then re-renders
+  // with isLoading=false once React Query resolves, growing the
+  // hook count between the two passes.
+  //
+  // Fix: hoist the store selector and memo to the top so the hook
+  // count is constant regardless of which branch returns.
+  const fuelType = useAppStore((s) => s.filter.fuelType);
+  const market = useMemo(() => {
+    const prices: number[] = [];
+    for (const r of recommendations) {
+      const p = r.station.prices?.[fuelType];
+      if (typeof p === 'number' && p > 0) prices.push(p);
+    }
+    if (prices.length === 0) {
+      return { min: null as number | null, max: null as number | null, avg: null as number | null, count: 0 };
+    }
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+    return { min, max, avg, count: prices.length };
+  }, [recommendations, fuelType]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3 p-4">
@@ -100,26 +130,6 @@ export function StationList({
   const total = recommendations.length;
   const shown = Math.min(visibleCount, total);
   const hasMore = shown < total;
-
-  // Compute the same market context the StationPanel uses, but for
-  // the active fuel only (the cards only show one fuel each, so we
-  // don't need the full per-fuel matrix). Memoised because the
-  // computation walks every station.
-  const fuelType = useAppStore((s) => s.filter.fuelType);
-  const market = useMemo(() => {
-    const prices: number[] = [];
-    for (const r of recommendations) {
-      const p = r.station.prices?.[fuelType];
-      if (typeof p === 'number' && p > 0) prices.push(p);
-    }
-    if (prices.length === 0) {
-      return { min: null as number | null, max: null as number | null, avg: null as number | null, count: 0 };
-    }
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
-    return { min, max, avg, count: prices.length };
-  }, [recommendations, fuelType]);
 
   return (
     <div className="flex flex-col gap-3 p-4">
