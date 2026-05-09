@@ -41,7 +41,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
 
   return (
     <section
-      aria-label={`${FUEL_TYPE_LABELS[fuelType]} Preis\u00FCbersicht`}
+      aria-label={`${FUEL_TYPE_LABELS[fuelType]} Preisübersicht`}
       className="mx-4 mb-3 bg-white dark:bg-gray-800/90 rounded-2xl shadow-card
                  border border-gray-100 dark:border-gray-700/60 p-4"
     >
@@ -57,9 +57,9 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
       {/* Stats Row */}
       <dl className="flex items-end justify-between gap-2 mb-3">
         <div className="text-center">
-          <dt className="text-[10px] font-medium text-reach-safe">G\u00FCnstigste</dt>
+          <dt className="text-[10px] font-medium text-reach-safe">Günstigste</dt>
           <dd className="text-base font-bold text-reach-safe tabular-nums">
-            {formatPrice(stats.min)} \u20AC
+            {formatPrice(stats.min)} €
           </dd>
         </div>
         <div className="text-center">
@@ -67,22 +67,22 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
             Durchschnitt
           </dt>
           <dd className="text-sm font-semibold tabular-nums text-gray-700 dark:text-gray-200">
-            {formatPrice(stats.avg)} \u20AC
+            {formatPrice(stats.avg)} €
           </dd>
         </div>
         <div className="text-center">
           <dt className="text-[10px] font-medium text-reach-unreachable">Teuerste</dt>
           <dd className="text-base font-bold text-reach-unreachable tabular-nums">
-            {formatPrice(stats.max)} \u20AC
+            {formatPrice(stats.max)} €
           </dd>
         </div>
       </dl>
 
-      {/* Visual Price Bar \u2014 pure-Tailwind gradient via fuel/reach colors */}
+      {/* Visual Price Bar — pure-Tailwind gradient via fuel/reach colors */}
       <div
         className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible"
         role="img"
-        aria-label={`Preisverteilung: g\u00FCnstig ${formatPrice(stats.min)} \u20AC, teuer ${formatPrice(stats.max)} \u20AC`}
+        aria-label={`Preisverteilung: günstig ${formatPrice(stats.min)} €, teuer ${formatPrice(stats.max)} €`}
       >
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-reach-safe via-reach-tight to-reach-unreachable" />
         {/* Average indicator */}
@@ -91,7 +91,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
                      bg-white dark:bg-gray-100 border-2 border-gray-900 dark:border-gray-300
                      rounded-full shadow-sm"
           style={{ left: `${avgPosition}%` }}
-          title={`Durchschnitt: ${formatPrice(stats.avg)} \u20AC`}
+          title={`Durchschnitt: ${formatPrice(stats.avg)} €`}
           aria-hidden="true"
         />
       </div>
@@ -99,8 +99,8 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
       {/* Savings hint */}
       {stats.spread > 0.02 && (
         <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 text-center">
-          Sparpotenzial: bis zu {formatPrice(stats.spread)} \u20AC/L
-          {stats.spread > 0.05 && ' \u2014 Vergleichen lohnt sich!'}
+          Sparpotenzial: bis zu {formatPrice(stats.spread)} €/L
+          {stats.spread > 0.05 && ' — Vergleichen lohnt sich!'}
         </p>
       )}
     </section>
