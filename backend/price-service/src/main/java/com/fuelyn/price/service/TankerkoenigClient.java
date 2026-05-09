@@ -133,9 +133,16 @@ public class TankerkoenigClient implements FuelStationClient {
 
     /**
      * Batch-fetches current prices for up to 10 station IDs.
+     *
+     * <p>Decorated with the same {@code external-api} rate limiter as the
+     * sibling search/detail methods — without it, a bursty caller (e.g. a
+     * favourites-list refresh that fans out to 50 stations in 5 batches)
+     * could blow Tankerkönig's per-key quota independently of the limit
+     * applied everywhere else in this service.</p>
      */
     @CircuitBreaker(name = "tankerkoenig", fallbackMethod = "fetchPricesFallback")
     @Retry(name = "tankerkoenig")
+    @RateLimiter(name = "external-api")
     public Map<String, TankerkoenigResponse.PriceEntry> fetchPrices(List<String> stationIds) {
         if (stationIds == null || stationIds.isEmpty()) {
             return Collections.emptyMap();

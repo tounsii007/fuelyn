@@ -1,5 +1,7 @@
 package com.fuelyn.price.stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fuelyn.common.events.EventEnvelope;
 import com.fuelyn.common.events.PriceUpdatedEvent;
 import org.slf4j.Logger;
@@ -47,6 +49,15 @@ public class PriceAlertsConsumer {
 
     /** Cents threshold for "significant" delta (signed). */
     private static final double THRESHOLD_CT = 3.0;
+
+    /**
+     * Shared, thread-safe Jackson mapper. Constructing one per event
+     * walked the JavaTimeModule's reflection metadata for every payload
+     * — wasteful at the alert-consumer's high event rate. Mirrors the
+     * pattern already in {@code PriceEventConsumer}.
+     */
+    private static final ObjectMapper SHARED_MAPPER =
+            new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final AtomicLong eventsSeen = new AtomicLong();
     private final AtomicLong alertsFired = new AtomicLong();
@@ -104,9 +115,7 @@ public class PriceAlertsConsumer {
         if (data instanceof PriceUpdatedEvent already) return already;
         if (data instanceof Map<?, ?> map) {
             try {
-                return new com.fasterxml.jackson.databind.ObjectMapper()
-                        .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-                        .convertValue(map, PriceUpdatedEvent.class);
+                return SHARED_MAPPER.convertValue(map, PriceUpdatedEvent.class);
             } catch (Exception e) {
                 return null;
             }
