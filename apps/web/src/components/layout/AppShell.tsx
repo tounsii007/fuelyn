@@ -438,12 +438,30 @@ function Divider() {
 
 function ThemeQuickToggle() {
   const { resolved, toggle } = useTheme();
+  // SSR can't read `matchMedia('(prefers-color-scheme: dark)')` or
+  // localStorage, so the server always thinks the theme is 'light'
+  // and renders the moon icon. Users with a dark preference get a
+  // sun icon on the client → server-vs-client SVG mismatch →
+  // React #418 hydration crash on every page load.
+  //
+  // Standard next-themes-style fix: gate the icon rendering on a
+  // `mounted` flag so the FIRST hydration pass renders the same
+  // placeholder the server produced; the real icon appears one
+  // tick later via a normal state update. The button itself stays
+  // interactive throughout — only the icon swap is deferred.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolved === 'dark';
+
   return (
     <IconButton
       onClick={toggle}
-      label={resolved === 'dark' ? 'Auf hellen Modus umschalten' : 'Auf dunklen Modus umschalten'}
+      label={isDark ? 'Auf hellen Modus umschalten' : 'Auf dunklen Modus umschalten'}
     >
-      {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
+      {isDark ? <SunIcon /> : <MoonIcon />}
     </IconButton>
   );
 }
