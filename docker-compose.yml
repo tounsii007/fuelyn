@@ -59,11 +59,19 @@ services:
   redpanda:
     image: redpandadata/redpanda:v24.3.4
     restart: unless-stopped
+    # ─── Resource hints, not caps ────────────────────────────
+    # Redpanda's `--memory` flag is a SOFT target it sizes its
+    # internal pools against. We give it a comfortable working
+    # set (1 GB) that elastic loads can grow into without OOM
+    # — no `deploy.resources.limits` block, so the container
+    # uses host memory dynamically up to whatever Docker has
+    # available. The CPU `--smp=1` is also hint-level: when
+    # the host has cores idle, throughput rises naturally.
     command:
       - redpanda
       - start
-      - --smp=1
-      - --memory=512M
+      - --smp=${REDPANDA_SMP:-2}
+      - --memory=${REDPANDA_MEMORY_HINT:-1G}
       - --reserve-memory=0M
       - --overprovisioned
       - --node-id=0
@@ -86,10 +94,6 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: ${REDPANDA_MEMORY_LIMIT:-768M}
 
   postgres:
     image: postgres:16-alpine
@@ -137,6 +141,13 @@ services:
       API_KEY_1: ${API_KEY_1}
       TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY}
       OPENCHARGEMAP_API_KEY: ${OPENCHARGEMAP_API_KEY}
+      # ─── Polling tunables (no rebuild needed) ────────────────
+      # Tankerkönig docs cap at ≤ 5 req/s globally; 240/min keeps
+      # 20 % headroom for retries and bursts. Bump to 250–290 if
+      # the operator confirms a higher per-key allowance.
+      RATELIMIT_EXTERNAL_API_PERIOD: ${RATELIMIT_EXTERNAL_API_PERIOD:-240}
+      RATELIMIT_EXTERNAL_API_REFRESH: ${RATELIMIT_EXTERNAL_API_REFRESH:-1m}
+      RATELIMIT_EXTERNAL_API_TIMEOUT: ${RATELIMIT_EXTERNAL_API_TIMEOUT:-30s}
     expose:
       - "28810"
     healthcheck:
@@ -185,13 +196,23 @@ services:
       timeout: 5s
       retries: 6
       start_period: 30s
-    # Hard cap so a runaway inference can't OOM the host.
-    deploy:
-      resources:
-        limits:
-          memory: ${OLLAMA_MEMORY_LIMIT:-12G}
-        reservations:
-          memory: ${OLLAMA_MEMORY_RESERVATION:-6G}
+    # ─── No hard memory cap by default ───────────────────────
+    # Earlier we capped at 12 GB to protect the host from a
+    # runaway model swap. With a single 7B model + KV cache
+    # the steady-state working set is ~9 GB; a hard cap that
+    # close to working set just makes Docker OOM-kill the
+    # container on benign bursts. We now ship without limits
+    # so Ollama uses whatever the host has free, and operators
+    # who care about isolation can re-enable the cap by
+    # exporting OLLAMA_MEMORY_LIMIT in .env.
+    #
+    # Re-enable example (paste into .env):
+    #   OLLAMA_MEMORY_LIMIT=14G
+    # and uncomment the deploy block below.
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: ${OLLAMA_MEMORY_LIMIT:-14G}
 
   # One-shot init: pulls the model into the named volume AND triggers
   # a tiny warm-up inference so the first real user request doesn't

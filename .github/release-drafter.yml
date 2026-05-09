@@ -1,0 +1,56 @@
+# ============================================================
+# Release Drafter — Phase E
+#
+# Generates the GitHub Release notes automatically from merged
+# PR titles. Categorises by label so the changelog stays readable
+# instead of a flat dump.
+#
+# Activate with the workflow .github/workflows/release-drafter.yml
+# (not included here — copy from release-drafter/release-drafter
+# README when wiring it up).
+# ============================================================
+
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+template: |
+  ## What's changed
+
+  $CHANGES
+
+  **Full changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+categories:
+  - title: '🚀 Features'
+    labels: ['feature', 'enhancement']
+  - title: '🐛 Fixes'
+    labels: ['bug', 'fix']
+  - title: '⚡ Performance'
+    labels: ['performance', 'perf']
+  - title: '🔒 Security'
+    labels: ['security']
+  - title: '📚 Documentation'
+    labels: ['docs', 'documentation']
+  - title: '🧹 Chores'
+    labels: ['chore', 'refactor', 'tooling']
+  - title: '📦 Dependencies'
+    labels: ['dependencies']
+  - title: '🚢 CI/CD'
+    labels: ['ci']
+
+change-template: '- $TITLE (#$NUMBER) by @$AUTHOR'
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels: ['breaking-change']
+  minor:
+    labels: ['feature', 'enhancement']
+  patch:
+    labels: ['bug', 'fix', 'chore', 'dependencies', 'docs']
+  default: patch
+
+exclude-labels:
+  - 'skip-changelog'
+  - 'duplicate'
+  - 'invalid'
+  - 'wontfix'
