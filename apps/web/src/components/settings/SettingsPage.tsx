@@ -101,21 +101,23 @@ export function SettingsPage() {
         {t('common.back')}
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
         {t('settings.title')}
       </h1>
 
       {/*
-        Inline current-value subtitles next to each section title
-        let users see what they currently have set without expanding
-        anything. Computed below using the same translation table
-        the section bodies use, so the labels stay in sync.
+        Sticky quick-jump nav sits between the title and the first
+        section. On mobile it stays at the top while the user
+        scrolls so they can warp to any settings section in one
+        tap, which beats the previous "scroll-and-look" pattern
+        on a 9-section page.
       */}
-      {(() => null)()}
+      <SettingsJumpNav />
 
       <div className="space-y-6">
         {/* ── Section: Language ─────────────────────────── */}
         <SettingsSection
+          id="sec-language"
           title={t('settings.language')}
           currentValue={
             settings.locale === 'de'
@@ -149,6 +151,7 @@ export function SettingsPage() {
 
         {/* ── Section: Appearance ───────────────────────── */}
         <SettingsSection
+          id="sec-theme"
           title={t('settings.theme')}
           currentValue={
             settings.theme === 'light' ? 'Hell'
@@ -223,6 +226,7 @@ export function SettingsPage() {
 
         {/* ── Section: Map Style ───────────────────────── */}
         <SettingsSection
+          id="sec-map"
           title={t('settings.mapStyle')}
           currentValue={
             settings.mapStyle === 'standard'   ? 'Standard'
@@ -261,6 +265,7 @@ export function SettingsPage() {
 
         {/* ── Section: Fuel Type ────────────────────────── */}
         <SettingsSection
+          id="sec-fuel"
           title={t('settings.defaultFuelType')}
           currentValue={FUEL_TYPE_LABELS[settings.defaultFuelType]}
         >
@@ -287,6 +292,7 @@ export function SettingsPage() {
 
         {/* ── Section: Search Radius ───────────────────── */}
         <SettingsSection
+          id="sec-radius"
           title={t('settings.searchRadius')}
           currentValue={`${radiusValue} km`}
         >
@@ -323,7 +329,7 @@ export function SettingsPage() {
         <PrivacySection />
 
         {/* ── Section: Notifications ───────────────────── */}
-        <SettingsSection title={t('settings.notifications')}>
+        <SettingsSection id="sec-notifications" title={t('settings.notifications')}>
           <Link
             href="/alerts"
             className="flex items-center justify-between p-4 -m-4 rounded-xl
@@ -352,7 +358,7 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: Data ─────────────────────────────── */}
-        <SettingsSection title={t('settings.data')}>
+        <SettingsSection id="sec-data" title={t('settings.data')}>
           <div className="space-y-3">
             <button
               type="button"
@@ -401,7 +407,7 @@ export function SettingsPage() {
         </SettingsSection>
 
         {/* ── Section: About ───────────────────────────── */}
-        <SettingsSection title={t('settings.about')}>
+        <SettingsSection id="sec-about" title={t('settings.about')}>
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -609,7 +615,10 @@ function PrivacySection() {
     permission === 'granted' ? 'Erteilt' : permission === 'denied' ? 'Verweigert' : 'Ausstehend';
 
   return (
-    <section className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
+    <section
+      id="sec-privacy"
+      className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5 scroll-mt-24"
+    >
       <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
         Privatsphäre & Standort
       </h2>
@@ -695,6 +704,10 @@ function PrivacySection() {
 }
 
 function SettingsSection({
+  /** Stable hash anchor for the quick-jump nav. Optional — when
+   *  omitted the section is still rendered but won't be a jump
+   *  target. The id is also used as the key in the jump-nav row. */
+  id,
   title,
   /** Optional current value displayed next to the title — useful
    *  so the user sees their current selection without expanding
@@ -703,12 +716,19 @@ function SettingsSection({
   currentValue,
   children,
 }: {
+  id?: string;
   title: string;
   currentValue?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
+    <section
+      id={id}
+      // scroll-mt offsets the sticky anchor nav so a hash-jump
+      // doesn't hide the heading under it. Matches the strip's
+      // height + a comfortable margin.
+      className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5 scroll-mt-24"
+    >
       <div className="flex items-baseline justify-between gap-3 mb-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
           {title}
@@ -724,6 +744,54 @@ function SettingsSection({
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * Sticky horizontal anchor-jump row. Sits under the page title and
+ * lets the user warp to any section without scrolling — particularly
+ * useful on mobile where the page is one long ribbon.
+ *
+ * The list is hardcoded (rather than generated from an array of
+ * `{id, label}` because we want the labels to be authored by hand
+ * and stay synced with the section titles even as those evolve.
+ */
+function SettingsJumpNav() {
+  const items: { href: string; label: string }[] = [
+    { href: '#sec-language', label: 'Sprache' },
+    { href: '#sec-theme', label: 'Theme' },
+    { href: '#sec-map', label: 'Karte' },
+    { href: '#sec-fuel', label: 'Kraftstoff' },
+    { href: '#sec-radius', label: 'Radius' },
+    { href: '#sec-privacy', label: 'Privatsphäre' },
+    { href: '#sec-notifications', label: 'Alarme' },
+    { href: '#sec-data', label: 'Daten' },
+    { href: '#sec-about', label: 'Über' },
+  ];
+  return (
+    <nav
+      aria-label="Schnell-Navigation"
+      className="sticky top-0 -mx-6 px-6 py-2 mb-4 z-10
+                 bg-[var(--color-bg)]/85 backdrop-blur-md
+                 border-b border-[var(--color-border-subtle)]"
+    >
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        {items.map((it) => (
+          <a
+            key={it.href}
+            href={it.href}
+            className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium
+                       text-gray-600 dark:text-gray-300
+                       bg-gray-100 dark:bg-gray-800
+                       hover:bg-brand-50 dark:hover:bg-brand-900/30
+                       hover:text-brand-700 dark:hover:text-brand-300
+                       transition-colors"
+          >
+            {it.label}
+          </a>
+        ))}
+      </div>
+    </nav>
   );
 }
 
