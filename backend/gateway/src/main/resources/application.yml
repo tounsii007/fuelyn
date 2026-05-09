@@ -83,6 +83,11 @@ fuelyn:
     rate-limit:
       requests-per-second: 10
       burst-capacity: 20
+    # Hard cap on the size of a body we'll buffer for HMAC signing.
+    # 256 KiB covers every legitimate JSON request we proxy today
+    # (advisor input, price report submissions). Anything larger is
+    # rejected with 413 instead of pinning gateway heap.
+    max-signed-body-bytes: ${MAX_SIGNED_BODY_BYTES:262144}
 
 resilience4j:
   circuitbreaker:
