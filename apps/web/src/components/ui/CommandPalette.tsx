@@ -173,13 +173,24 @@ export function CommandPalette() {
       aria-label="Befehlspalette"
       className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-20"
       onClick={(e) => {
+        // The container's flex-padding occasionally generates click
+        // events whose target IS the container — keep this as a
+        // belt-and-braces fallback. The actual click-outside is
+        // handled by the explicit backdrop onClick below, because
+        // the backdrop sits absolutely inside this container and
+        // would otherwise eat the click without bubbling closing.
         if (e.target === e.currentTarget) setOpen(false);
       }}
     >
-      {/* Backdrop */}
+      {/* Backdrop — clicking anywhere outside the dialog closes
+           the palette. Previously the modal could only be dismissed
+           with ESC because the backdrop's own click was caught by
+           this nested div and never reached the outer container's
+           handler. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-sm"
+        onClick={() => setOpen(false)}
+        className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-sm cursor-default"
         style={{ animation: 'fy-enter 200ms var(--ease-soft) both' }}
       />
 

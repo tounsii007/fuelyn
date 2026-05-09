@@ -12,6 +12,7 @@ FILES = [
     r"C:/projects/fuelyn/apps/web/src/components/stations/PriceStats.tsx",
     r"C:/projects/fuelyn/apps/web/src/components/notifications/PriceAlertSettings.tsx",
     r"C:/projects/fuelyn/apps/web/src/app/station/[id]/page.tsx",
+    r"C:/projects/fuelyn/apps/web/src/components/stations/StationPanel.tsx",
 ]
 
 # Match backslash + 'u' + 4 hex digits. Note the doubled backslash in the
