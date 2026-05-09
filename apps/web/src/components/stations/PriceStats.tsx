@@ -16,6 +16,10 @@ interface PriceStatsProps {
 
 export function PriceStats({ recommendations }: PriceStatsProps) {
   const fuelType = useAppStore((s) => s.filter.fuelType);
+  // When the user has a station open in the detail panel, surface
+  // its position on the spread bar so they can SEE whether the
+  // station they're considering is on the cheap or expensive end.
+  const routeTarget = useAppStore((s) => s.routeTarget);
 
   const stats = useMemo(() => {
     const prices = recommendations
@@ -78,14 +82,18 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
         </div>
       </dl>
 
-      {/* Visual Price Bar — pure-Tailwind gradient via fuel/reach colors */}
+      {/* Visual Price Bar — pure-Tailwind gradient via fuel/reach colors.
+           Also marks the currently-open station's position when one
+           is selected, so the user can read at a glance whether
+           their choice is on the cheap or expensive end of the spread. */}
       <div
         className="relative h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-visible"
         role="img"
         aria-label={`Preisverteilung: günstig ${formatPrice(stats.min)} €, teuer ${formatPrice(stats.max)} €`}
       >
         <div className="absolute inset-0 rounded-full bg-gradient-to-r from-reach-safe via-reach-tight to-reach-unreachable" />
-        {/* Average indicator */}
+
+        {/* Average indicator (white dot, neutral). */}
         <span
           className="absolute top-1/2 -translate-y-1/2 -ml-1.5 w-3 h-3
                      bg-white dark:bg-gray-100 border-2 border-gray-900 dark:border-gray-300
@@ -94,6 +102,39 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
           title={`Durchschnitt: ${formatPrice(stats.avg)} €`}
           aria-hidden="true"
         />
+
+        {/*
+          Selected-station marker — only shown when the panel has
+          a target whose price for this fuel falls inside the
+          measured spread. Brand-blue triangle pointing UP at the
+          bar so it's visually distinct from the round avg dot.
+          Skipped when target == avg position (would just collide
+          with the avg marker and add noise).
+        */}
+        {(() => {
+          const targetPrice = routeTarget?.prices?.[fuelType];
+          if (typeof targetPrice !== 'number') return null;
+          if (targetPrice < stats.min - 0.0001 || targetPrice > stats.max + 0.0001) return null;
+          const targetPosition = stats.spread > 0
+            ? ((targetPrice - stats.min) / stats.spread) * 100
+            : 50;
+          if (Math.abs(targetPosition - avgPosition) < 1.5) return null;
+          return (
+            <span
+              className="absolute top-1/2 -translate-y-1/2 -ml-2 -mt-3 flex flex-col items-center pointer-events-none"
+              style={{ left: `${targetPosition}%` }}
+              aria-hidden="true"
+              title={`${routeTarget?.brand || routeTarget?.name || 'Diese Tankstelle'}: ${formatPrice(targetPrice)} €`}
+            >
+              <span className="text-[8px] font-bold text-brand-700 dark:text-brand-300 leading-none mb-0.5 whitespace-nowrap">
+                hier
+              </span>
+              <span className="block w-0 h-0 border-l-4 border-r-4 border-t-[6px]
+                               border-l-transparent border-r-transparent
+                               border-t-brand-600 dark:border-t-brand-400" />
+            </span>
+          );
+        })()}
       </div>
 
       {/* Savings hint */}
