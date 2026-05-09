@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import type { MutableRefObject } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { Circle, MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import type { StationRecommendation, ChargingStation, UnifiedStation, UnifiedHydrogenStation, UnifiedGasStation } from '@fuelyn/core';
@@ -71,102 +71,297 @@ function getStarSvg(size: number): string {
   return `<svg viewBox="0 0 20 20" width="${size}" height="${size}" fill="currentColor" aria-hidden="true"><path d="M10 1.5l2.224 4.507 4.974.723-3.6 3.509.85 4.953L10 13.523l-4.448 2.339.85-4.953-3.6-3.509 4.974-.723L10 1.5z"/></svg>`;
 }
 
+type MapStyleId = 'standard' | 'dark' | 'satellite' | 'terrain';
+
+/**
+ * Per-basemap palette for the price marker. Each basemap has its
+ * own contrast and colour bias, so the holo-card needs a different
+ * surface, accent and glow strength to stay legible AND feel like
+ * it belongs to that map.
+ *
+ *   • standard  — light Voyager tiles (warm pastel landmass).
+ *                 We keep the marker dark so it pops, but use a
+ *                 deeper navy with a softer, less neon cyan glow
+ *                 so it harmonises with the warm map palette.
+ *   • dark      — CartoCDN dark_all. The original holo look — a
+ *                 near-black card with a strong cyan glow and
+ *                 visible inner highlights — works best here.
+ *   • satellite — Esri imagery. Imagery is busy and saturated, so
+ *                 the marker switches to a near-white frosted card
+ *                 with a thin slate border for clean separation.
+ *   • terrain   — OpenTopoMap (greens/browns, contour lines). A
+ *                 muted slate-blue accent reads better against
+ *                 the natural palette than pure cyan.
+ *
+ * The accent colour for semantic states (best / unreachable /
+ * tight) is constant across maps so users learn ONE colour code.
+ * Only the *default* (no-state) accent and the surface change.
+ */
+interface MarkerTheme {
+  /** Card background gradient (top → bottom). */
+  surface: string;
+  /** Inner top highlight for the glass effect. */
+  innerHighlight: string;
+  /** Outer drop-shadow tint that grounds the card on the map. */
+  shadowTint: string;
+  /** Body text colour (price + brand initials read against this). */
+  textColor: string;
+  /** Default accent if no semantic override (best/tight/unreachable). */
+  defaultAccent: string;
+  /** Whether the surface is dark — drives a few inverted styles. */
+  isDarkSurface: boolean;
+}
+
+const MARKER_THEMES: Record<MapStyleId, MarkerTheme> = {
+  standard: {
+    // Slightly warmer navy than #0F172A so the card feels native
+    // to Voyager's beige landmass instead of "alien".
+    surface: 'linear-gradient(180deg, rgba(23,32,52,0.94) 0%, rgba(15,23,42,0.86) 100%)',
+    innerHighlight: 'rgba(255,255,255,0.10)',
+    shadowTint: 'rgba(15,23,42,0.30)',
+    textColor: '#F8FAFC',
+    // Indigo-shifted cyan: less neon, blends with Voyager's blue water/roads.
+    defaultAccent: '#38BDF8',
+    isDarkSurface: true,
+  },
+  dark: {
+    // Almost-black glass — the canonical holo look.
+    surface: 'linear-gradient(180deg, rgba(2,6,23,0.94) 0%, rgba(15,23,42,0.82) 100%)',
+    innerHighlight: 'rgba(255,255,255,0.14)',
+    shadowTint: 'rgba(0,0,0,0.55)',
+    textColor: '#F1F5F9',
+    defaultAccent: '#22D3EE',
+    isDarkSurface: true,
+  },
+  satellite: {
+    // Imagery is saturated; an inverted (light) card cuts through.
+    surface: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.92) 100%)',
+    innerHighlight: 'rgba(15,23,42,0.06)',
+    shadowTint: 'rgba(0,0,0,0.35)',
+    textColor: '#0F172A',
+    // Sapphire blue reads well over greens/browns/water.
+    defaultAccent: '#2563EB',
+    isDarkSurface: false,
+  },
+  terrain: {
+    // Slightly off-white that won't fight OpenTopoMap's beige tiles.
+    surface: 'linear-gradient(180deg, rgba(248,250,252,0.96) 0%, rgba(226,232,240,0.92) 100%)',
+    innerHighlight: 'rgba(15,23,42,0.05)',
+    shadowTint: 'rgba(15,23,42,0.30)',
+    textColor: '#0F172A',
+    // Muted slate-blue: the contour lines of topo maps already use
+    // a teal-ish hue, so we shift slightly cooler to stand out.
+    defaultAccent: '#0891B2',
+    isDarkSurface: false,
+  },
+};
+
+function isMapStyleId(s: string): s is MapStyleId {
+  return s === 'standard' || s === 'dark' || s === 'satellite' || s === 'terrain';
+}
+
+/**
+ * Holographic glass marker — futuristic "floating pin" look:
+ *   ┌─────────────┐
+ *   │   [BR]      │   ← brand initials chip (brand-tinted)
+ *   │    ⛽       │   ← simplified fuel-pump icon (accent-coloured)
+ *   │ [1,929 €]   │   ← price pill (rounded, high-contrast)
+ *   └─────┬───────┘
+ *         ▾▾         ← chevrons pointing down
+ *         ●          ← halo ring on the ground
+ *
+ * Accent colour rules (highest priority first):
+ *   1) `isBest`                 → amber/gold (the standout pin)
+ *   2) `reachability=unreachable` → red (out of range)
+ *   3) `reachability=tight`     → yellow (cutting it close)
+ *   4) default                  → theme's defaultAccent (varies
+ *                                 per map style, see MARKER_THEMES)
+ *
+ * The card is anchored so its halo sits on the lat/lng coordinate
+ * — `iconAnchor` is calibrated to the rendered card height.
+ */
 function createPriceMarkerIcon(
   price: number | null,
   isBest: boolean,
   isOpen: boolean,
   reachability: 'safe' | 'tight' | 'unreachable',
   brand: string,
+  mapStyle: string,
 ): L.DivIcon {
   const priceText = price != null ? formatPrice(price) : 'n/a';
   const brandCfg = getBrandConfig(brand);
   const noPrice = price == null;
-  const bgColor = isBest ? '#2575EA' : '#FFFFFF';
-  const textColor = isBest ? '#FFFFFF' : noPrice ? '#94A3B8' : '#0F172A';
-  const borderColor = isBest
-    ? 'transparent'
+  const theme = MARKER_THEMES[isMapStyleId(mapStyle) ? mapStyle : 'standard'];
+
+  // ─── Accent colour ───────────────────────────────────────────
+  // Best/tight/unreachable use a fixed semantic palette across all
+  // map styles so users learn one colour code; only the *default*
+  // accent shifts per basemap (see MARKER_THEMES).
+  const accent = isBest
+    ? '#F59E0B' // amber-500 — slightly warmer than 400, plays nice with both light + dark surfaces
     : reachability === 'unreachable'
-      ? '#FCA5A5'
+      ? '#EF4444' // red-500
       : reachability === 'tight'
-        ? '#FCD34D'
-        : noPrice ? '#E2E8F0' : `${brandCfg.color}40`;
-  const opacity = !isOpen ? 0.5 : noPrice ? 0.65 : 1;
-  const stemColor = isBest ? '#2575EA' : noPrice ? '#CBD5E1' : brandCfg.color;
-  const badgeGrad = isBest ? 'rgba(255,255,255,0.2)' : brandCfg.gradient;
-  const badgeText = isBest ? '#FFFFFF' : brandCfg.textColor;
-  const badgeShadow = isBest ? 'none' : `0 1px 4px ${brandCfg.color}50`;
+        ? '#F59E0B' // we keep tight on amber too, but visually distinct via NO best-star
+        : theme.defaultAccent;
+  const accentSoft = `${accent}55`;
+  const accentTrace = `${accent}80`;
+  // Soft variant for the price-pill border on dark surfaces — too
+  // saturated a colour starts to bleed; a 33-alpha keeps it elegant.
+  const pillBorder = theme.isDarkSurface ? `${accent}55` : `${accent}66`;
+
+  const opacity = !isOpen ? 0.55 : noPrice ? 0.78 : 1;
+  // Glow tuning: best/unreachable amplify; default is restrained so
+  // a city full of stations doesn't feel chaotic.
+  const glowStrength = isBest ? 1.4 : reachability === 'unreachable' ? 1.0 : 0.7;
+  const glow = theme.isDarkSurface
+    ? `0 0 ${Math.round(10 * glowStrength)}px ${accent}${Math.round(120 * glowStrength).toString(16).padStart(2, '0')},
+       0 0 ${Math.round(22 * glowStrength)}px ${accent}33,
+       0 4px 12px ${theme.shadowTint}`
+    : `0 0 ${Math.round(8 * glowStrength)}px ${accent}${Math.round(80 * glowStrength).toString(16).padStart(2, '0')},
+       0 6px 16px ${theme.shadowTint}`;
+
+  // Pump-icon SVG — accent-stroked, lightly traced. The drop-shadow
+  // colour matches the accent so the icon reads as "lit" by it.
+  const pumpSvg = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="${accent}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 3px ${accentSoft})">
+    <rect x="4" y="3" width="9" height="17" rx="1.5"/>
+    <path d="M6 7h5"/>
+    <path d="M6 10h5"/>
+    <path d="M13 9l3 0a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0v-7l-2-2"/>
+  </svg>`;
+
+  // Best-option star — its border colour follows the surface so it
+  // doesn't look pasted on regardless of light/dark theme.
+  const starBorder = theme.isDarkSurface ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)';
+  const bestStarHtml = isBest ? `
+    <span style="
+      position:absolute; top:-6px; right:-6px;
+      width:16px; height:16px;
+      background:linear-gradient(135deg,#FBBF24 0%,#F59E0B 100%);
+      border-radius:50%;
+      border:2px solid ${starBorder};
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 0 8px ${accent}AA;
+      color:white;
+      z-index:2;
+    ">${getStarSvg(8)}</span>` : '';
+
+  // Price-pill colours: on dark surfaces we keep the white pill for
+  // contrast; on light surfaces an inverted (deep-navy) pill reads
+  // better and looks more refined.
+  const pillBg = theme.isDarkSurface
+    ? 'linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%)'
+    : 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)';
+  const pillTextColor = theme.isDarkSurface ? '#0F172A' : '#F8FAFC';
+  const pillEuroColor = theme.isDarkSurface ? '#64748B' : '#94A3B8';
+  const pillNaColor = theme.isDarkSurface ? '#94A3B8' : '#94A3B8';
+  const pillInsetHighlight = theme.isDarkSurface
+    ? 'inset 0 1px 0 rgba(255,255,255,0.7)'
+    : 'inset 0 1px 0 rgba(255,255,255,0.10)';
+
+  // Brand chip: keep the per-brand colour so the user can spot Aral
+  // vs. Shell vs. JET at a glance. On light surfaces we strengthen
+  // the chip's outline so the brand colour doesn't bleed visually.
+  const brandChipShadow = theme.isDarkSurface
+    ? `0 1px 4px ${brandCfg.color}55, inset 0 1px 0 rgba(255,255,255,0.18)`
+    : `0 1px 3px ${brandCfg.color}66, inset 0 1px 0 rgba(255,255,255,0.20), 0 0 0 0.5px rgba(15,23,42,0.08)`;
 
   return L.divIcon({
     className: 'tp-marker',
     html: `
       <div class="tp-marker-bubble" style="
-        opacity: ${opacity};
-        background: ${bgColor};
-        color: ${textColor};
-        border: 2px solid ${borderColor};
-        border-radius: 16px;
-        padding: 3px 10px 3px 3px;
-        font-size: 13px;
-        font-weight: 700;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        white-space: nowrap;
-        box-shadow: ${isBest
-          ? '0 4px 14px rgba(37,117,234,0.35), 0 0 0 3px rgba(37,117,234,0.15)'
-          : '0 2px 10px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)'};
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: transform 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.15s ease;
-        transform-origin: bottom center;
-        position: relative;
+        position:relative;
+        opacity:${opacity};
+        font-family:'Inter',system-ui,-apple-system,sans-serif;
+        cursor:pointer;
+        transform-origin:bottom center;
+        transition:transform 0.18s cubic-bezier(0.4,0,0.2,1);
+        width:78px;
       ">
-        <span style="
-          width: 24px; height: 24px;
-          border-radius: 8px;
-          background: ${badgeGrad};
-          color: ${badgeText};
-          display: flex; align-items: center; justify-content: center;
-          font-size: ${brandCfg.initials.length > 2 ? '7px' : '10px'};
-          font-weight: 800;
-          flex-shrink: 0;
-          letter-spacing: ${brandCfg.initials.length > 2 ? '0px' : '-0.3px'};
-          box-shadow: ${badgeShadow}, inset 0 1px 0 rgba(255,255,255,0.15);
-          text-shadow: ${badgeText === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'};
-          position: relative;
-          overflow: hidden;
-        "><span style="position:relative;z-index:1">${brandCfg.initials}</span><span style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.3) 0%,transparent 50%,rgba(0,0,0,0.05) 100%);border-radius:8px;"></span></span>
-        <span style="letter-spacing: -0.3px;">${priceText}</span>
-        ${isBest ? `
+        <!-- Glass card -->
+        <div style="
+          position:relative;
+          padding:6px 8px 7px;
+          border-radius:14px;
+          border:1px solid ${accentTrace};
+          background:
+            radial-gradient(120% 80% at 50% 0%, ${accent}14 0%, transparent 65%),
+            ${theme.surface};
+          backdrop-filter:blur(6px);
+          -webkit-backdrop-filter:blur(6px);
+          box-shadow:${glow}, inset 0 1px 0 ${theme.innerHighlight};
+          color:${theme.textColor};
+          display:flex; flex-direction:column; align-items:center; gap:3px;
+        ">
+          ${bestStarHtml}
+
+          <!-- Brand chip -->
           <span style="
-            position: absolute;
-            top: -6px; right: -6px;
-            width: 16px; height: 16px;
-            background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
-            border-radius: 50%;
-            border: 2px solid white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 6px rgba(245,158,11,0.4);
-            color: white;
-          ">${getStarSvg(8)}</span>
-        ` : ''}
+            align-self:stretch;
+            display:flex; align-items:center; justify-content:center;
+            height:14px;
+            border-radius:5px;
+            background:${brandCfg.gradient};
+            color:${brandCfg.textColor};
+            font-size:${brandCfg.initials.length > 2 ? '7px' : '9px'};
+            font-weight:800;
+            letter-spacing:${brandCfg.initials.length > 2 ? '0' : '-0.2px'};
+            box-shadow:${brandChipShadow};
+            text-shadow:${brandCfg.textColor === '#FFFFFF' ? '0 1px 2px rgba(0,0,0,0.25)' : 'none'};
+            text-transform:uppercase;
+          ">${brandCfg.initials}</span>
+
+          <!-- Pump icon -->
+          <span style="display:flex; line-height:0;">${pumpSvg}</span>
+
+          <!-- Price pill -->
+          <span style="
+            display:inline-flex; align-items:center; justify-content:center;
+            min-width:56px;
+            padding:2px 9px;
+            border-radius:999px;
+            border:1px solid ${pillBorder};
+            background:${pillBg};
+            color:${pillTextColor};
+            font-size:12px;
+            font-weight:800;
+            letter-spacing:-0.3px;
+            box-shadow:${pillInsetHighlight}, 0 0 6px ${accent}29;
+            white-space:nowrap;
+          ">${noPrice
+            ? `<span style="color:${pillNaColor};font-weight:600;">n/a</span>`
+            : `${priceText}<span style="font-weight:600;color:${pillEuroColor};margin-left:2px;">&nbsp;€</span>`
+          }</span>
+        </div>
+
+        <!-- Pointer chevrons -->
+        <div style="
+          width:14px; margin:2px auto 0;
+          display:flex; flex-direction:column; align-items:center;
+          color:${accent};
+        ">
+          <svg viewBox="0 0 12 6" width="14" height="5" fill="none" stroke="${accent}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 2px ${accentSoft})">
+            <path d="M2 1l4 4 4-4"/>
+          </svg>
+          <svg viewBox="0 0 12 6" width="14" height="5" fill="none" stroke="${accent}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="margin-top:-2px;opacity:0.55;filter:drop-shadow(0 0 2px ${accentSoft})">
+            <path d="M2 1l4 4 4-4"/>
+          </svg>
+        </div>
+
+        <!-- Ground halo -->
+        <div style="
+          width:20px; height:6px; margin:1px auto 0;
+          border-radius:50%;
+          background:radial-gradient(50% 100% at 50% 50%, ${accent}B0 0%, ${accent}30 55%, transparent 100%);
+          box-shadow:0 0 8px ${accentSoft};
+        "></div>
       </div>
-      <div style="
-        width: 2px; height: 10px;
-        background: linear-gradient(to bottom, ${stemColor}, ${stemColor}00);
-        margin: 0 auto;
-      "></div>
-      <div style="
-        width: 7px; height: 7px;
-        background: ${stemColor};
-        border-radius: 50%;
-        margin: -2px auto 0;
-        box-shadow: 0 0 0 2px ${stemColor}30;
-      "></div>
     `,
     iconSize: [0, 0],
-    iconAnchor: [48, 52],
-    popupAnchor: [0, -55],
+    // Anchor: card 70 + chevrons 12 + halo 6 ≈ 88; centre of halo
+    // sits on lat/lng. 39 horizontal → centre of 78 px width.
+    iconAnchor: [39, 88],
+    popupAnchor: [0, -80],
   });
 }
 
@@ -451,6 +646,8 @@ export function StationMap({
 }: StationMapProps) {
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const userLocation = useAppStore((s) => s.userLocation);
+  const userLocationAccuracy = useAppStore((s) => s.userLocationAccuracy);
+  const liveTracking = useAppStore((s) => s.liveTracking);
   const mapStyle = useAppStore((s) => s.settings.mapStyle);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const setMapCenter = useAppStore((s) => s.setMapCenter);
@@ -530,11 +727,39 @@ export function StationMap({
         <MapRefCapture mapRef={mapRef} />
 
         {userLocation && (
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={userIcon}
-            interactive={false}
-          />
+          <>
+            {/*
+              Accuracy circle — visualises the GPS uncertainty so
+              the user understands why the dot might not sit on the
+              right house number. Hidden for tiny radii (≤8 m)
+              where the circle would just clutter the dot. Clamped
+              at 1500 m so a poor fix doesn't fill the entire
+              viewport and obscure stations. Stronger fill when
+              live tracking is on so the radius reads as "live
+              data", not a stale fix.
+            */}
+            {userLocationAccuracy != null &&
+              Number.isFinite(userLocationAccuracy) &&
+              userLocationAccuracy > 8 && (
+                <Circle
+                  center={[userLocation.lat, userLocation.lng]}
+                  radius={Math.min(userLocationAccuracy, 1500)}
+                  pathOptions={{
+                    color: '#2575EA',
+                    weight: 1,
+                    opacity: liveTracking ? 0.55 : 0.35,
+                    fillColor: '#2575EA',
+                    fillOpacity: liveTracking ? 0.10 : 0.06,
+                  }}
+                  interactive={false}
+                />
+              )}
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={userIcon}
+              interactive={false}
+            />
+          </>
         )}
 
         <MarkerClusterGroup
@@ -554,6 +779,7 @@ export function StationMap({
               rec.station.isOpen,
               rec.reachabilityStatus,
               rec.station.brand,
+              mapStyle,
             );
             const icon = getCachedIcon(cacheKey, () =>
               createPriceMarkerIcon(
@@ -562,6 +788,7 @@ export function StationMap({
                 rec.station.isOpen,
                 rec.reachabilityStatus,
                 rec.station.brand,
+                mapStyle,
               ),
             );
 

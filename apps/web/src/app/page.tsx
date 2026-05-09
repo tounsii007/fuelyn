@@ -9,7 +9,7 @@
 import dynamic from 'next/dynamic';
 import { useAppStore } from '@/lib/store/app-store';
 import { useUnifiedStations } from '@/lib/hooks/use-unified-stations';
-import { useGeolocation } from '@/lib/hooks/use-location';
+import { useGeolocation, useLiveLocation } from '@/lib/hooks/use-location';
 import { useRecommendations } from '@/lib/hooks/use-recommendations';
 import { AppShell } from '@/components/layout/AppShell';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -113,6 +113,11 @@ export function composeHistoryLabel(
 
 export default function HomePage() {
   const { userLocation, permission, requestLocation, insecureContext } = useGeolocation();
+  // Live GPS tracking — once permission is granted, keep position
+  // updated as the user moves so distances/sorting refresh without
+  // a manual refetch. The hook is no-op on insecure contexts (no
+  // GPS available) and self-disables when permission is denied.
+  useLiveLocation({ enabled: permission === 'granted' && !insecureContext });
   const isMapView = useAppStore((s) => s.isMapView);
   const filter = useAppStore((s) => s.filter);
   const selectStation = useAppStore((s) => s.selectStation);
@@ -392,13 +397,16 @@ export default function HomePage() {
                 <BestDealCard recommendations={recommendations} />
                 <PriceStats recommendations={recommendations} />
 
-                {recommendations.length > 0 && (
-                  <div className="px-4 space-y-3 pb-2 fy-enter">
-                    <FuelAdvisor />
-                    <SavingsCalculator recommendations={recommendations} />
-                  </div>
-                )}
-
+                {/*
+                  Order rationale: the user's primary task is "find a
+                  cheap station nearby". So the StationList comes
+                  immediately after the price-summary widgets and
+                  BEFORE the AI advisor / savings calculator (which
+                  are deeper-context tools that get scrolled to). On
+                  narrow viewports the list was previously buried
+                  below the advisor card and the user had to scroll
+                  one screen-height to reach the first station entry.
+                */}
                 <StationList
                   recommendations={recommendations}
                   isLoading={isLoading}
@@ -406,6 +414,13 @@ export default function HomePage() {
                   onStationClick={handleStationClick}
                   onRetry={() => void refetch()}
                 />
+
+                {recommendations.length > 0 && (
+                  <div className="px-4 space-y-3 pb-2 fy-enter">
+                    <FuelAdvisor />
+                    <SavingsCalculator recommendations={recommendations} />
+                  </div>
+                )}
               </aside>
             </div>
           </>

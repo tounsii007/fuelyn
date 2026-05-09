@@ -4,7 +4,11 @@ import { useAppStore } from '@/lib/store/app-store';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
 import type { FuelType } from '@fuelyn/core';
 import {
+  AVERAGE_SPEED_KMH,
+  estimateDriveTime,
   formatAddress,
+  formatDistance,
+  formatDriveTime,
   formatPrice,
   computeReachability,
   computeRemainingRange,
@@ -31,10 +35,28 @@ export function StationPanel() {
   const address = formatAddress(station.street, station.houseNumber, station.postCode, station.place);
   const range = vehicle ? computeRemainingRange(vehicle) : null;
   const reachability = computeReachability(station.dist, range);
-  const routeDistanceKm = activeRoute ? activeRoute.distanceMeters / 1000 : station.dist;
+
+  // ─── Distance / Time — keep the SAME metrics as the list card ────
+  // The list card shows airline distance (`station.dist` from
+  // Tankerkönig) and a 50 km/h heuristic drive time. The panel used
+  // to swap to the routing service's road distance + real drive
+  // time as soon as the route loaded — different numbers for the
+  // same station, which made users think they'd clicked the wrong
+  // entry. We now mirror the card here and surface the route as a
+  // *secondary* line so power users still see the precise nav
+  // estimate without it overriding the "headline" numbers.
+  const airlineDistanceKm = station.dist;
+  const heuristicDriveMin = estimateDriveTime(station.dist, AVERAGE_SPEED_KMH);
+  const routeDistanceKm = activeRoute ? activeRoute.distanceMeters / 1000 : null;
   const routeDurationMin = activeRoute
     ? Math.round(activeRoute.durationSeconds / 60)
-    : Math.round((station.dist / 40) * 60);
+    : null;
+  // Show the route line only when it differs by at least 10 % from the
+  // heuristic; otherwise it's just clutter.
+  const routeMeaningfullyDifferent =
+    routeDistanceKm != null && routeDurationMin != null &&
+    (Math.abs(routeDistanceKm - airlineDistanceKm) / Math.max(airlineDistanceKm, 0.1) > 0.1 ||
+     Math.abs(routeDurationMin - heuristicDriveMin) / Math.max(heuristicDriveMin, 1) > 0.1);
 
   const handleFavoriteToggle = () => {
     if (isFavorite) {
@@ -95,9 +117,19 @@ export function StationPanel() {
                     className={`h-2 w-2 flex-shrink-0 rounded-full ${
                       station.isOpen ? 'bg-reach-safe' : 'bg-gray-300'
                     }`}
+                    title={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
                   />
                 </div>
-                <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{address}</p>
+                {/*
+                  Address is the only reliable disambiguator when the
+                  same brand has multiple stations in the area (e.g.
+                  two "Raiffeisen" within 40 km). Bumped from xs to
+                  sm + medium-weight so users can tell at a glance
+                  *which* Aral / Raiffeisen / Shell they're looking at.
+                */}
+                <p className="mt-0.5 truncate text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {address}
+                </p>
               </div>
             </div>
             <button
@@ -150,13 +182,13 @@ export function StationPanel() {
               <div className="text-center">
                 <p className="text-xs text-gray-400 dark:text-gray-500">Strecke</p>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {routeDistanceKm < 1 ? `${Math.round(routeDistanceKm * 1000)} m` : `${routeDistanceKm.toFixed(1)} km`}
+                  {formatDistance(airlineDistanceKm)}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-gray-400 dark:text-gray-500">Fahrzeit</p>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  {routeDurationMin < 1 ? '<1 min' : `${routeDurationMin} min`}
+                  ~{formatDriveTime(heuristicDriveMin)}
                 </p>
               </div>
               {vehicle?.tankCapacity && price != null && (
@@ -170,6 +202,32 @@ export function StationPanel() {
               <ReachabilityBadge status={reachability} />
             </div>
           </div>
+
+          {/*
+            Route detail \u2014 secondary line, only shown when the actual
+            road route differs noticeably from the airline heuristic
+            (typically: detours, ferries, dense city blocks). Keeps
+            the headline strecke/fahrzeit values aligned with the
+            list card so users don't get whiplash from clicking.
+          */}
+          {routeMeaningfullyDifferent && routeDistanceKm != null && routeDurationMin != null && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5
+                            text-xs text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+              <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m-6 3l6-3" />
+              </svg>
+              <span>
+                Route:&nbsp;
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {formatDistance(routeDistanceKm)}
+                </span>
+                &nbsp;\u00b7&nbsp;
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {routeDurationMin < 1 ? '<1 min' : `${routeDurationMin} min`}
+                </span>
+              </span>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button

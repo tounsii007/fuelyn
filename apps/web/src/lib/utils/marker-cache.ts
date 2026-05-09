@@ -44,6 +44,13 @@ export function getCachedIcon(
 /**
  * Build a cache key for price marker icons.
  * Encodes every visual-differentiating parameter.
+ *
+ * `mapStyle` is included because each tile style (light Voyager,
+ * Dark, Satellite, Terrain) gets its own marker palette so the
+ * card stays legible against the background. Two markers that are
+ * identical in everything else but rendered on different basemaps
+ * must NOT share a DivIcon — otherwise switching map styles would
+ * leave stale markers around.
  */
 export function priceMarkerKey(
   price: number | null,
@@ -51,8 +58,9 @@ export function priceMarkerKey(
   isOpen: boolean,
   reachability: 'safe' | 'tight' | 'unreachable',
   brand: string,
+  mapStyle: string,
 ): string {
-  return buildKey('price', price, isBest, isOpen, reachability, brand);
+  return buildKey('price', price, isBest, isOpen, reachability, brand, mapStyle);
 }
 
 /**
