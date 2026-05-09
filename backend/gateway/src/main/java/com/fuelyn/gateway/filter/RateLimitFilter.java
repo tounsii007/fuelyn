@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.security.GatewayGatewayTrustedProxyResolver;
+import com.fuelyn.gateway.security.GatewayTrustedProxyResolver;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.fuelyn.gateway.config.TankpilotProperties;
