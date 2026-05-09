@@ -77,6 +77,20 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
   const station = routeTarget;
   const price = station.prices?.[fuelType] ?? null;
   const address = formatAddress(station.street, station.houseNumber, station.postCode, station.place);
+
+  // ─── Hero "TOP DEAL" eligibility ────────────────────────────────
+  // Promote the panel to a celebratory state when:
+  //   - we have meaningful candidate-set context (≥3 stations),
+  //   - this station IS the cheapest in the set for the active fuel,
+  //   - it's actually open (no point flagging a closed bargain).
+  // The banner doubles as a savings hint vs. the next-cheapest
+  // station so the user sees a concrete number, not just a label.
+  const fuelStat = marketStats[fuelType];
+  const isTopDeal =
+    price != null && station.isOpen && fuelStat != null && fuelStat.count >= 3 &&
+    price <= fuelStat.min + 0.0005;
+  const topDealSavingsPerLiterCt =
+    isTopDeal && fuelStat ? Math.max(0, Math.round((fuelStat.avg - price!) * 100)) : 0;
   const range = vehicle ? computeRemainingRange(vehicle) : null;
   const reachability = computeReachability(station.dist, range);
 
@@ -148,6 +162,33 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
           </div>
         )}
 
+        {/*
+          TOP DEAL banner — a slim gradient strip that appears only
+          when this station is the cheapest open option in the
+          current candidate set. We surface the savings vs. the set
+          average so the user sees a concrete reason to act, not a
+          vague badge. Suppressed completely when we don't have
+          enough context (≥3 candidates).
+        */}
+        {isTopDeal && (
+          <div
+            className="flex items-center justify-between gap-2 px-4 py-1.5 text-xs font-semibold text-white
+                       bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500"
+            role="status"
+            aria-label={`Beste Wahl in der Liste für ${FUEL_TYPE_LABELS[fuelType]}`}
+          >
+            <span className="flex items-center gap-1.5 tracking-wide">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M11.48 3.5a.563.563 0 0 1 1.04 0l2.13 5.11 5.5.43c.51.04.72.69.32 1l-4.18 3.42 1.27 5.36a.562.562 0 0 1-.84.61L12 16.97l-4.72 2.46a.562.562 0 0 1-.84-.61l1.27-5.36-4.18-3.42a.563.563 0 0 1 .32-1l5.5-.43L11.48 3.5Z" transform="translate(-2 0)"/>
+              </svg>
+              BESTE WAHL · {FUEL_TYPE_LABELS[fuelType]}
+            </span>
+            {topDealSavingsPerLiterCt > 0 && (
+              <span className="font-mono">−{topDealSavingsPerLiterCt} ct/L vs. Schnitt</span>
+            )}
+          </div>
+        )}
+
         <div className="p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -157,12 +198,22 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                   <h3 className="truncate text-base font-bold text-gray-900 dark:text-gray-100">
                     {station.brand || station.name}
                   </h3>
+                  {/*
+                    Status pill — a labelled chip beats a tiny coloured
+                    dot for accessibility (screen readers + low-vision
+                    users). Tone follows the underlying state so colour
+                    blindness doesn't lose the signal.
+                  */}
                   <span
-                    className={`h-2 w-2 flex-shrink-0 rounded-full ${
-                      station.isOpen ? 'bg-reach-safe' : 'bg-gray-300'
+                    className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                      station.isOpen
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                        : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                     }`}
-                    title={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
-                  />
+                    aria-label={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                  >
+                    {station.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                  </span>
                 </div>
                 {/*
                   Address is the only reliable disambiguator when the
