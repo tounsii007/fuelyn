@@ -13,10 +13,6 @@ import java.time.LocalDateTime;
  * <p>The primary key is the Tankerkoenig UUID ({@code id}), which remains stable
  * across API calls. Station metadata is upserted on each collection run so that
  * name, brand, and address fields stay current.</p>
- *
- * <p>The {@code priceCollectionCount} field tracks how many times prices have
- * been successfully collected for this station, providing a simple data-quality
- * indicator.</p>
  */
 @Entity
 @Table(
@@ -65,10 +61,6 @@ public class StationMeta {
     /** Timestamp of the most recent successful price collection for this station. */
     @Column(name = "last_seen")
     private LocalDateTime lastSeen;
-
-    /** Number of successful price collection runs that included this station. */
-    @Column(name = "price_collection_count")
-    private Integer priceCollectionCount;
 
     /**
      * Default constructor required by JPA.
@@ -146,14 +138,6 @@ public class StationMeta {
 
     public void setLastSeen(LocalDateTime lastSeen) {
         this.lastSeen = lastSeen;
-    }
-
-    public Integer getPriceCollectionCount() {
-        return priceCollectionCount;
-    }
-
-    public void setPriceCollectionCount(Integer priceCollectionCount) {
-        this.priceCollectionCount = priceCollectionCount;
     }
 
     @Override
