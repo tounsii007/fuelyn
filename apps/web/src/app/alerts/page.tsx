@@ -19,7 +19,7 @@ import { IconButton } from '@/components/ui/IconButton';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 export default function AlertsPage() {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const alerts = useAppStore((s) => s.priceAlerts);
   const addPriceAlert = useAppStore((s) => s.addPriceAlert);
   const removePriceAlert = useAppStore((s) => s.removePriceAlert);
@@ -170,6 +170,7 @@ export default function AlertsPage() {
                 onToggle={() => togglePriceAlert(alert.id)}
                 onRemove={() => removePriceAlert(alert.id)}
                 t={t}
+                locale={locale}
               />
             ))}
           </div>
@@ -193,11 +194,13 @@ function AlertCard({
   onToggle,
   onRemove,
   t,
+  locale,
 }: {
   alert: PriceAlert;
   onToggle: () => void;
   onRemove: () => void;
   t: ReturnType<typeof useTranslations>['t'];
+  locale: ReturnType<typeof useTranslations>['locale'];
 }) {
   const fuelColor =
     alert.fuelType === 'diesel'
@@ -222,7 +225,14 @@ function AlertCard({
           {FUEL_TYPE_LABELS[alert.fuelType]} {t('alerts.under')} {alert.targetPrice.toFixed(2)} €
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {t('alerts.createdAt')} {new Date(alert.createdAt).toLocaleDateString()}
+          {t('alerts.createdAt')}{' '}
+          {/*
+            Format date with the active app locale rather than the
+            browser/system default. Without this, SSR renders the
+            date in Node's default locale (often en-US) while client
+            renders it in the browser's locale → hydration mismatch.
+          */}
+          {new Date(alert.createdAt).toLocaleDateString(locale)}
         </p>
       </div>
       <ToggleSwitch
