@@ -18,6 +18,35 @@ import {
 } from '@fuelyn/core';
 import { BrandBadge } from '../ui/BrandBadge';
 
+/**
+ * Build a Google Maps directions URL pointing at lat/lng. Uses
+ * the cross-platform "search" form (q=lat,lng) which the GMaps app
+ * intercepts on Android and the website handles everywhere else —
+ * one URL covers desktop browsers, iPhone with the app, iPhone
+ * without the app, Android, and shareable links.
+ */
+function buildGoogleMapsUrl(lat: number, lng: number): string {
+  const params = new URLSearchParams({
+    api: '1',
+    query: `${lat},${lng}`,
+  });
+  return `https://www.google.com/maps/search/?${params.toString()}`;
+}
+
+/**
+ * Build an Apple Maps URL. The `maps.apple.com` domain works as a
+ * direct browser-fallback when the iOS app isn't installed (Apple
+ * serves a usable web view), and the iOS app intercepts it
+ * automatically when present.
+ */
+function buildAppleMapsUrl(lat: number, lng: number, label: string): string {
+  const params = new URLSearchParams({
+    ll: `${lat},${lng}`,
+    q: label,
+  });
+  return `https://maps.apple.com/?${params.toString()}`;
+}
+
 interface StationPanelProps {
   /**
    * Current set of recommended stations. Used to contextualise the
@@ -421,6 +450,46 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
             the headline strecke/fahrzeit values aligned with the
             list card so users don't get whiplash from clicking.
           */}
+          {/*
+            External-maps deep links — opens the user's preferred
+            navigation app (Google Maps in browsers, Apple Maps on
+            iOS Safari) with this station as the destination. Beats
+            the in-app Navigation when the user wants turn-by-turn
+            voice guidance from the OS-native app.
+          */}
+          <div className="mb-3 flex items-center gap-2">
+            <a
+              href={buildGoogleMapsUrl(station.lat, station.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg
+                         bg-gray-50 dark:bg-gray-800/60 px-3 py-2 text-xs font-semibold
+                         text-gray-700 dark:text-gray-300
+                         hover:bg-gray-100 dark:hover:bg-gray-800
+                         border border-gray-200 dark:border-gray-700/60
+                         transition-colors"
+              title="In Google Maps öffnen"
+            >
+              <span aria-hidden>🗺</span>
+              Google Maps
+            </a>
+            <a
+              href={buildAppleMapsUrl(station.lat, station.lng, station.brand || station.name)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg
+                         bg-gray-50 dark:bg-gray-800/60 px-3 py-2 text-xs font-semibold
+                         text-gray-700 dark:text-gray-300
+                         hover:bg-gray-100 dark:hover:bg-gray-800
+                         border border-gray-200 dark:border-gray-700/60
+                         transition-colors"
+              title="In Apple Maps öffnen"
+            >
+              <span aria-hidden></span>
+              Apple Maps
+            </a>
+          </div>
+
           {routeMeaningfullyDifferent && routeDistanceKm != null && routeDurationMin != null && (
             <div className="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5
                             text-xs text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
