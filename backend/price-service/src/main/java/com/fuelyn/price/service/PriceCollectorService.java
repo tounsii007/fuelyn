@@ -69,7 +69,7 @@ public class PriceCollectorService {
      */
     private final List<CityCoord> cities;
 
-    private final TankerkoenigClient tankerkoenigClient;
+    private final FuelStationClient tankerkoenigClient;
     private final PriceSnapshotRepository snapshotRepo;
     private final StationMetaRepository stationRepo;
     private final CollectionRunRepository runRepo;
@@ -100,7 +100,7 @@ public class PriceCollectorService {
     private static final List<String> CACHES_DEPENDENT_ON_PRICES = List.of("priceHistory", "areaStats");
 
     public PriceCollectorService(
-            TankerkoenigClient tankerkoenigClient,
+            FuelStationClient tankerkoenigClient,
             PriceSnapshotRepository snapshotRepo,
             StationMetaRepository stationRepo,
             CollectionRunRepository runRepo,
