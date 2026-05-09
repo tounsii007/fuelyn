@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
@@ -341,6 +341,14 @@ export function SettingsPage() {
               )}
             </button>
 
+            {/* Export / import section — sits inside the Data card
+                because it's the same conceptual surface (managing
+                what's stored locally). Exports the user's whole
+                client-side state as a portable JSON blob; imports
+                merges it back. The full action lives in
+                ImportExportRow so the existing render stays scannable. */}
+            <ImportExportRow />
+
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-gray-400 dark:text-gray-500">
                 {t('settings.lastUpdate')}
@@ -385,6 +393,144 @@ export function SettingsPage() {
 }
 
 // ─── Sub-components ─────────────────────────────────────────
+
+// ─── Import / Export row ────────────────────────────────────
+//
+// Lets the user move their client-side state — favourites,
+// vehicle profile, fuel-log, saved locations, search history,
+// preferences — between devices or back-up to disk. Round-trips
+// as a single JSON document so the file is easy to inspect.
+//
+// Export: opens a download dialog with a timestamped filename.
+// Import: file-picker → JSON.parse → shallow-merge into the store
+//         under a single setState call, so listeners only re-render
+//         once. Unknown fields are ignored (forward-compatible).
+//         Validation is intentionally light because this is a
+//         self-restore path, not a public API surface.
+function ImportExportRow() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<{ kind: 'idle' | 'ok' | 'err'; message: string }>({
+    kind: 'idle',
+    message: '',
+  });
+
+  const exportData = useCallback(() => {
+    try {
+      const s = useAppStore.getState();
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings: s.settings,
+        vehicle: s.vehicle,
+        favorites: s.favorites,
+        priceAlerts: s.priceAlerts,
+        fuelLog: s.fuelLog,
+        savedLocations: s.savedLocations,
+        searchHistory: s.searchHistory,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const today = new Date().toISOString().slice(0, 10);
+      a.download = `fuelyn-backup-${today}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus({ kind: 'ok', message: 'Export gestartet' });
+      setTimeout(() => setStatus({ kind: 'idle', message: '' }), 3000);
+    } catch (e) {
+      setStatus({ kind: 'err', message: 'Export fehlgeschlagen' });
+    }
+  }, []);
+
+  const importData = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      // Defensive: only accept fields we recognise. Unknown keys
+      // are ignored so a future export with extra columns doesn't
+      // pollute today's store.
+      useAppStore.setState((cur) => ({
+        settings: { ...cur.settings, ...(data.settings ?? {}) },
+        vehicle: data.vehicle ?? cur.vehicle,
+        favorites: Array.isArray(data.favorites) ? data.favorites : cur.favorites,
+        priceAlerts: Array.isArray(data.priceAlerts) ? data.priceAlerts : cur.priceAlerts,
+        fuelLog: Array.isArray(data.fuelLog) ? data.fuelLog : cur.fuelLog,
+        savedLocations: Array.isArray(data.savedLocations) ? data.savedLocations : cur.savedLocations,
+        searchHistory: Array.isArray(data.searchHistory) ? data.searchHistory : cur.searchHistory,
+      }));
+      setStatus({ kind: 'ok', message: 'Import erfolgreich' });
+      setTimeout(() => setStatus({ kind: 'idle', message: '' }), 3000);
+    } catch {
+      setStatus({ kind: 'err', message: 'Datei konnte nicht gelesen werden' });
+      setTimeout(() => setStatus({ kind: 'idle', message: '' }), 4000);
+    }
+  }, []);
+
+  return (
+    <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3 space-y-2">
+      <div className="flex items-center gap-3 mb-1">
+        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12M12 16.5V3" />
+        </svg>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Daten exportieren / importieren
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Favoriten, Fahrzeug, Logbuch &amp; Einstellungen als JSON
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={exportData}
+          className="flex-1 min-w-[120px] rounded-lg bg-white dark:bg-gray-900 px-3 py-2 text-xs font-semibold
+                     text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800
+                     border border-gray-200 dark:border-gray-700 transition-colors"
+        >
+          Export (JSON)
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex-1 min-w-[120px] rounded-lg bg-white dark:bg-gray-900 px-3 py-2 text-xs font-semibold
+                     text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800
+                     border border-gray-200 dark:border-gray-700 transition-colors"
+        >
+          Import (JSON)
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void importData(f);
+            // Reset so re-selecting the same file still triggers change
+            e.target.value = '';
+          }}
+        />
+      </div>
+      {status.kind !== 'idle' && (
+        <p
+          className={`text-[11px] mt-1 ${
+            status.kind === 'ok'
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-rose-600 dark:text-rose-400'
+          }`}
+          role="status"
+        >
+          {status.message}
+        </p>
+      )}
+    </div>
+  );
+}
 
 // ─── Privacy & Location section ─────────────────────────────
 //
