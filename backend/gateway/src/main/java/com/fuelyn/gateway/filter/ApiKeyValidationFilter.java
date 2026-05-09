@@ -29,23 +29,35 @@ public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
     private static final Logger log = LoggerFactory.getLogger(ApiKeyValidationFilter.class);
     private static final String API_KEY_HEADER = "X-API-Key";
 
+    private static final List<String> PUBLIC_PREFIXES = List.of("/actuator", "/fallback");
+
     private final List<String> validApiKeys;
 
     public ApiKeyValidationFilter(TankpilotProperties properties) {
-        this.validApiKeys = properties.getSecurity().getApiKeys();
+        // Pre-filter to drop empty / blank entries that a misconfigured
+        // env-var expansion might leave behind. Otherwise the loop below
+        // would still iterate them (good for constant-time guarantees) but
+        // every empty entry takes one constant-time comparison for nothing.
+        this.validApiKeys = properties.getSecurity().getApiKeys() == null
+                ? List.of()
+                : properties.getSecurity().getApiKeys().stream()
+                        .filter(k -> k != null && !k.isBlank())
+                        .toList();
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // Skip validation for actuator, health, and fallback endpoints
-        if (path.startsWith("/actuator") || path.startsWith("/fallback")) {
+        // Skip validation for actuator, health, and fallback endpoints.
+        // Anchor the prefix at a path-segment boundary so /actuator-evil
+        // doesn't match /actuator and bypass the auth check.
+        if (isPublicPath(path)) {
             return chain.filter(exchange);
         }
 
         // Skip if no API keys are configured (dev mode)
-        if (validApiKeys == null || validApiKeys.isEmpty()) {
+        if (validApiKeys.isEmpty()) {
             return chain.filter(exchange);
         }
 
@@ -56,8 +68,16 @@ public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
             return exchange.getResponse().setComplete();
         }
 
-        boolean valid = validApiKeys.stream()
-                .anyMatch(key -> constantTimeEquals(key, providedKey));
+        // Iterate ALL configured keys with a non-short-circuiting OR. The
+        // previous Stream.anyMatch returned at the first hit, leaking
+        // information about WHICH key matched via response-time variance.
+        // Now every accepted key incurs the same total compare cost.
+        byte[] providedBytes = providedKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        boolean valid = false;
+        for (String key : validApiKeys) {
+            byte[] keyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            valid |= MessageDigest.isEqual(keyBytes, providedBytes);
+        }
 
         if (!valid) {
             log.warn("Invalid API key for request: {} {}", exchange.getRequest().getMethod(), path);
@@ -68,14 +88,13 @@ public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange);
     }
 
-    /**
-     * Constant-time string comparison to prevent timing attacks.
-     */
-    private boolean constantTimeEquals(String a, String b) {
-        return MessageDigest.isEqual(
-                a.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                b.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-        );
+    private static boolean isPublicPath(String path) {
+        for (String p : PUBLIC_PREFIXES) {
+            if (path.equals(p) || path.startsWith(p + "/")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
