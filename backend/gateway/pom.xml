@@ -68,6 +68,13 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- StepVerifier for reactive Mono/Flux assertions in tests -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
