@@ -635,10 +635,11 @@ function MoreMenu() {
             <div className="mt-2 rounded-[var(--radius-lg)] bg-gray-50 dark:bg-gray-800/60 p-3
                             text-xs text-[var(--color-fg-subtle)] space-y-1.5">
               <div className="font-semibold text-[var(--color-fg)] mb-1">Tastenkürzel</div>
-              <KbdRow keys={['⌘ / Ctrl', 'K']} label="Befehlspalette öffnen" />
-              <KbdRow keys={['Esc']}            label="Dialoge & Popups schließen" />
-              <KbdRow keys={['↑ / ↓']}           label="In Listen navigieren" />
-              <KbdRow keys={['Enter']}           label="Auswahl bestätigen" />
+              <KbdRow keys={['⌘ / Ctrl', 'K']}   label="Befehlspalette öffnen" />
+              <KbdRow keys={['Esc']}              label="Dialoge & Popups schließen" />
+              <KbdRow keys={['↑ / ↓']}             label="In Listen navigieren" />
+              <KbdRow keys={['Enter']}             label="Auswahl bestätigen" />
+              <KbdRow keys={['Rechtsklick / Halten']} label="Pin auf Karte setzen" />
             </div>
           )}
 
