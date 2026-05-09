@@ -13,6 +13,7 @@ import com.fuelyn.price.stream.PriceEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,16 @@ public class PriceCollectorService {
     private final double radiusKm;
     private final int maxHistoryDays;
 
+    /**
+     * Self-reference so {@link #collectAll()} can call {@link #collectForArea}
+     * through the Spring proxy. A direct {@code this.collectForArea(...)} call
+     * would bypass the AOP proxy and silently disable {@code @Transactional},
+     * causing every {@code findById}/{@code save} to open its own implicit
+     * transaction — which also nullifies {@code hibernate.jdbc.batch_size}.
+     * {@code @Lazy} breaks the circular self-dependency at startup.
+     */
+    private final PriceCollectorService self;
+
     public PriceCollectorService(
             TankerkoenigClient tankerkoenigClient,
             PriceSnapshotRepository snapshotRepo,
@@ -61,7 +72,8 @@ public class PriceCollectorService {
             CollectionRunRepository runRepo,
             PriceEventPublisher priceEventPublisher,
             @Value("${fuelyn.collection.radius-km:10}") double radiusKm,
-            @Value("${fuelyn.collection.max-history-days:90}") int maxHistoryDays
+            @Value("${fuelyn.collection.max-history-days:90}") int maxHistoryDays,
+            @Lazy PriceCollectorService self
     ) {
         this.tankerkoenigClient = tankerkoenigClient;
         this.snapshotRepo = snapshotRepo;
@@ -70,6 +82,7 @@ public class PriceCollectorService {
         this.priceEventPublisher = priceEventPublisher;
         this.radiusKm = radiusKm;
         this.maxHistoryDays = maxHistoryDays;
+        this.self = self;
     }
 
     /**
@@ -88,7 +101,10 @@ public class PriceCollectorService {
 
         for (CityCoord city : CITIES) {
             try {
-                CollectionResult cityResult = collectForArea(city.lat(), city.lng(), city.name());
+                // Routed through `self` so the @Transactional proxy actually
+                // wraps the call — a direct `collectForArea(...)` would bypass
+                // AOP and run every JPA op in its own auto-commit transaction.
+                CollectionResult cityResult = self.collectForArea(city.lat(), city.lng(), city.name());
                 totalStations += cityResult.stationsCount();
                 totalPrices += cityResult.pricesCount();
             } catch (Exception e) {
