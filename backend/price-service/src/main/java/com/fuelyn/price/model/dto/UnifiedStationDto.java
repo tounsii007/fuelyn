@@ -50,6 +50,15 @@ public record UnifiedStationDto(
         String usageCost,
         String accessType
 ) {
+    /**
+     * Nested DTOs explicitly opt back into NON_NULL because Jackson's
+     * include-policy on the enclosing class does NOT propagate to record
+     * components. Without this annotation, a fuel station with only
+     * diesel data emits {@code "prices":{"diesel":1.799,"e5":null,"e10":null}}
+     * — bloating the wire and forcing every frontend consumer to defensively
+     * filter null prices.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AddressDto(
             String street,
             String houseNumber,
@@ -57,12 +66,14 @@ public record UnifiedStationDto(
             String city
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PricesDto(
             Double diesel,
             Double e5,
             Double e10
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ConnectionDto(
             String connectorType,
             String connectorLabel,
