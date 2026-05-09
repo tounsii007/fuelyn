@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
 import type { FuelType, StationRecommendation } from '@fuelyn/core';
 import {
@@ -87,6 +88,7 @@ function computeMarketStats(recs: readonly StationRecommendation[] | undefined):
 }
 
 export function StationPanel({ recommendations }: StationPanelProps = {}) {
+  const { t } = useTranslations();
   const routeTarget = useAppStore((state) => state.routeTarget);
   const activeRoute = useAppStore((state) => state.activeRoute);
   const routeLoading = useAppStore((state) => state.routeLoading);
@@ -215,7 +217,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
               <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M11.48 3.5a.563.563 0 0 1 1.04 0l2.13 5.11 5.5.43c.51.04.72.69.32 1l-4.18 3.42 1.27 5.36a.562.562 0 0 1-.84.61L12 16.97l-4.72 2.46a.562.562 0 0 1-.84-.61l1.27-5.36-4.18-3.42a.563.563 0 0 1 .32-1l5.5-.43L11.48 3.5Z" transform="translate(-2 0)"/>
               </svg>
-              BESTE WAHL · {FUEL_TYPE_LABELS[fuelType]}
+              {t('panel.bestChoice')} · {FUEL_TYPE_LABELS[fuelType]}
             </span>
             {topDealSavingsPerLiterCt > 0 && (
               <span className="font-mono">−{topDealSavingsPerLiterCt} ct/L vs. Schnitt</span>
@@ -244,9 +246,9 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                         : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                     }`}
-                    aria-label={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                    aria-label={station.isOpen ? t('station.open') : t('station.closed')}
                   >
-                    {station.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                    {station.isOpen ? t('station.open') : t('station.closed')}
                   </span>
                 </div>
                 {/*
@@ -336,7 +338,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                                  dark:bg-emerald-900/40 dark:text-emerald-300"
                       title={`Günstigster ${FUEL_TYPE_LABELS[ft]}-Preis in der aktuellen Liste`}
                     >
-                      ★ günstigster
+                      ★ {t('panel.cheapestChip')}
                     </span>
                   ) : deltaCt !== null && Math.abs(deltaCt) >= 1 ? (
                     <span
@@ -365,18 +367,18 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
             station is impossible to overlook.
           */}
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Anfahrt
+            {t('panel.travel')}
           </p>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-sm">
               <div className="text-center">
-                <p className="text-xs text-gray-400 dark:text-gray-500">Strecke</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('station.distance')}</p>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
                   {formatDistance(airlineDistanceKm)}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-gray-400 dark:text-gray-500">Fahrzeit</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('station.driveTime')}</p>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
                   ~{formatDriveTime(heuristicDriveMin)}
                 </p>
@@ -402,7 +404,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                             dark:bg-brand-900/15 dark:ring-brand-900/30">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-300">
-                  Mit deinem Fahrzeug
+                  {t('panel.withYourVehicle')}
                 </span>
                 {vehicle.consumption ? (
                   <span className="text-[10px] text-gray-500 dark:text-gray-400">
@@ -413,7 +415,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
               <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-200">
                 {vehicle.tankCapacity ? (
                   <li className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Volltanken</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('panel.fullTank')}</span>
                     <span className="font-semibold tabular-nums">
                       {Math.round(vehicle.tankCapacity)} L
                       <span className="mx-1 text-gray-400">·</span>
@@ -423,7 +425,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                 ) : null}
                 {vehicle.consumption && airlineDistanceKm > 0.1 ? (
                   <li className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Sprit-Aufwand Hin+Rück</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('panel.fuelCostRoundTrip')}</span>
                     <span className="font-semibold tabular-nums">
                       {((airlineDistanceKm * 2 * vehicle.consumption) / 100).toFixed(2)} L
                       <span className="mx-1 text-gray-400">·</span>
@@ -433,7 +435,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                 ) : null}
                 {vehicle.tankCapacity && vehicle.consumption ? (
                   <li className="flex items-center justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Reichweite voll</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('panel.fullRange')}</span>
                     <span className="font-semibold tabular-nums">
                       {Math.round((vehicle.tankCapacity / vehicle.consumption) * 100)} km
                     </span>
@@ -497,7 +499,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m-6 3l6-3" />
               </svg>
               <span>
-                Route:&nbsp;
+                {t('panel.routeDetail')}:&nbsp;
                 <span className="font-medium text-gray-700 dark:text-gray-200">
                   {formatDistance(routeDistanceKm)}
                 </span>
@@ -544,8 +546,8 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                   ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
               }`}
-              aria-label={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten'}
-              title={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              aria-label={isFavorite ? t('station.removeFavorite') : t('station.addFavorite')}
+              title={isFavorite ? t('station.removeFavorite') : t('station.addFavorite')}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill={isFavorite ? 'currentColor' : 'none'}>
                 <path
@@ -565,13 +567,13 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
               }`}
               aria-label={
                 compareIds.includes(station.id)
-                  ? 'Aus Vergleich entfernen'
-                  : 'Zum Vergleich hinzufügen'
+                  ? t('compare.removeHint')
+                  : t('compare.addedHint')
               }
               title={
                 compareIds.includes(station.id)
-                  ? 'Aus Vergleich entfernen'
-                  : `Zum Vergleich hinzufügen (${compareIds.length}/3)`
+                  ? t('compare.removeHint')
+                  : `${t('compare.addedHint')} (${compareIds.length}/3)`
               }
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
