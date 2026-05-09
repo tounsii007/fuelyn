@@ -6,8 +6,9 @@
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
+import { useAppStore } from '@/lib/store/app-store';
 import { StationCard } from './StationCard';
 import { StationCardSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
@@ -100,6 +101,23 @@ export function StationList({
   const shown = Math.min(visibleCount, total);
   const hasMore = shown < total;
 
+  // Compute the same market context the StationPanel uses, but for
+  // the active fuel only (the cards only show one fuel each, so we
+  // don't need the full per-fuel matrix). Memoised because the
+  // computation walks every station.
+  const fuelType = useAppStore((s) => s.filter.fuelType);
+  const market = useMemo(() => {
+    const prices: number[] = [];
+    for (const r of recommendations) {
+      const p = r.station.prices?.[fuelType];
+      if (typeof p === 'number' && p > 0) prices.push(p);
+    }
+    if (prices.length === 0) return { min: null as number | null, avg: null as number | null, count: 0 };
+    const min = Math.min(...prices);
+    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+    return { min, avg, count: prices.length };
+  }, [recommendations, fuelType]);
+
   return (
     <div className="flex flex-col gap-3 p-4">
       {/* Result count */}
@@ -117,6 +135,9 @@ export function StationList({
         >
           <StationCard
             recommendation={rec}
+            marketAvgForFuel={market.avg}
+            marketMinForFuel={market.min}
+            marketCount={market.count}
             onClick={() => onStationClick(rec.station.id)}
           />
         </div>

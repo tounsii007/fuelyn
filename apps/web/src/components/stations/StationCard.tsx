@@ -12,11 +12,26 @@ import { BrandBadge } from '../ui/BrandBadge';
 import { useAppStore } from '@/lib/store/app-store';
 
 interface StationCardProps {
-  recommendation: StationRecommendation;
-  onClick?: () => void;
+  readonly recommendation: StationRecommendation;
+  readonly onClick?: () => void;
+  /**
+   * Optional market context — when supplied, a small chip is
+   * appended to the price showing how this station compares to
+   * the rest of the list (★ günstigster / −5 ct / +8 ct).
+   * Calls without it (legacy) just hide the chip.
+   */
+  readonly marketAvgForFuel?: number | null;
+  readonly marketMinForFuel?: number | null;
+  readonly marketCount?: number;
 }
 
-export function StationCard({ recommendation, onClick }: StationCardProps) {
+export function StationCard({
+  recommendation,
+  onClick,
+  marketAvgForFuel,
+  marketMinForFuel,
+  marketCount,
+}: StationCardProps) {
   const { station, reachabilityStatus, estimatedDriveTime, isBestOption, reasons } =
     recommendation;
   const fuelType = useAppStore((s) => s.filter.fuelType);
@@ -29,6 +44,21 @@ export function StationCard({ recommendation, onClick }: StationCardProps) {
 
   const address = formatAddress(station.street, station.houseNumber, station.postCode, station.place);
   const price = station.prices?.[fuelType] ?? null;
+
+  // Same delta-vs-average logic as StationPanel — kept simple
+  // (≥1 ct rounded delta + count threshold) so chip presence is
+  // an honest signal, not noise.
+  let deltaCt: number | null = null;
+  let isCheapest = false;
+  if (
+    price != null &&
+    typeof marketAvgForFuel === 'number' &&
+    typeof marketMinForFuel === 'number' &&
+    (marketCount ?? 0) >= 3
+  ) {
+    deltaCt = Math.round((price - marketAvgForFuel) * 100);
+    isCheapest = price <= marketMinForFuel + 0.0005;
+  }
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -87,8 +117,44 @@ export function StationCard({ recommendation, onClick }: StationCardProps) {
           </div>
         </div>
 
-        {/* Price */}
-        <PriceTag price={price} fuelType={fuelType} size="md" />
+        {/* Price + market-delta chip */}
+        <div className="flex flex-col items-end gap-0.5">
+          <PriceTag price={price} fuelType={fuelType} size="md" />
+          {/*
+            Mirror of the StationPanel chip so users get the same
+            "is this a good deal?" signal in the list before they
+            even click. Suppressed when:
+              - we don't have market context yet (initial render),
+              - candidate set is too small (< 3) to be informative,
+              - the delta is < 1 ct (noise threshold).
+            The "günstigster" badge wins over the delta — strongest
+            signal beats the most precise one.
+          */}
+          {isCheapest ? (
+            <span
+              className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5
+                         text-[9px] font-semibold leading-tight
+                         bg-emerald-100 text-emerald-700
+                         dark:bg-emerald-900/40 dark:text-emerald-300"
+              title="Günstigster Preis in der aktuellen Liste"
+            >
+              ★ günstigster
+            </span>
+          ) : deltaCt !== null && Math.abs(deltaCt) >= 1 ? (
+            <span
+              className={`inline-flex items-center rounded-full px-1.5 py-0.5
+                          text-[9px] font-semibold leading-tight ${
+                            deltaCt < 0
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                          }`}
+              title={`${Math.abs(deltaCt)} ct ${deltaCt < 0 ? 'unter' : 'über'} dem Schnitt der angezeigten Tankstellen`}
+            >
+              {deltaCt > 0 ? '+' : ''}
+              {deltaCt} ct
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Meta Row */}
