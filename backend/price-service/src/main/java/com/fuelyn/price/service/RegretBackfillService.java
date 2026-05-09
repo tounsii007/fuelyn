@@ -8,9 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -118,17 +122,26 @@ public class RegretBackfillService {
 
         int filled = 0;
         int skipped = 0;
+        // Collect results first, then issue a single JDBC batchUpdate.
+        // Per-row jdbc.update() through a 500-row pass meant 500 separate
+        // PreparedStatement round-trips; batchUpdate folds them into one
+        // protocol exchange (or driver-level batching) and stays trivially
+        // cancellable on shutdown.
+        List<StampParams> stampBatch = new ArrayList<>(pending.size());
         for (PendingLog row : pending) {
             BackfillResult result = backfillRow(row);
             if (result.regretEur != null) filled++;
             else skipped++;
-            stamp(row.id, result);
+            stampBatch.add(new StampParams(row.id, result));
         }
+        stampAll(stampBatch);
 
         log.info("Regret backfill — pass complete: {} regret-rows, {} no-data, batch={}",
                 filled, skipped, pending.size());
         return filled;
     }
+
+    private record StampParams(long id, BackfillResult result) {}
 
     /** Outcome of looking up the realised 24 h minimum for one row. */
     private record BackfillResult(Double realizedMin, Instant realizedAt, Double regretEur) {}
@@ -195,10 +208,17 @@ public class RegretBackfillService {
         return Math.round(diff * l * 100.0) / 100.0;
     }
 
-    private void stamp(long id, BackfillResult r) {
-        // Always stamp `backfilled_at` so we don't reprocess this row
-        // forever, even when the backfill produced nothing useful.
-        jdbc.update(
+    /**
+     * Single-statement batch stamp. Always sets backfilled_at so a row
+     * with no useful realised data still leaves the pending pool — the
+     * outer loop won't reprocess it forever.
+     */
+    private void stampAll(List<StampParams> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        Timestamp now = Timestamp.from(Instant.now());
+        jdbc.batchUpdate(
                 """
                 UPDATE recommendation_logs
                    SET realized_min_24h = ?,
@@ -207,11 +227,26 @@ public class RegretBackfillService {
                        backfilled_at    = ?
                  WHERE id = ?
                 """,
-                r.realizedMin,
-                r.realizedAt == null ? null : Timestamp.from(r.realizedAt),
-                r.regretEur,
-                Timestamp.from(Instant.now()),
-                id
+                new org.springframework.jdbc.core.BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        StampParams p = rows.get(i);
+                        BackfillResult r = p.result();
+                        if (r.realizedMin == null) ps.setNull(1, Types.DOUBLE);
+                        else                       ps.setDouble(1, r.realizedMin);
+                        if (r.realizedAt == null)  ps.setNull(2, Types.TIMESTAMP);
+                        else                       ps.setTimestamp(2, Timestamp.from(r.realizedAt));
+                        if (r.regretEur == null)   ps.setNull(3, Types.DOUBLE);
+                        else                       ps.setDouble(3, r.regretEur);
+                        ps.setTimestamp(4, now);
+                        ps.setLong(5, p.id());
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return rows.size();
+                    }
+                }
         );
     }
 }
