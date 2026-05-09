@@ -4,12 +4,20 @@
 
 'use client';
 
+import type { ReactNode } from 'react';
 import { Button } from './Button';
 
 interface EmptyStateProps {
   icon?: string;
   title: string;
-  message: string;
+  /**
+   * Body text. Accepts a plain string for short, single-paragraph
+   * states OR a ReactNode when the caller wants to embed bullet
+   * lists, links, or formatted hints (e.g. the StationList "tips"
+   * empty state). Renders inside the same `<p>`-styled container
+   * either way, so styling stays consistent.
+   */
+  message: ReactNode;
   action?: {
     label: string;
     onClick: () => void;

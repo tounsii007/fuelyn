@@ -72,10 +72,26 @@ export function StationList({
   }
 
   if (recommendations.length === 0) {
+    // Tip-style empty state — three concrete things the user can
+    // try, ranked by likelihood of helping. Cheaper than embedding
+    // diagnostics ("which filter is biting?") and good enough to
+    // unblock most users.
     return (
       <EmptyState
+        icon="🔍"
         title="Keine Tankstellen gefunden"
-        message="Versuche einen größeren Suchradius oder ändere deine Filter."
+        message={
+          <span className="block">
+            <span className="block mb-2">
+              In der aktuellen Auswahl ist nichts dabei. Versuche eines davon:
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 inline-block text-left">
+              • Suchradius vergrößern<br />
+              • Andere Kraftstoffart wählen<br />
+              • Filter zurücksetzen
+            </span>
+          </span>
+        }
       />
     );
   }
