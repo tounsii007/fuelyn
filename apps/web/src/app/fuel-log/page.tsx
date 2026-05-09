@@ -78,6 +78,60 @@ export default function FuelLogPage() {
     return { totalCost, totalLiters, avgPrice, count: fuelLog.length };
   }, [fuelLog]);
 
+  /**
+   * Per-month aggregates for the new monthly-overview card.
+   * Walks the log once, grouping by year-month key (YYYY-MM)
+   * which keeps natural chronological ordering when sorted as
+   * strings. Only the most recent 6 months are kept — past
+   * that the card would crowd more than it informs.
+   */
+  const monthlyStats = useMemo(() => {
+    if (fuelLog.length === 0) return [];
+    const buckets = new Map<
+      string,
+      { ymKey: string; year: number; month: number; cost: number; liters: number; entries: number }
+    >();
+    for (const e of fuelLog) {
+      const d = new Date(e.date);
+      if (Number.isNaN(d.getTime())) continue;
+      const ymKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const cur = buckets.get(ymKey) ?? {
+        ymKey,
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        cost: 0,
+        liters: 0,
+        entries: 0,
+      };
+      cur.cost += e.totalCost;
+      cur.liters += e.liters;
+      cur.entries += 1;
+      buckets.set(ymKey, cur);
+    }
+    return [...buckets.values()]
+      .sort((a, b) => b.ymKey.localeCompare(a.ymKey))
+      .slice(0, 6);
+  }, [fuelLog]);
+
+  // Cheapest month → drives the green highlight on the monthly
+  // overview card so a budget-watcher can spot their best month
+  // at a glance.
+  const cheapestMonthlyAvg = useMemo(() => {
+    if (monthlyStats.length === 0) return null;
+    return monthlyStats.reduce(
+      (min, m) => {
+        const avg = m.liters > 0 ? m.cost / m.liters : Infinity;
+        return avg < min ? avg : min;
+      },
+      Infinity,
+    );
+  }, [monthlyStats]);
+
+  const currentYmKey = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
+
   return (
     <div className="max-w-2xl mx-auto p-6 animate-fade-in">
       <PageHeader
@@ -94,7 +148,7 @@ export default function FuelLogPage() {
       {/* KI Verbrauchstracker */}
       <ConsumptionTracker className="mb-4" />
 
-      {/* Stats Summary */}
+      {/* Stats Summary — lifetime totals */}
       {stats && (
         <div className="grid grid-cols-3 gap-3 mb-4">
           <StatCard label="Gesamt" value={stats.totalCost.toFixed(2)} unit="€" />
@@ -106,6 +160,78 @@ export default function FuelLogPage() {
             tone="brand"
           />
         </div>
+      )}
+
+      {/*
+        Monthly overview card — six most recent months with cost,
+        liters and Ø/L per row. Current month carries a brand-tinted
+        chip so the user knows where they are; the month with the
+        lowest average gets a green highlight so a budget-watcher
+        can spot their best stretch at a glance.
+      */}
+      {monthlyStats.length > 0 && (
+        <section
+          aria-labelledby="monthly-heading"
+          className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5 mb-4"
+        >
+          <div className="flex items-baseline justify-between mb-3">
+            <h2
+              id="monthly-heading"
+              className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
+            >
+              Monatsübersicht
+            </h2>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+              letzte {monthlyStats.length} {monthlyStats.length === 1 ? 'Monat' : 'Monate'}
+            </span>
+          </div>
+          <ul className="divide-y divide-gray-100 dark:divide-gray-700/50">
+            {monthlyStats.map((m) => {
+              const monthName = new Date(m.year, m.month, 1).toLocaleDateString('de-DE', {
+                month: 'long',
+                year: 'numeric',
+              });
+              const avg = m.liters > 0 ? m.cost / m.liters : 0;
+              const isCurrent = m.ymKey === currentYmKey;
+              const isCheapest =
+                cheapestMonthlyAvg != null &&
+                m.liters > 0 &&
+                avg <= cheapestMonthlyAvg + 0.0005 &&
+                monthlyStats.length >= 2;
+              return (
+                <li key={m.ymKey} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {monthName}
+                      {isCurrent && (
+                        <span className="ml-2 inline-block rounded-full bg-brand-50 dark:bg-brand-900/30
+                                         px-1.5 py-0.5 text-[9px] font-semibold tracking-wide
+                                         text-brand-700 dark:text-brand-300 uppercase">
+                          aktuell
+                        </span>
+                      )}
+                      {isCheapest && (
+                        <span className="ml-2 inline-block rounded-full bg-emerald-50 dark:bg-emerald-900/30
+                                         px-1.5 py-0.5 text-[9px] font-semibold tracking-wide
+                                         text-emerald-700 dark:text-emerald-300 uppercase">
+                          ★ günstigster
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 tabular-nums">
+                      {m.entries} {m.entries === 1 ? 'Eintrag' : 'Einträge'} ·{' '}
+                      {m.liters.toFixed(1)} L ·{' '}
+                      Ø {avg.toFixed(3)} €/L
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100 tabular-nums whitespace-nowrap">
+                    {m.cost.toFixed(2)} €
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {/* Add Form */}
