@@ -85,7 +85,12 @@ public class PriceEventConsumer {
 
             ack.acknowledge();
         } catch (Exception e) {
-            log.error("Failed to process price event id={}: {}", envelope.id(), e.getMessage(), e);
+            // envelope itself can be null when the deserialiser handed us
+            // a poison-pill (ErrorHandlingDeserializer drops a null). The
+            // previous code NPE'd on envelope.id() inside the catch and
+            // crashed the listener thread instead of logging cleanly.
+            String envelopeId = envelope == null ? "null" : envelope.id();
+            log.error("Failed to process price event id={}: {}", envelopeId, e.getMessage(), e);
             // Don't acknowledge → broker will redeliver on next poll
         }
     }

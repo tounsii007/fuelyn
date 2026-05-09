@@ -83,8 +83,18 @@ public class OpenChargeMapClient implements ChargingStationClient {
         );
 
         long duration = System.currentTimeMillis() - start;
-        List<OCMResult> results = response.getBody();
 
+        // Defensive checks before any field access. OpenChargeMap can answer
+        // 200 with an empty body, 204 with no body at all, or 200 with a non-
+        // 2xx-equivalent payload — and a circuit-breaker recovery may yield
+        // a half-deserialised response. Treat any of these as "no stations"
+        // so the caller never receives a null and never NPEs.
+        if (response == null || !response.getStatusCode().is2xxSuccessful()) {
+            log.warn("OpenChargeMap non-success status: {}",
+                    response == null ? "null" : response.getStatusCode());
+            return Collections.emptyList();
+        }
+        List<OCMResult> results = response.getBody();
         if (results == null) {
             return Collections.emptyList();
         }

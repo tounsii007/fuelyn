@@ -125,7 +125,17 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-        String content = String.valueOf(message.get("content"));
+        if (message == null) {
+            throw new IllegalStateException("OpenAI response missing message in choice[0]");
+        }
+        Object rawContent = message.get("content");
+        if (rawContent == null) {
+            throw new IllegalStateException("OpenAI response missing content in message");
+        }
+        // String.valueOf(null) returns the literal "null" — silently passing
+        // that downstream produced JSON-parser failures with a misleading
+        // root cause. Explicit null-check above gives a precise diagnostic.
+        String content = rawContent.toString();
 
         @SuppressWarnings("unchecked")
         Map<String, Object> usage = (Map<String, Object>) respBody.get("usage");
