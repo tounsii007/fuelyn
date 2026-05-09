@@ -24,7 +24,7 @@ import {
   computeReachability,
   computeRemainingRange,
 } from '@fuelyn/core';
-import type { FuelType } from '@fuelyn/core';
+import type { FuelType, StationRecommendation, VehicleProfile } from '@fuelyn/core';
 
 export default function ComparePage() {
   const compareIds = useAppStore((s) => s.compareStationIds);
@@ -138,16 +138,44 @@ export default function ComparePage() {
         </>
       ) : (
         <>
+          {/*
+            Group summary — appears with ≥2 compared stations and
+            tells the user what they actually want to know:
+              • Spannweite (cheapest vs most expensive of THIS set)
+              • Spar-Potenzial pro Tankfüllung (delta × tank size)
+              • Markt-Schnitt der ausgewählten Tankstellen
+            For one station the comparison has no other side, so
+            the strip is suppressed.
+          */}
+          <CompareGroupSummary compared={compared} fuelType={filter.fuelType} vehicle={vehicle} />
+
           {/* Compare Grid */}
           <div
             className="grid gap-4"
             style={{ gridTemplateColumns: `repeat(${compared.length}, minmax(0, 1fr))` }}
           >
-            {compared.map((rec) => {
+            {(() => {
+              // Pre-compute the cheapest active-fuel price across the
+              // compared set. Used by the per-card "+ X €/Tank vs.
+              // günstigster" footer chip.
+              const groupPrices = compared
+                .map((r) => r.station.prices?.[filter.fuelType])
+                .filter((p): p is number => typeof p === 'number');
+              const groupMin = groupPrices.length > 0 ? Math.min(...groupPrices) : null;
+              return compared.map((rec) => {
               const s = rec.station;
               const address = formatAddress(s.street, s.houseNumber, s.postCode, s.place);
               const driveTime = estimateDriveTime(s.dist, AVERAGE_SPEED_KMH);
               const reachability = computeReachability(s.dist, range);
+              // Per-fill € delta vs the cheapest of the compared
+              // set. Suppressed for the cheapest station itself
+              // (delta would be 0 € — no signal to add).
+              const myPrice = s.prices?.[filter.fuelType];
+              const tankL = vehicle?.tankCapacity ?? 50;
+              const deltaPerFillEur =
+                typeof myPrice === 'number' && groupMin != null && myPrice > groupMin
+                  ? (myPrice - groupMin) * tankL
+                  : null;
 
               return (
                 <article
@@ -224,10 +252,23 @@ export default function ComparePage() {
                         Beste Empfehlung
                       </div>
                     )}
+                    {/*
+                      Per-fill delta vs cheapest of THIS comparison
+                      set. Different signal from the overall-market
+                      delta on the home cards — here it answers
+                      "how much more does picking THIS one cost me
+                      vs the cheapest one I chose to compare?".
+                    */}
+                    {deltaPerFillEur != null && (
+                      <p className="text-[10px] text-rose-600 dark:text-rose-400 text-center mt-2 font-semibold">
+                        +{deltaPerFillEur.toFixed(2)} € pro Tank vs. günstigster
+                      </p>
+                    )}
                   </div>
                 </article>
               );
-            })}
+            });
+            })()}
           </div>
 
           {/* Add more hint */}
@@ -260,5 +301,67 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-medium tabular-nums text-gray-900 dark:text-gray-100">{value}</span>
     </div>
+  );
+}
+
+/**
+ * Group-summary strip — only renders when at least 2 stations are
+ * compared AND at least 2 of them have a price for the active fuel.
+ * Three numbers that turn the comparison from a side-by-side card
+ * grid into a verdict:
+ *   • Spannweite — cheapest vs. most expensive of THIS set (ct).
+ *   • Spar-Potenzial — that delta × tank capacity (€).
+ *   • Schnitt — arithmetic mean of the visible prices (€/L).
+ *
+ * Uses the user's vehicle.tankCapacity when available, otherwise
+ * falls back to a 50 L default so the savings number is meaningful
+ * for casual users without a profile set.
+ */
+function CompareGroupSummary({
+  compared,
+  fuelType,
+  vehicle,
+}: {
+  compared: readonly StationRecommendation[];
+  fuelType: FuelType;
+  vehicle: VehicleProfile | null;
+}) {
+  const prices = compared
+    .map((r) => r.station.prices?.[fuelType])
+    .filter((p): p is number => typeof p === 'number');
+  if (prices.length < 2) return null;
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
+  const tankL = vehicle?.tankCapacity ?? 50;
+  const savingsPerFill = (max - min) * tankL;
+
+  return (
+    <section
+      aria-label="Vergleichs-Übersicht"
+      className="mb-4 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700
+                 dark:from-brand-700 dark:to-brand-900
+                 text-white p-4 shadow-card"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70 mb-3">
+        Vergleichs-Übersicht
+      </p>
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <p className="text-[10px] text-white/60 uppercase tracking-wide">Spannweite</p>
+          <p className="text-xl font-bold tabular-nums">{Math.round((max - min) * 100)} ct</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-white/60 uppercase tracking-wide">Spar-Potenzial</p>
+          <p className="text-xl font-bold tabular-nums">{savingsPerFill.toFixed(2)} €</p>
+          <p className="text-[9px] text-white/60 mt-0.5">pro {Math.round(tankL)} L Tank</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-white/60 uppercase tracking-wide">Schnitt</p>
+          <p className="text-xl font-bold tabular-nums">{avg.toFixed(3)} €</p>
+        </div>
+      </div>
+    </section>
   );
 }
