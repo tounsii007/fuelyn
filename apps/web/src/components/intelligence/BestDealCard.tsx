@@ -28,6 +28,7 @@ import { useMemo } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
 import { formatDistance, formatDriveTime, estimateDriveTime, AVERAGE_SPEED_KMH } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { PriceTag } from '@/components/ui/PriceTag';
 
 export interface BestDealCardProps {
@@ -35,6 +36,7 @@ export interface BestDealCardProps {
 }
 
 export function BestDealCard({ recommendations }: BestDealCardProps) {
+  const { t } = useTranslations();
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const vehicle = useAppStore((s) => s.vehicle);
 
@@ -103,7 +105,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
 
   return (
     <article
-      aria-label="Bester Treffer"
+      aria-label={t('station.bestOption')}
       className="relative mx-4 mt-3 mb-4 overflow-hidden rounded-2xl
                  border border-[color:oklch(0.45_0.18_250/0.45)]
                  bg-gradient-to-br from-[color:oklch(0.20_0.05_250/0.95)]
@@ -134,14 +136,14 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
         <header className="flex items-center justify-between mb-3">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
             <SparkleIcon />
-            Top Deal
+            {t('bestDeal.eyebrow')}
           </span>
           <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-fg-subtle)]">
             <span className="relative inline-flex w-1.5 h-1.5">
               <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
             </span>
-            Live
+            {t('bestDeal.live')}
           </span>
         </header>
 
@@ -168,25 +170,25 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                              border border-emerald-400/30
                              shadow-[0_0_18px_-4px_oklch(0.68_0.20_150/0.45)]">
               <ArrowDownIcon />
-              {savingsCt.toFixed(1)}&nbsp;ct unter ⌀
+              {savingsCt.toFixed(1)}&nbsp;{t('panel.belowAvg')}
             </span>
           )}
         </div>
 
         {/* Stat strip */}
         <dl className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
-          <Stat icon={<RouteIcon />} label="Distanz">
+          <Stat icon={<RouteIcon />} label={t('station.distance')}>
             {formatDistance(station.dist)}
           </Stat>
-          <Stat icon={<ClockIcon />} label="Fahrzeit">
+          <Stat icon={<ClockIcon />} label={t('station.driveTime')}>
             ~{formatDriveTime(driveTime)}
           </Stat>
           <Stat
             icon={<DotIcon className={isOpen ? 'text-emerald-400' : 'text-amber-400'} />}
-            label="Status"
+            label={t('station.openingTimes')}
             tone={isOpen ? 'success' : 'warning'}
           >
-            {isOpen ? 'Geöffnet' : 'Geschlossen'}
+            {isOpen ? t('station.open') : t('station.closed')}
           </Stat>
         </dl>
 
@@ -209,7 +211,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                 {marketMin.toFixed(3).replace('.', ',')} €
               </span>
               <span className="text-[var(--color-fg-subtle)] uppercase tracking-wider">
-                Live-Preisindex · {allPrices.length} Tankstellen
+                {t('bestDeal.indexLabel')} · {allPrices.length} {t('station.stations')}
               </span>
               <span className="text-rose-300 font-semibold tabular-nums">
                 {marketMax.toFixed(3).replace('.', ',')} €
@@ -219,7 +221,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
               className="relative h-2 rounded-full overflow-visible
                          bg-gradient-to-r from-emerald-400/70 via-amber-400/60 to-rose-500/70"
               role="img"
-              aria-label={`Preisindex: günstig ${marketMin.toFixed(3)} €, teuer ${marketMax.toFixed(3)} €`}
+              aria-label={`${t('bestDeal.indexLabel')}: ${marketMin.toFixed(3)} €  –  ${marketMax.toFixed(3)} €`}
             >
               {/* Per-station ticks — drawn under markers so they
                   don't overlap the headline best/avg indicators. */}
@@ -237,7 +239,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                 className="absolute top-1/2 -translate-y-1/2 -ml-1 w-2 h-3 rounded-sm
                            bg-white/90 ring-1 ring-black/30"
                 style={{ left: `${positionPct(marketAvg)}%` }}
-                title={`Markt-⌀: ${marketAvg.toFixed(3)} €`}
+                title={`${t('bestDeal.marketAvgTooltip')}: ${marketAvg.toFixed(3)} €`}
               />
               {/* Best marker — green dot at the leftmost edge with
                   a soft glow, label sits below for clarity. */}
@@ -247,7 +249,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                            bg-emerald-400 ring-2 ring-emerald-200/60
                            shadow-[0_0_10px_rgba(52,211,153,0.6)]"
                 style={{ left: `${positionPct(marketMin)}%` }}
-                title="Bester Preis"
+                title={t('bestDeal.bestPriceTooltip')}
               />
             </div>
             {/*
@@ -258,11 +260,11 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
             */}
             {savingsPerFillEur > 0.05 && (
               <p className="mt-2 text-[10px] text-emerald-200/90 text-center">
-                Spar bis zu{' '}
+                {t('bestDeal.perFillSavings')}{' '}
                 <span className="font-bold text-emerald-300">
                   {savingsPerFillEur.toFixed(2)} €
                 </span>{' '}
-                pro Tankfüllung ({Math.round(tankL)} L)
+                {t('bestDeal.perFillUnit')} ({Math.round(tankL)} L)
               </p>
             )}
           </div>
