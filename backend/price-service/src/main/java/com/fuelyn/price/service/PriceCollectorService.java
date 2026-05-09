@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -136,7 +137,11 @@ public class PriceCollectorService {
             return CollectionResult.success(0, 0, System.currentTimeMillis() - start);
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        // Truncate to whole-minute precision so that two scheduler nodes whose
+        // ShedLock windows briefly overlap produce identical timestamps for
+        // the same station/fuel — the V6 UNIQUE constraint then collapses
+        // the race deterministically instead of letting both rows land.
+        LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
         int priceCount = 0;
 
         for (TankerkoenigResponse.Station s : stations) {
@@ -184,7 +189,8 @@ public class PriceCollectorService {
      * matters: if Kafka throws (it won't — the publisher is defensive)
      * the snapshot still landed and a subsequent poll would re-emit.</p>
      *
-     * @return true if a snapshot was persisted (always, currently)
+     * @return true if a snapshot was persisted, false if skipped
+     *         (already recorded for the same minute bucket).
      */
     private boolean persistAndPublishIfChanged(
             TankerkoenigResponse.Station s, String fuelType, double newPrice,
@@ -192,6 +198,15 @@ public class PriceCollectorService {
 
         Optional<PriceSnapshot> previous =
                 snapshotRepo.findFirstByStationIdAndFuelTypeOrderByTimestampDesc(s.id(), fuelType);
+
+        // Bucket-equality short-circuit: if the most recent persisted snapshot
+        // is for the same minute we're trying to write now, another node (or
+        // a retried call) already won this bucket. Skipping here avoids a
+        // guaranteed UNIQUE-constraint violation that would otherwise mark
+        // the entire collectForArea transaction rollback-only.
+        if (previous.isPresent() && now.equals(previous.get().getTimestamp())) {
+            return false;
+        }
 
         snapshotRepo.save(new PriceSnapshot(s.id(), fuelType, newPrice, now));
 
