@@ -115,13 +115,15 @@ public class UnifiedStationController {
             }));
         }
 
+        // Each lambda already catches its own Exception and returns empty;
+        // the previous outer try/catch around future.join() was unreachable.
+        // Use allOf so we wait once for the slowest leg, then collect — the
+        // explicit ordering also makes it obvious neither leg can fail
+        // CompletableFuture-internally because both have boundaries inside.
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
         List<UnifiedStationDto> allStations = new ArrayList<>();
         for (CompletableFuture<List<UnifiedStationDto>> future : futures) {
-            try {
-                allStations.addAll(future.join());
-            } catch (Exception e) {
-                log.error("Station fetch failed: {}", e.getMessage());
-            }
+            allStations.addAll(future.join()); // already complete, returns immediately
         }
 
         if ("dist".equals(sort)) {
