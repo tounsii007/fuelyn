@@ -273,19 +273,38 @@ public class PriceCollectorService {
         List<PriceSnapshot> snapshotsToSave = new ArrayList<>(stations.size() * COLLECTED_FUEL_TYPES.size());
         List<PriceUpdatedEvent> eventsToPublish = new ArrayList<>();
         int priceCount = 0;
+        int stationMetaSkipped = 0;
 
         for (TankerkoenigResponse.Station s : stations) {
-            StationMeta meta = existingStations.getOrDefault(s.id(), new StationMeta());
-            meta.setId(s.id());
-            meta.setName(s.name());
-            meta.setBrand(s.brand() != null ? s.brand() : "");
-            meta.setLat(s.lat());
-            meta.setLng(s.lng());
-            meta.setStreet(s.street());
-            meta.setCity(s.place());
-            meta.setPostCode(s.postCode());
-            meta.setLastSeen(now);
-            stationsToSave.add(meta);
+            StationMeta existing = existingStations.get(s.id());
+
+            // Skip the row write entirely when nothing meaningful changed and
+            // lastSeen was bumped within the freshness window. With ~thousands
+            // of stations polled per cycle and most of them stable for weeks,
+            // this drops the StationMeta UPDATE volume from "every cycle" to
+            // "rarely" — taking the table off the cycle's hot write path. We
+            // MUST evaluate before mutating: existing came from findAllById
+            // and is managed, so any setter would be flushed automatically
+            // on transaction commit regardless of whether we add it to the
+            // saveAll list.
+            StationMeta meta;
+            if (existing != null && stationMetadataMatches(existing, s)
+                    && lastSeenIsFresh(existing, now)) {
+                stationMetaSkipped++;
+                meta = existing; // managed, untouched, no flush
+            } else {
+                meta = existing != null ? existing : new StationMeta();
+                meta.setId(s.id());
+                meta.setName(s.name());
+                meta.setBrand(s.brand() != null ? s.brand() : "");
+                meta.setLat(s.lat());
+                meta.setLng(s.lng());
+                meta.setStreet(s.street());
+                meta.setCity(s.place());
+                meta.setPostCode(s.postCode());
+                meta.setLastSeen(now);
+                stationsToSave.add(meta);
+            }
 
             if (s.diesel() != null && s.diesel() > 0
                     && stagePriceUpdate(s, "diesel", s.diesel(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
@@ -317,9 +336,47 @@ public class PriceCollectorService {
         }
 
         long duration = System.currentTimeMillis() - start;
-        log.info("Collected {} prices from {} stations in {} ({}ms)",
-                priceCount, stations.size(), cityName, duration);
+        log.info("Collected {} prices from {} stations in {} ({}ms, meta-skip={})",
+                priceCount, stations.size(), cityName, duration, stationMetaSkipped);
         return CollectionResult.success(stations.size(), priceCount, duration);
+    }
+
+    /**
+     * How long a {@code lastSeen} timestamp can stay unchanged before we
+     * insist on bumping it. Picked to be larger than one normal collection
+     * cycle (30 min cron) but small enough that "recently active" data
+     * stays meaningful — operators querying station_meta for stale rows
+     * shouldn't see the freshness signal lag by more than an hour.
+     */
+    private static final java.time.Duration LAST_SEEN_FRESHNESS_WINDOW = java.time.Duration.ofHours(1);
+
+    /**
+     * True when every observable field on {@code persisted} matches the
+     * incoming Tankerkönig response. Used to skip a row write whose only
+     * effect would have been to bump {@code lastSeen}.
+     */
+    private static boolean stationMetadataMatches(StationMeta persisted, TankerkoenigResponse.Station incoming) {
+        String incomingBrand = incoming.brand() != null ? incoming.brand() : "";
+        return java.util.Objects.equals(persisted.getName(), incoming.name())
+                && java.util.Objects.equals(persisted.getBrand(), incomingBrand)
+                && java.util.Objects.equals(persisted.getLat(), incoming.lat())
+                && java.util.Objects.equals(persisted.getLng(), incoming.lng())
+                && java.util.Objects.equals(persisted.getStreet(), incoming.street())
+                && java.util.Objects.equals(persisted.getCity(), incoming.place())
+                && java.util.Objects.equals(persisted.getPostCode(), incoming.postCode());
+    }
+
+    /**
+     * True when {@code lastSeen} has been bumped within the freshness
+     * window — i.e. a write right now would only push it forward by a
+     * few minutes, which is below operator-visible resolution.
+     */
+    private static boolean lastSeenIsFresh(StationMeta persisted, LocalDateTime now) {
+        LocalDateTime ls = persisted.getLastSeen();
+        if (ls == null) {
+            return false;
+        }
+        return java.time.Duration.between(ls, now).compareTo(LAST_SEEN_FRESHNESS_WINDOW) < 0;
     }
 
     /** Composite key for the per-area "latest snapshot" lookup map. */
