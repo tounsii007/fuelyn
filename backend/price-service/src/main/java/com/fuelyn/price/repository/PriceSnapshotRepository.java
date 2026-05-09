@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +35,27 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
      */
     Optional<PriceSnapshot> findFirstByStationIdAndFuelTypeOrderByTimestampDesc(
             String stationId, String fuelType);
+
+    /**
+     * Batch variant of {@link #findFirstByStationIdAndFuelTypeOrderByTimestampDesc}
+     * for the collection hot path: returns the most-recent snapshot per
+     * (stationId, fuelType) across an entire area in a single round-trip.
+     *
+     * <p>The correlated subquery is portable across Postgres and H2 — both
+     * recognise the equality on max(timestamp) per group and use the
+     * {@code (station_id, fuel_type, timestamp)} unique index for the
+     * inner aggregate. This replaces N×M individual lookups (250 stations
+     * × 3 fuel types = 750 queries per area) with one.</p>
+     */
+    @Query("SELECT p FROM PriceSnapshot p " +
+           "WHERE p.stationId IN :stationIds " +
+           "  AND p.fuelType IN :fuelTypes " +
+           "  AND p.timestamp = (SELECT MAX(p2.timestamp) FROM PriceSnapshot p2 " +
+           "                     WHERE p2.stationId = p.stationId " +
+           "                       AND p2.fuelType = p.fuelType)")
+    List<PriceSnapshot> findLatestByStationIdsAndFuelTypes(
+            @Param("stationIds") Collection<String> stationIds,
+            @Param("fuelTypes") Collection<String> fuelTypes);
 
     /**
      * Computes average price for a station and fuel type within a time window.

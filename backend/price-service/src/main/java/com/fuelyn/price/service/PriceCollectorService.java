@@ -20,8 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Orchestrates periodic price collection from Tankerkoenig API.
@@ -126,7 +129,27 @@ public class PriceCollectorService {
     }
 
     /**
+     * Fuel types we collect — kept as a constant so the batch lookup of
+     * "latest snapshot per (station, fuel)" filters against the same set
+     * the inner loop iterates. Order matches Tankerkönig response order.
+     */
+    private static final List<String> COLLECTED_FUEL_TYPES = List.of("diesel", "e5", "e10");
+
+    /**
      * Collects prices for a specific area and persists them.
+     *
+     * <p>Hot-path optimisations vs. the naïve "per-station-find-then-save"
+     * loop:</p>
+     * <ul>
+     *   <li>One {@code findAllById} for all StationMeta in the response,
+     *       instead of N {@code findById} calls.</li>
+     *   <li>One correlated-subquery lookup for the latest snapshot per
+     *       {@code (station, fuel)} across the entire area, instead of
+     *       up to 3N point lookups.</li>
+     *   <li>{@code saveAll} on collected entity lists so Hibernate's
+     *       JDBC batching kicks in inside the surrounding transaction
+     *       (see {@code application.yml#hibernate.jdbc.batch_size}).</li>
+     * </ul>
      */
     @Transactional
     public CollectionResult collectForArea(double lat, double lng, String cityName) {
@@ -142,11 +165,29 @@ public class PriceCollectorService {
         // the same station/fuel — the V6 UNIQUE constraint then collapses
         // the race deterministically instead of letting both rows land.
         LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+
+        Set<String> stationIds = stations.stream()
+                .map(TankerkoenigResponse.Station::id)
+                .collect(Collectors.toSet());
+
+        // Bulk pre-fetches — collapses what used to be 4N round-trips per area
+        // (one findById + up to 3 findFirstByStationIdAndFuelType per station)
+        // into a flat 2 queries, regardless of how many stations the area has.
+        Map<String, StationMeta> existingStations = stationRepo.findAllById(stationIds).stream()
+                .collect(Collectors.toMap(StationMeta::getId, m -> m));
+        Map<SnapshotKey, PriceSnapshot> latestByKey = snapshotRepo
+                .findLatestByStationIdsAndFuelTypes(stationIds, COLLECTED_FUEL_TYPES).stream()
+                .collect(Collectors.toMap(
+                        ps -> new SnapshotKey(ps.getStationId(), ps.getFuelType()),
+                        ps -> ps));
+
+        List<StationMeta> stationsToSave = new ArrayList<>(stations.size());
+        List<PriceSnapshot> snapshotsToSave = new ArrayList<>(stations.size() * COLLECTED_FUEL_TYPES.size());
+        List<PriceUpdatedEvent> eventsToPublish = new ArrayList<>();
         int priceCount = 0;
 
         for (TankerkoenigResponse.Station s : stations) {
-            // Upsert station metadata
-            StationMeta meta = stationRepo.findById(s.id()).orElse(new StationMeta());
+            StationMeta meta = existingStations.getOrDefault(s.id(), new StationMeta());
             meta.setId(s.id());
             meta.setName(s.name());
             meta.setBrand(s.brand() != null ? s.brand() : "");
@@ -156,19 +197,35 @@ public class PriceCollectorService {
             meta.setCity(s.place());
             meta.setPostCode(s.postCode());
             meta.setLastSeen(now);
-            stationRepo.save(meta);
+            stationsToSave.add(meta);
 
-            // Save price snapshots and emit a delta event when the
-            // value actually changed vs. the most recent persisted price.
-            if (s.diesel() != null && s.diesel() > 0) {
-                if (persistAndPublishIfChanged(s, "diesel", s.diesel(), now, meta)) priceCount++;
+            if (s.diesel() != null && s.diesel() > 0
+                    && stagePriceUpdate(s, "diesel", s.diesel(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+                priceCount++;
             }
-            if (s.e5() != null && s.e5() > 0) {
-                if (persistAndPublishIfChanged(s, "e5", s.e5(), now, meta)) priceCount++;
+            if (s.e5() != null && s.e5() > 0
+                    && stagePriceUpdate(s, "e5", s.e5(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+                priceCount++;
             }
-            if (s.e10() != null && s.e10() > 0) {
-                if (persistAndPublishIfChanged(s, "e10", s.e10(), now, meta)) priceCount++;
+            if (s.e10() != null && s.e10() > 0
+                    && stagePriceUpdate(s, "e10", s.e10(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+                priceCount++;
             }
+        }
+
+        // Two batched writes — one per entity type. Hibernate orders the
+        // INSERT statements within each saveAll, and with batch_size=50
+        // the JDBC layer groups them into multi-row INSERTs.
+        stationRepo.saveAll(stationsToSave);
+        if (!snapshotsToSave.isEmpty()) {
+            snapshotRepo.saveAll(snapshotsToSave);
+        }
+        // Events are emitted only after the DB commit boundary closes; for
+        // now we publish post-save in-method since PriceEventPublisher is
+        // best-effort fire-and-forget. A subsequent change can wire this
+        // to a TransactionSynchronization for true after-commit semantics.
+        for (PriceUpdatedEvent ev : eventsToPublish) {
+            priceEventPublisher.publish(ev);
         }
 
         long duration = System.currentTimeMillis() - start;
@@ -177,43 +234,51 @@ public class PriceCollectorService {
         return CollectionResult.success(stations.size(), priceCount, duration);
     }
 
-    /**
-     * Persist a snapshot and emit a {@link PriceUpdatedEvent} only if
-     * the new value differs from the most recent persisted price for
-     * the same (station, fuel) pair. This stops the streaming bus from
-     * being filled with repeats — Tankerkönig polls every 5 minutes
-     * but actual prices change far less often.
-     *
-     * <p>The event is sent <i>after</i> the snapshot is persisted, so
-     * a successful event implies a successful save. Order of operations
-     * matters: if Kafka throws (it won't — the publisher is defensive)
-     * the snapshot still landed and a subsequent poll would re-emit.</p>
-     *
-     * @return true if a snapshot was persisted, false if skipped
-     *         (already recorded for the same minute bucket).
-     */
-    private boolean persistAndPublishIfChanged(
-            TankerkoenigResponse.Station s, String fuelType, double newPrice,
-            LocalDateTime now, StationMeta meta) {
+    /** Composite key for the per-area "latest snapshot" lookup map. */
+    private record SnapshotKey(String stationId, String fuelType) {}
 
-        Optional<PriceSnapshot> previous =
-                snapshotRepo.findFirstByStationIdAndFuelTypeOrderByTimestampDesc(s.id(), fuelType);
+    /**
+     * Stage a single (station, fuel) snapshot for the batched write at the
+     * end of {@link #collectForArea}. Compared to the previous per-row
+     * persist-and-publish helper, this method:
+     * <ul>
+     *   <li>Looks up the previous price from the pre-fetched map instead
+     *       of issuing its own SQL — turning N×M findFirst queries into
+     *       a constant-time HashMap probe.</li>
+     *   <li>Skips the bucket-equality case (same minute already persisted)
+     *       to avoid a guaranteed UNIQUE-constraint violation.</li>
+     *   <li>Defers persistence + Kafka emission to the caller, so the
+     *       whole area can be committed in two saveAll batches and the
+     *       events fired together.</li>
+     * </ul>
+     *
+     * @return {@code true} if a snapshot was queued for write,
+     *         {@code false} if skipped for the bucket-equality reason.
+     */
+    private boolean stagePriceUpdate(
+            TankerkoenigResponse.Station s, String fuelType, double newPrice,
+            LocalDateTime now, StationMeta meta,
+            Map<SnapshotKey, PriceSnapshot> latestByKey,
+            List<PriceSnapshot> snapshotsToSave,
+            List<PriceUpdatedEvent> eventsToPublish) {
+
+        PriceSnapshot previous = latestByKey.get(new SnapshotKey(s.id(), fuelType));
 
         // Bucket-equality short-circuit: if the most recent persisted snapshot
-        // is for the same minute we're trying to write now, another node (or
-        // a retried call) already won this bucket. Skipping here avoids a
-        // guaranteed UNIQUE-constraint violation that would otherwise mark
-        // the entire collectForArea transaction rollback-only.
-        if (previous.isPresent() && now.equals(previous.get().getTimestamp())) {
+        // is already for the same minute we're trying to write now, another
+        // node (or a retried call) already won this bucket. Skipping here
+        // avoids the UNIQUE-constraint violation that would otherwise mark
+        // the surrounding transaction rollback-only.
+        if (previous != null && now.equals(previous.getTimestamp())) {
             return false;
         }
 
-        snapshotRepo.save(new PriceSnapshot(s.id(), fuelType, newPrice, now));
+        snapshotsToSave.add(new PriceSnapshot(s.id(), fuelType, newPrice, now));
 
-        Double prevPrice = previous.map(PriceSnapshot::getPrice).orElse(null);
+        Double prevPrice = previous != null ? previous.getPrice() : null;
         boolean changed = (prevPrice == null) || Math.abs(prevPrice - newPrice) > 0.0009;
         if (changed) {
-            priceEventPublisher.publish(PriceUpdatedEvent.forUpdate(
+            eventsToPublish.add(PriceUpdatedEvent.forUpdate(
                     s.id(),
                     meta.getName(),
                     meta.getBrand() == null ? "" : meta.getBrand().toLowerCase(),
