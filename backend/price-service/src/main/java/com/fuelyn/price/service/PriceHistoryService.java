@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fuelyn.price.model.dto.PriceHistoryResponse;
 import com.fuelyn.price.model.entity.PriceSnapshot;
@@ -23,8 +24,15 @@ import com.fuelyn.price.repository.StationMetaRepository;
  * Spring-aware wrapper that handles caching, repository access, and DTO
  * assembly. All math is in-Java (no DB-dialect-specific SQL) so the same
  * code works against H2 and Postgres.
+ *
+ * <p>{@code @Transactional(readOnly = true)} at the class level: every
+ * public method is a pure read aggregation. Hibernate uses this hint to
+ * skip the dirty-check sweep before query execution and to disable auto
+ * flush — measurable savings on a hot endpoint that runs against the
+ * shared connection pool.
  */
 @Service
+@Transactional(readOnly = true)
 public class PriceHistoryService {
 
     private static final Logger log = LoggerFactory.getLogger(PriceHistoryService.class);
