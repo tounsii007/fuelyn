@@ -593,6 +593,31 @@ function MapController({
   return null;
 }
 
+/**
+ * LongPressPinHandler — captures a long-press (touch) or right-
+ * click (mouse) anywhere on the map and invokes the callback with
+ * the lat/lng coordinates. Lets the user "drop a pin here" to make
+ * any spot on the map their search centre, without typing an
+ * address into the search bar.
+ *
+ * Implementation note: Leaflet's `contextmenu` event fires on both
+ * gestures, so a single listener covers desktop + mobile cleanly.
+ * preventDefault would normally suppress the browser's native
+ * right-click menu, but Leaflet already handles that internally.
+ */
+function LongPressPinHandler({
+  onDropPin,
+}: {
+  onDropPin: (coords: { lat: number; lng: number }) => void;
+}) {
+  useMapEvents({
+    contextmenu: (e) => {
+      onDropPin({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
+}
+
 function MapRefCapture({ mapRef }: { mapRef: MutableRefObject<L.Map | null> }) {
   const map = useMap();
 
@@ -647,6 +672,27 @@ export function StationMap({
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const userLocation = useAppStore((s) => s.userLocation);
   const userLocationAccuracy = useAppStore((s) => s.userLocationAccuracy);
+  const setUserLocation = useAppStore((s) => s.setUserLocation);
+  // Toast shown briefly after a long-press / right-click drops a
+  // pin. Auto-clears after a couple of seconds so it doesn't
+  // linger across map interactions.
+  const [pinToast, setPinToast] = useState<string | null>(null);
+  const handleDropPin = useCallback(
+    (coords: { lat: number; lng: number }) => {
+      setUserLocation(coords);
+      setMapCenter(null);
+      setMapRadiusKm(5);
+      setPinToast(`Suchzentrum gesetzt (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+    },
+    [setUserLocation],
+  );
+  // Auto-fade the toast after 2.5 s — short enough to not be
+  // intrusive, long enough to read.
+  useEffect(() => {
+    if (!pinToast) return;
+    const t = setTimeout(() => setPinToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [pinToast]);
   const liveTracking = useAppStore((s) => s.liveTracking);
   const mapStyle = useAppStore((s) => s.settings.mapStyle);
   const updateSettings = useAppStore((s) => s.updateSettings);
@@ -725,6 +771,13 @@ export function StationMap({
         <MapController center={center} zoom={DEFAULT_ZOOM} onBoundsChange={onBoundsChange} />
         <RouteLayer />
         <MapRefCapture mapRef={mapRef} />
+        {/*
+          Long-press / right-click → "drop a pin here" so the user
+          can jump the search centre to anywhere on the map without
+          typing an address. Useful for "what's around this spot?"
+          exploration.
+        */}
+        <LongPressPinHandler onDropPin={handleDropPin} />
 
         {userLocation && (
           <>
@@ -1236,6 +1289,28 @@ export function StationMap({
           </span>
         )}
       </div>
+
+      {/*
+        Drop-pin confirmation toast — appears top-centre after a
+        long-press / right-click moves the search centre. Auto-
+        clears after 2.5 s. z-[1100] to sit above the map controls.
+      */}
+      {pinToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute top-3 left-1/2 -translate-x-1/2 z-[1100]
+                     px-3 py-2 rounded-full bg-gray-900/95 dark:bg-gray-100/95
+                     text-white dark:text-gray-900
+                     text-xs font-medium shadow-[var(--shadow-lg)]
+                     flex items-center gap-2 animate-fade-in-up"
+        >
+          <svg className="w-3.5 h-3.5 text-brand-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
+          </svg>
+          {pinToast}
+        </div>
+      )}
     </div>
   );
 }
