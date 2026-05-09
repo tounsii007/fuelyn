@@ -10,23 +10,35 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { useAppStore } from '@/lib/store/app-store';
 
 interface Tab {
-  href: string;
-  label: string;
-  icon: ReactNode;
+  readonly href: string;
+  readonly label: string;
+  /** Long-form description used as the desktop hover title and the
+   *  screen-reader full label. Keeps the tab's visible text short
+   *  ("Karte") while announcing intent ("Karte und Tankstellen-Übersicht"). */
+  readonly title: string;
+  readonly icon: ReactNode;
+  /** Optional store-driven badge count (e.g. number of favourites).
+   *  Returns 0 when the indicator should be hidden. */
+  readonly badge?: () => number;
 }
 
 const TABS: Tab[] = [
-  { href: '/', label: 'Karte', icon: <MapIcon /> },
-  { href: '/compare', label: 'Vergleich', icon: <CompareIcon /> },
-  { href: '/fuel-log', label: 'Logbuch', icon: <BookIcon /> },
-  { href: '/favorites', label: 'Favoriten', icon: <HeartIcon /> },
-  { href: '/settings', label: 'Mehr', icon: <DotsIcon /> },
+  { href: '/',          label: 'Karte',     title: 'Karte und Tankstellen-Übersicht',                icon: <MapIcon /> },
+  { href: '/compare',   label: 'Vergleich', title: 'Tankstellen-Vergleich',                          icon: <CompareIcon /> },
+  { href: '/fuel-log',  label: 'Logbuch',   title: 'Tank-Logbuch — Verbrauch & Kosten',              icon: <BookIcon /> },
+  { href: '/favorites', label: 'Favoriten', title: 'Gespeicherte Tankstellen',                       icon: <HeartIcon />, badge: () => useAppStore.getState().favorites.length },
+  { href: '/settings',  label: 'Mehr',      title: 'Einstellungen, Privatsphäre & weitere Optionen', icon: <DotsIcon /> },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  // Subscribe to favourites so the badge re-renders when the user
+  // saves/removes a station. Reading via a selector instead of
+  // store.getState() inside the badge fn so React knows to re-render.
+  const favoritesCount = useAppStore((s) => s.favorites.length);
 
   return (
     <nav
@@ -39,10 +51,17 @@ export function BottomNav() {
         const active =
           pathname === tab.href ||
           (tab.href !== '/' && pathname?.startsWith(tab.href));
+        // Badge values are computed eagerly here so the component
+        // re-renders when the underlying store changes — calling
+        // tab.badge() at render time alone wouldn't subscribe.
+        const badge =
+          tab.href === '/favorites' ? favoritesCount : tab.badge ? tab.badge() : 0;
         return (
           <Link
             key={tab.href}
             href={tab.href}
+            title={tab.title}
+            aria-label={tab.title}
             aria-current={active ? 'page' : undefined}
             className={[
               'relative flex flex-col items-center justify-center gap-0.5 min-w-[60px] h-12 px-3',
@@ -59,7 +78,27 @@ export function BottomNav() {
                            bg-[var(--color-brand-100)]/70 dark:bg-[var(--color-brand-800)]/40"
               />
             )}
-            <span className="relative z-10">{tab.icon}</span>
+            <span className="relative z-10">
+              {tab.icon}
+              {/*
+                Badge — small numeric pill anchored to the icon's
+                top-right. Only rendered when count > 0; switches to
+                "9+" above 9 so the pill stays one digit wide. The
+                ring matches the BottomNav's glass background so the
+                badge appears to "punch out" of the icon.
+              */}
+              {badge > 0 && (
+                <span
+                  aria-label={`${badge} ${badge === 1 ? 'Eintrag' : 'Einträge'}`}
+                  className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1
+                             rounded-full bg-[var(--color-brand-600)] text-white
+                             text-[9px] font-semibold leading-4 text-center
+                             ring-2 ring-[var(--color-bg)] dark:ring-[var(--color-bg-subtle)]"
+                >
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
+            </span>
             <span className="relative z-10 text-[10px] font-medium leading-none">
               {tab.label}
             </span>
