@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fuelyn.common.events.EventEnvelope;
 import com.fuelyn.common.events.PriceUpdatedEvent;
+import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +71,16 @@ public class PriceStreamController {
         t.setDaemon(true);
         return t;
     });
+    /**
+     * Per-subscriber send executor. We hand fan-out off the Kafka consumer
+     * thread so a single slow client (slow TCP send buffer drain on a flaky
+     * mobile network) can no longer block the topic for everyone else.
+     * Virtual threads (Java 21) are the right tool here: a typical SSE send
+     * is mostly I/O wait, so we want hundreds of cheap threads not a small
+     * platform-thread pool with a queue.
+     */
+    private final ExecutorService fanOutExecutor =
+            Executors.newVirtualThreadPerTaskExecutor();
     private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
     /** Total events fan-out so far; surfaced in the management endpoint. */
     private final AtomicLong eventsFanOut = new AtomicLong();
@@ -77,6 +89,26 @@ public class PriceStreamController {
     public PriceStreamController() {
         // Send a heartbeat comment to every connection every 15 s.
         heartbeats.scheduleAtFixedRate(this::sendHeartbeats, 15, 15, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Tear down both executors on graceful shutdown so a hot reload doesn't
+     * leak threads. Daemon flag protects an unclean exit, this protects a
+     * clean one — and stops the heartbeat scheduler from firing into a
+     * half-disposed state during shutdown.
+     */
+    @PreDestroy
+    public void shutdown() {
+        heartbeats.shutdownNow();
+        fanOutExecutor.shutdown();
+        try {
+            if (!fanOutExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                fanOutExecutor.shutdownNow();
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            fanOutExecutor.shutdownNow();
+        }
     }
 
     /**
@@ -160,31 +192,47 @@ public class PriceStreamController {
             }
             String stationId = extractStationId(envelope);
             String payload = mapper.writeValueAsString(envelope);
+            String envelopeId = envelope.id();
 
             for (Subscription sub : subscriptions) {
                 if (!sub.stationFilter().isEmpty() && !sub.stationFilter().contains(stationId)) {
                     continue; // not in this client's interest set
                 }
-                try {
-                    sub.emitter().send(SseEmitter.event()
-                            .name("price.updated")
-                            .id(envelope.id())
-                            .data(payload, MediaType.APPLICATION_JSON));
-                    eventsFanOut.incrementAndGet();
-                } catch (IOException | IllegalStateException broken) {
-                    // Browser closed the tab / Caddy timed us out / etc.
-                    // We treat this as a normal lifecycle event: silently
-                    // drop the subscription and continue with the others.
-                    dropsFromSlowClients.incrementAndGet();
-                    subscriptions.remove(sub);
-                    try { sub.emitter().complete(); } catch (Exception ignored) {}
-                }
+                // Fire-and-forget per-subscriber send. We hand the actual
+                // emitter.send (which can block on slow TCP drain) to a
+                // virtual-thread executor so the Kafka consumer thread
+                // returns immediately. The whole topic stops being held
+                // hostage by one slow browser tab.
+                fanOutExecutor.execute(() -> deliver(sub, payload, envelopeId));
             }
+            // ACK as soon as fan-out is dispatched — the events are durable
+            // on Kafka and any send-side failure is already accounted for
+            // by removing the slow subscription. Holding the topic offset
+            // until every send completes would just amplify bad-client tail
+            // latency into broker lag.
             ack.acknowledge();
         } catch (Exception e) {
             log.warn("SSE fan-out failed for envelope id={}: {}",
                     envelope == null ? "null" : envelope.id(), e.getMessage());
             ack.acknowledge(); // don't redeliver — we just drop the event
+        }
+    }
+
+    /** Send a single envelope to a single subscriber, off the Kafka thread. */
+    private void deliver(Subscription sub, String payload, String envelopeId) {
+        try {
+            sub.emitter().send(SseEmitter.event()
+                    .name("price.updated")
+                    .id(envelopeId)
+                    .data(payload, MediaType.APPLICATION_JSON));
+            eventsFanOut.incrementAndGet();
+        } catch (IOException | IllegalStateException broken) {
+            // Browser closed the tab / Caddy timed us out / etc.
+            // We treat this as a normal lifecycle event: silently
+            // drop the subscription and continue with the others.
+            dropsFromSlowClients.incrementAndGet();
+            subscriptions.remove(sub);
+            try { sub.emitter().complete(); } catch (Exception ignored) {}
         }
     }
 
