@@ -113,11 +113,16 @@ export function composeHistoryLabel(
 
 export default function HomePage() {
   const { userLocation, permission, requestLocation, insecureContext } = useGeolocation();
-  // Live GPS tracking — once permission is granted, keep position
-  // updated as the user moves so distances/sorting refresh without
-  // a manual refetch. The hook is no-op on insecure contexts (no
-  // GPS available) and self-disables when permission is denied.
-  useLiveLocation({ enabled: permission === 'granted' && !insecureContext });
+  // Live GPS tracking — gated by the user's settings preference so
+  // battery use is deliberate. Plus the usual safety guards:
+  //   - permission must be granted (no point watching without it)
+  //   - context must be secure (insecure HTTP can't access GPS)
+  // The hook is otherwise free to no-op when its conditions don't
+  // hold, so wrapping in a single `enabled` is sufficient.
+  const liveLocationEnabled = useAppStore((s) => s.settings.liveLocationEnabled);
+  useLiveLocation({
+    enabled: liveLocationEnabled && permission === 'granted' && !insecureContext,
+  });
   const isMapView = useAppStore((s) => s.isMapView);
   const filter = useAppStore((s) => s.filter);
   const selectStation = useAppStore((s) => s.selectStation);

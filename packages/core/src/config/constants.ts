@@ -73,6 +73,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultFuelType: 'e10',
   mapStyle: 'standard',
   background: 'aurora',
+  // Live tracking is opt-in — battery use should be a deliberate
+  // user choice, not a surprise the next time their phone is warm.
+  liveLocationEnabled: false,
 } as const;
 
 export const DEFAULT_FILTER: StationFilter = {

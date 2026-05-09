@@ -142,6 +142,9 @@ export const appSettingsSchema = z.object({
   defaultFuelType: fuelTypeSchema,
   mapStyle: z.enum(['standard', 'dark', 'satellite', 'terrain']),
   background: z.enum(['aurora', 'sunset', 'ocean', 'forest', 'cyber', 'minimal']).default('aurora'),
+  // Off by default to keep battery use opt-in. .default() so old
+  // payloads without this field validate cleanly post-upgrade.
+  liveLocationEnabled: z.boolean().default(false),
 });
 
 // ─── Domain: Station Filter ─────────────────────────────────

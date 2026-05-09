@@ -279,6 +279,9 @@ export function SettingsPage() {
           </div>
         </SettingsSection>
 
+        {/* ── Section: Privacy & Location ──────────────── */}
+        <PrivacySection />
+
         {/* ── Section: Notifications ───────────────────── */}
         <SettingsSection title={t('settings.notifications')}>
           <Link
@@ -382,6 +385,128 @@ export function SettingsPage() {
 }
 
 // ─── Sub-components ─────────────────────────────────────────
+
+// ─── Privacy & Location section ─────────────────────────────
+//
+// Exposes user-facing controls for the parts of the app that touch
+// the device's GPS:
+//   • Live-Tracking toggle — drives `settings.liveLocationEnabled`
+//   • Permission-status badge — read-only, reflects what the
+//     browser tells us (granted / prompt / denied) so the user
+//     knows whether the toggle will actually work.
+//   • Accuracy hint — last reported ±NN m, surfaces the precision
+//     of the most recent fix so users can tell if a coarse Wi-Fi
+//     guess is dragging their distance numbers.
+//   • Standort vergessen — clears the stored coords so the next
+//     load starts fresh (useful when switching devices/phones).
+//
+// Co-located with SettingsSection so the file stays one stop-shop
+// for the whole page; pulling it into a separate file would scatter
+// related UI across the codebase for no real benefit at this size.
+function PrivacySection() {
+  const settings = useAppStore((s) => s.settings);
+  const updateSettings = useAppStore((s) => s.updateSettings);
+  const permission = useAppStore((s) => s.locationPermission);
+  const accuracy = useAppStore((s) => s.userLocationAccuracy);
+  const liveTracking = useAppStore((s) => s.liveTracking);
+  const setUserLocation = useAppStore((s) => s.setUserLocation);
+
+  const liveOn = settings.liveLocationEnabled;
+
+  const permissionTone =
+    permission === 'granted'
+      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+      : permission === 'denied'
+        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+  const permissionLabel =
+    permission === 'granted' ? 'Erteilt' : permission === 'denied' ? 'Verweigert' : 'Ausstehend';
+
+  return (
+    <section className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
+        Privatsphäre & Standort
+      </h2>
+
+      {/* Live-tracking toggle row */}
+      <div className="flex items-start justify-between gap-4 py-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            Live-Standort verfolgen
+          </p>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Aktualisiert deine Position automatisch während du dich bewegst,
+            damit Entfernungen und Reihenfolge sich anpassen. Schluckt mehr
+            Akku — daher standardmäßig aus.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={liveOn}
+          onClick={() => updateSettings({ liveLocationEnabled: !liveOn })}
+          className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+            liveOn ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-700'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              liveOn ? 'translate-x-[22px]' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Status row — read-only diagnostics about the GPS state */}
+      <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 text-center">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Berechtigung
+          </p>
+          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${permissionTone}`}>
+            {permissionLabel}
+          </span>
+        </div>
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Tracking
+          </p>
+          <span
+            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              liveTracking
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            }`}
+          >
+            {liveTracking ? 'Live aktiv' : 'Inaktiv'}
+          </span>
+        </div>
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Genauigkeit
+          </p>
+          <span className="mt-1 inline-block rounded-full bg-gray-200 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:text-gray-300">
+            {accuracy != null && Number.isFinite(accuracy) ? `±${Math.round(accuracy)} m` : '—'}
+          </span>
+        </div>
+      </div>
+
+      {/* Forget-location action */}
+      <button
+        type="button"
+        onClick={() => setUserLocation(null)}
+        className="mt-3 w-full rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3 text-left text-sm
+                   text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800
+                   transition-colors"
+      >
+        <span className="font-medium">Gespeicherten Standort vergessen</span>
+        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          Setzt deine Position zurück. Beim nächsten Öffnen wird sie neu ermittelt.
+        </span>
+      </button>
+    </section>
+  );
+}
 
 function SettingsSection({
   title,

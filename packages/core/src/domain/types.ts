@@ -231,6 +231,15 @@ export interface AppSettings {
   readonly defaultFuelType: FuelType;
   readonly mapStyle: MapStyle;
   readonly background: BackgroundVariant;
+  /**
+   * When true, the home view starts a continuous watchPosition once
+   * GPS permission is granted, so distances/sorting refresh as the
+   * user moves. Off by default — opt-in to keep battery use
+   * deliberate. Wired through `useLiveLocation({ enabled })` in the
+   * home page; ignored on insecure contexts and when permission
+   * isn't granted.
+   */
+  readonly liveLocationEnabled: boolean;
 }
 
 // ─── Price History (prepared for future) ─────────────────────
