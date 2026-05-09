@@ -11,6 +11,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Assigns a unique X-Request-Id to every request for tracing across services.
@@ -22,10 +23,19 @@ public class RequestIdFilter implements GlobalFilter, Ordered {
     private static final Logger log = LoggerFactory.getLogger(RequestIdFilter.class);
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
 
+    /**
+     * Allow-list for caller-supplied request IDs. Matches the common-module
+     * RequestContextFilter pattern. Anything outside the safe character set
+     * (hex / dash / underscore / dot, 1..128 chars) is replaced with a fresh
+     * UUID — defends downstream log lines and the response header against
+     * CRLF / control-char injection.
+     */
+    private static final Pattern SAFE_REQUEST_ID = Pattern.compile("[A-Za-z0-9._\\-]{1,128}");
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String requestId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isBlank()) {
+        if (requestId == null || !SAFE_REQUEST_ID.matcher(requestId).matches()) {
             requestId = UUID.randomUUID().toString().substring(0, 8);
         }
 
