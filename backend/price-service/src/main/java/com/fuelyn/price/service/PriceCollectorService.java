@@ -1,6 +1,7 @@
 package com.fuelyn.price.service;
 
 import com.fuelyn.common.events.PriceUpdatedEvent;
+import com.fuelyn.price.config.CollectionProperties;
 import com.fuelyn.price.model.dto.CollectionResult;
 import com.fuelyn.price.model.dto.TankerkoenigResponse;
 import com.fuelyn.price.model.entity.CollectionRun;
@@ -40,8 +41,13 @@ public class PriceCollectorService {
 
     private static final Logger log = LoggerFactory.getLogger(PriceCollectorService.class);
 
-    /** Major German cities for price collection. */
-    private static final List<CityCoord> CITIES = List.of(
+    /**
+     * Default polling grid — top 10 cities by population. Used when
+     * {@code fuelyn.collection.cities} is left empty in configuration so
+     * the service still boots with sane coverage (CI, fresh checkouts,
+     * forgotten environment variables).
+     */
+    private static final List<CityCoord> DEFAULT_CITIES = List.of(
             new CityCoord("Berlin", 52.5200, 13.4050),
             new CityCoord("Hamburg", 53.5511, 9.9937),
             new CityCoord("Muenchen", 48.1351, 11.5820),
@@ -53,6 +59,14 @@ public class PriceCollectorService {
             new CityCoord("Dortmund", 51.5136, 7.4653),
             new CityCoord("Nuernberg", 49.4521, 11.0767)
     );
+
+    /**
+     * Active polling grid resolved from configuration at construction
+     * time. Operators can extend coverage without a recompile by adding
+     * entries under {@code fuelyn.collection.cities} in
+     * {@code application.yml}.
+     */
+    private final List<CityCoord> cities;
 
     private final TankerkoenigClient tankerkoenigClient;
     private final PriceSnapshotRepository snapshotRepo;
@@ -93,7 +107,8 @@ public class PriceCollectorService {
             @Value("${fuelyn.collection.radius-km:10}") double radiusKm,
             @Value("${fuelyn.collection.max-history-days:90}") int maxHistoryDays,
             @Lazy PriceCollectorService self,
-            @Autowired(required = false) CacheManager cacheManager
+            @Autowired(required = false) CacheManager cacheManager,
+            CollectionProperties collectionProperties
     ) {
         this.tankerkoenigClient = tankerkoenigClient;
         this.snapshotRepo = snapshotRepo;
@@ -104,6 +119,43 @@ public class PriceCollectorService {
         this.maxHistoryDays = maxHistoryDays;
         this.self = self;
         this.cacheManager = cacheManager;
+        this.cities = resolveCities(collectionProperties);
+    }
+
+    /**
+     * Picks the configured city list when present, otherwise falls back
+     * to {@link #DEFAULT_CITIES}. Each entry is validated — coordinates
+     * outside Germany's bounding box (47–55 N, 5.5–15.5 E) are dropped
+     * with a warning rather than silently polluting the polling grid.
+     * If the config exists but every entry fails validation we still
+     * fall back to defaults — booting with zero cities would be a
+     * silent outage.
+     */
+    private static List<CityCoord> resolveCities(CollectionProperties props) {
+        if (props == null || props.getCities() == null || props.getCities().isEmpty()) {
+            log.info("fuelyn.collection.cities not set — using {} default cities", DEFAULT_CITIES.size());
+            return DEFAULT_CITIES;
+        }
+        List<CityCoord> resolved = new ArrayList<>(props.getCities().size());
+        for (CollectionProperties.CityConfig c : props.getCities()) {
+            if (c.getName() == null || c.getName().isBlank()) {
+                log.warn("Skipping configured city with blank name: lat={}, lng={}", c.getLat(), c.getLng());
+                continue;
+            }
+            if (c.getLat() < 47.0 || c.getLat() > 55.0 || c.getLng() < 5.5 || c.getLng() > 15.5) {
+                log.warn("Skipping city {} — coordinates ({}, {}) outside Germany bounds",
+                        c.getName(), c.getLat(), c.getLng());
+                continue;
+            }
+            resolved.add(new CityCoord(c.getName(), c.getLat(), c.getLng()));
+        }
+        if (resolved.isEmpty()) {
+            log.warn("All configured cities failed validation — falling back to {} defaults",
+                    DEFAULT_CITIES.size());
+            return DEFAULT_CITIES;
+        }
+        log.info("Polling grid configured with {} cities from application.yml", resolved.size());
+        return List.copyOf(resolved);
     }
 
     /**
@@ -120,7 +172,7 @@ public class PriceCollectorService {
         run.setStatus("running");
         runRepo.save(run);
 
-        for (CityCoord city : CITIES) {
+        for (CityCoord city : cities) {
             try {
                 // Routed through `self` so the @Transactional proxy actually
                 // wraps the call — a direct `collectForArea(...)` would bypass

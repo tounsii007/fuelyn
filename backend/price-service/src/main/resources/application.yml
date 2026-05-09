@@ -68,6 +68,18 @@ fuelyn:
     cron: "0 */30 * * * *"
     radius-km: 10
     max-history-days: 90
+    # Polling grid — explicitly overrides PriceCollectorService.DEFAULT_CITIES
+    # when present. Each entry is name + lat/lng (decimal degrees, WGS-84).
+    # Coordinates outside Germany's bounding box (47–55 N, 5.5–15.5 E) are
+    # logged and dropped at startup, the rest still apply. Leave empty / unset
+    # to use the built-in 10-city default grid.
+    cities: []
+    #   - name: Berlin
+    #     lat: 52.5200
+    #     lng: 13.4050
+    #   - name: Hamburg
+    #     lat: 53.5511
+    #     lng: 9.9937
   # ─── Streaming bus (Kafka / Redpanda) ─────────────────────
   # Producer publishes price-update deltas; consumer fans them out
   # to SSE subscribers (live UI updates) and the alerts processor.
