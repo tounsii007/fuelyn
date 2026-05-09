@@ -112,20 +112,41 @@ export function StationList({
       const p = r.station.prices?.[fuelType];
       if (typeof p === 'number' && p > 0) prices.push(p);
     }
-    if (prices.length === 0) return { min: null as number | null, avg: null as number | null, count: 0 };
+    if (prices.length === 0) {
+      return { min: null as number | null, max: null as number | null, avg: null as number | null, count: 0 };
+    }
     const min = Math.min(...prices);
+    const max = Math.max(...prices);
     const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
-    return { min, avg, count: prices.length };
+    return { min, max, avg, count: prices.length };
   }, [recommendations, fuelType]);
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      {/* Result count */}
-      <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
-        {hasMore
-          ? `${shown} von ${total} Tankstelle${total !== 1 ? 'n' : ''}`
-          : `${total} Tankstelle${total !== 1 ? 'n' : ''} gefunden`}
-      </p>
+      {/*
+        Result count + price-range subtitle. The count is the
+        primary signal ("X von Y Tankstellen"); the subtitle hangs
+        a sparkline-style range hint underneath ("1,89 € – 2,05 €
+        · Spanne 16 ct") so the user sees the spread before
+        scrolling. Subtitle suppressed when fewer than 2 priced
+        stations — a single price has no range to talk about.
+      */}
+      <div className="px-1 space-y-0.5">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {hasMore
+            ? `${shown} von ${total} Tankstelle${total !== 1 ? 'n' : ''}`
+            : `${total} Tankstelle${total !== 1 ? 'n' : ''} gefunden`}
+        </p>
+        {market.count >= 2 && market.min != null && market.max != null && (
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">
+            {market.min.toFixed(3).replace('.', ',')} €
+            {' – '}
+            {market.max.toFixed(3).replace('.', ',')} €
+            {' · Spanne '}
+            {Math.round((market.max - market.min) * 100)} ct
+          </p>
+        )}
+      </div>
 
       {recommendations.slice(0, shown).map((rec, idx) => (
         <div
