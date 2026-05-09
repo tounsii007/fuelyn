@@ -102,6 +102,31 @@ export function HeroEmptyState({
           ))}
         </ul>
 
+        {/*
+          Feature mini-grid — three short explanations that
+          translate "AI fuel intelligence" into something concrete.
+          Sits above the privacy note so the value pitch is the
+          last thing users read before scrolling, with the privacy
+          assurance acting as the trust closer.
+        */}
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
+          <FeatureTile
+            icon="🎯"
+            title="Smart-Empfehlung"
+            body="Nicht nur die billigste — die sinnvollste Tankstelle für deine Strecke."
+          />
+          <FeatureTile
+            icon="📈"
+            title="Markt-Kontext"
+            body="±ct vs. Schnitt für jede Tankstelle. Wissen, was günstig wirklich heißt."
+          />
+          <FeatureTile
+            icon="⏰"
+            title="Beste Zeit"
+            body="Wann es typischerweise billiger wird — pro Wochentag und Uhrzeit."
+          />
+        </div>
+
         {/* Privacy note */}
         <p className="mt-8 text-xs text-[var(--color-fg-subtle)]">
           🔒 Dein Standort verlässt nie dein Gerät. Wir senden nur Koordinaten an unseren Server,
@@ -109,6 +134,34 @@ export function HeroEmptyState({
         </p>
       </div>
     </section>
+  );
+}
+
+function FeatureTile({
+  icon,
+  title,
+  body,
+}: {
+  icon: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl border border-[var(--color-border-subtle)]
+                 bg-[var(--color-surface)]/60 backdrop-blur-sm p-3.5
+                 hover:bg-[var(--color-surface)]/85 transition-colors"
+    >
+      <div className="flex items-start gap-2.5">
+        <span className="text-xl select-none flex-shrink-0" aria-hidden>{icon}</span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[var(--color-fg)]">{title}</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--color-fg-muted)]">
+            {body}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
