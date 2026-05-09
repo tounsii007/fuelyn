@@ -241,7 +241,8 @@ public class AdvisorService {
      * keeps the digest stable when the upstream returns the same set in
      * a different order.</p>
      */
-    private static String buildCacheKey(AIAdvisorRequest request) {
+    /** Package-private for unit tests; product callers go through {@code getRecommendation}. */
+    static String buildCacheKey(AIAdvisorRequest request) {
         double lat = request.lat() == null ? 0 : request.lat();
         double lng = request.lng() == null ? 0 : request.lng();
         double rLat = Math.round(lat * 100.0) / 100.0;
