@@ -80,6 +80,7 @@ export const fr: TranslationKeys = {
 
   station: {
     stations: 'Stations-service',
+    stationSingular: 'Station-service',
     nearby: 'Stations à proximité',
     detail: 'Détails de la station',
     price: 'Prix',

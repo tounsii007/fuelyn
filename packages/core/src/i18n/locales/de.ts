@@ -76,6 +76,7 @@ export const de = {
 
   station: {
     stations: 'Tankstellen',
+    stationSingular: 'Tankstelle',
     nearby: 'Tankstellen in der Nähe',
     detail: 'Tankstellendetails',
     price: 'Preis',

@@ -75,6 +75,7 @@ export const en: TranslationKeys = {
 
   station: {
     stations: 'Gas Stations',
+    stationSingular: 'Station',
     nearby: 'Nearby stations',
     detail: 'Station details',
     price: 'Price',

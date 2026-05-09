@@ -16,8 +16,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export function CompareTray() {
+  const { t } = useTranslations();
   const ids = useAppStore((s) => s.compareStationIds);
   const clearCompare = useAppStore((s) => s.clearCompare);
   const pathname = usePathname();
@@ -44,8 +46,8 @@ export function CompareTray() {
         {ids.length}
       </span>
       <span className="text-xs font-medium pr-1">
-        {ids.length === 1 ? 'Tankstelle' : 'Tankstellen'}{' '}
-        <span className="opacity-70">zum Vergleich gewählt</span>
+        {ids.length === 1 ? t('station.stationSingular') : t('station.stations')}{' '}
+        <span className="opacity-70">{t('compare.trayLabel')}</span>
       </span>
       <Link
         href="/compare"
@@ -54,7 +56,7 @@ export function CompareTray() {
                    px-3 py-1 text-xs font-semibold text-white
                    transition-colors"
       >
-        Vergleichen
+        {t('compare.cta')}
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -64,8 +66,8 @@ export function CompareTray() {
         onClick={clearCompare}
         className="ml-0.5 flex h-6 w-6 items-center justify-center rounded-full
                    text-[var(--color-bg-subtle)] hover:bg-white/10 transition-colors"
-        aria-label="Vergleich leeren"
-        title="Vergleich leeren"
+        aria-label={t('compare.clearAll')}
+        title={t('compare.clearAll')}
       >
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
