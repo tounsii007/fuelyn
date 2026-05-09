@@ -323,6 +323,16 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
             })}
           </div>
 
+          {/*
+            Travel summary — three figures that drive the user's go-
+            or-not-go decision: how far, how long, and (when their
+            vehicle profile is set) what a full tank costs here. The
+            ReachabilityBadge sits alongside so an unreachable
+            station is impossible to overlook.
+          */}
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Anfahrt
+          </p>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-sm">
               <div className="text-center">
@@ -337,17 +347,67 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
                   ~{formatDriveTime(heuristicDriveMin)}
                 </p>
               </div>
-              {vehicle?.tankCapacity && price != null && (
-                <div className="text-center">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Volltanken</p>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    {(price * vehicle.tankCapacity).toFixed(2)} €
-                  </p>
-                </div>
-              )}
               <ReachabilityBadge status={reachability} />
             </div>
           </div>
+
+          {/*
+            Vehicle-cost box — shown only when the user has a
+            vehicle profile AND the active fuel has a price here.
+            Three lines that turn raw price-per-litre into the
+            answer to the question "what does it actually cost me?":
+              • Volltanken — capacity × price
+              • Anfahrt    — round-trip litres × price (if dist > 0)
+              • Reichweite — range a full tank gives at the
+                             vehicle's average consumption
+            All calculations happen client-side from existing
+            VehicleProfile fields; no extra API.
+          */}
+          {vehicle && price != null && (
+            <div className="mb-3 rounded-lg bg-brand-50/60 ring-1 ring-brand-100 px-3 py-2.5
+                            dark:bg-brand-900/15 dark:ring-brand-900/30">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-300">
+                  Mit deinem Fahrzeug
+                </span>
+                {vehicle.consumption ? (
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                    {vehicle.consumption.toFixed(1)} L/100 km
+                  </span>
+                ) : null}
+              </div>
+              <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-200">
+                {vehicle.tankCapacity ? (
+                  <li className="flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Volltanken</span>
+                    <span className="font-semibold tabular-nums">
+                      {Math.round(vehicle.tankCapacity)} L
+                      <span className="mx-1 text-gray-400">·</span>
+                      {(price * vehicle.tankCapacity).toFixed(2)} €
+                    </span>
+                  </li>
+                ) : null}
+                {vehicle.consumption && airlineDistanceKm > 0.1 ? (
+                  <li className="flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Sprit-Aufwand Hin+Rück</span>
+                    <span className="font-semibold tabular-nums">
+                      {((airlineDistanceKm * 2 * vehicle.consumption) / 100).toFixed(2)} L
+                      <span className="mx-1 text-gray-400">·</span>
+                      {(((airlineDistanceKm * 2 * vehicle.consumption) / 100) * price).toFixed(2)} €
+                    </span>
+                  </li>
+                ) : null}
+                {vehicle.tankCapacity && vehicle.consumption ? (
+                  <li className="flex items-center justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Reichweite voll</span>
+                    <span className="font-semibold tabular-nums">
+                      {Math.round((vehicle.tankCapacity / vehicle.consumption) * 100)} km
+                    </span>
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          )}
 
           {/*
             Route detail — secondary line, only shown when the actual
