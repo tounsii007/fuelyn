@@ -119,8 +119,6 @@ public class PriceHistoryService {
         }
 
         PriceStatistics.Stats overall = PriceStatistics.compute(snapshots);
-        List<PriceStatistics.StationAverage> perStation =
-                PriceStatistics.stationAverages(snapshots);
         Map<String, StationMeta> metaById = new HashMap<>();
         stationsInArea.forEach(s -> metaById.put(s.getId(), s));
 
@@ -136,12 +134,11 @@ public class PriceHistoryService {
         result.put("fuelType", fuelType);
         result.put("days", days);
 
-        if (!perStation.isEmpty()) {
-            result.put("minStation", stationSummary(perStation.get(0), metaById));
-            result.put(
-                    "maxStation",
-                    stationSummary(perStation.get(perStation.size() - 1), metaById));
-        }
+        // Single-pass min/max — used to be a sort + index-0/index-N read.
+        PriceStatistics.cheapestAndMostExpensive(snapshots).ifPresent(mm -> {
+            result.put("minStation", stationSummary(mm.cheapest(), metaById));
+            result.put("maxStation", stationSummary(mm.mostExpensive(), metaById));
+        });
 
         return result;
     }

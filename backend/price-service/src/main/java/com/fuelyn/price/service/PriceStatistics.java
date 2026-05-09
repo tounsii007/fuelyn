@@ -6,6 +6,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.fuelyn.price.model.entity.PriceSnapshot;
 
@@ -124,6 +125,43 @@ public final class PriceStatistics {
                 .map(e -> new StationAverage(e.getKey(), e.getValue()[0] / e.getValue()[1]))
                 .sorted((a, b) -> Double.compare(a.avgPrice(), b.avgPrice()))
                 .toList();
+    }
+
+    /** Pair of cheapest and most expensive station-average — both never null when present. */
+    public record MinMaxStations(StationAverage cheapest, StationAverage mostExpensive) {}
+
+    /**
+     * Single-pass O(n) variant for callers that only need the cheapest
+     * and most-expensive station average — i.e. the area-stats response
+     * which previously called {@link #stationAverages} (O(n log n) due
+     * to the sort) and then read just element 0 and element {@code n-1}.
+     *
+     * <p>Returns {@link Optional#empty()} when the input has no usable
+     * snapshots, so callers can short-circuit cleanly without a special
+     * "no data" sentinel record.</p>
+     */
+    public static Optional<MinMaxStations> cheapestAndMostExpensive(List<PriceSnapshot> snapshots) {
+        if (snapshots == null || snapshots.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, double[]> acc = new HashMap<>();
+        for (PriceSnapshot s : snapshots) {
+            double[] entry = acc.computeIfAbsent(s.getStationId(), k -> new double[] {0, 0});
+            entry[0] += s.getPrice();
+            entry[1] += 1;
+        }
+        if (acc.isEmpty()) {
+            return Optional.empty();
+        }
+        StationAverage cheapest = null;
+        StationAverage mostExpensive = null;
+        for (Map.Entry<String, double[]> e : acc.entrySet()) {
+            double avg = e.getValue()[0] / e.getValue()[1];
+            StationAverage current = new StationAverage(e.getKey(), avg);
+            if (cheapest == null || avg < cheapest.avgPrice()) cheapest = current;
+            if (mostExpensive == null || avg > mostExpensive.avgPrice()) mostExpensive = current;
+        }
+        return Optional.of(new MinMaxStations(cheapest, mostExpensive));
     }
 
     /** Geographic helper: degrees of latitude/longitude per kilometer near a given lat. */
