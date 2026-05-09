@@ -12,7 +12,10 @@ import com.fuelyn.price.repository.StationMetaRepository;
 import com.fuelyn.price.stream.PriceEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +72,18 @@ public class PriceCollectorService {
      */
     private final PriceCollectorService self;
 
+    /**
+     * Optional cache manager. When wired, {@link #collectAll()} clears the
+     * {@code priceHistory} and {@code areaStats} caches at the end of a
+     * successful cycle so the next read returns the freshly persisted data
+     * instead of waiting up to 5 minutes for the TTL to expire. Optional
+     * because tests may run without a configured cache type.
+     */
+    private final CacheManager cacheManager;
+
+    /** Cache names that hold price-derived projections — must invalidate post-cycle. */
+    private static final List<String> CACHES_DEPENDENT_ON_PRICES = List.of("priceHistory", "areaStats");
+
     public PriceCollectorService(
             TankerkoenigClient tankerkoenigClient,
             PriceSnapshotRepository snapshotRepo,
@@ -77,7 +92,8 @@ public class PriceCollectorService {
             PriceEventPublisher priceEventPublisher,
             @Value("${fuelyn.collection.radius-km:10}") double radiusKm,
             @Value("${fuelyn.collection.max-history-days:90}") int maxHistoryDays,
-            @Lazy PriceCollectorService self
+            @Lazy PriceCollectorService self,
+            @Autowired(required = false) CacheManager cacheManager
     ) {
         this.tankerkoenigClient = tankerkoenigClient;
         this.snapshotRepo = snapshotRepo;
@@ -87,6 +103,7 @@ public class PriceCollectorService {
         this.radiusKm = radiusKm;
         this.maxHistoryDays = maxHistoryDays;
         this.self = self;
+        this.cacheManager = cacheManager;
     }
 
     /**
@@ -124,8 +141,27 @@ public class PriceCollectorService {
         run.setStatus("completed");
         runRepo.save(run);
 
+        // Invalidate price-derived caches now that fresh data has landed.
+        // Without this the @Cacheable areaStats/priceHistory results would
+        // serve stale data for up to the 5-minute Caffeine TTL after every
+        // cycle. Clearing here turns "5 min worst-case staleness" into
+        // "always fresh after the next cycle commits".
+        evictPriceDependentCaches();
+
         log.info("Collection complete: {} stations, {} prices in {}ms", totalStations, totalPrices, duration);
         return CollectionResult.success(totalStations, totalPrices, duration);
+    }
+
+    private void evictPriceDependentCaches() {
+        if (cacheManager == null) {
+            return;
+        }
+        for (String name : CACHES_DEPENDENT_ON_PRICES) {
+            Cache cache = cacheManager.getCache(name);
+            if (cache != null) {
+                cache.clear();
+            }
+        }
     }
 
     /**
