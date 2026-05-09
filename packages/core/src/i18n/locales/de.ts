@@ -236,6 +236,115 @@ export const de = {
     locationTitle: 'Standort nicht verfügbar',
     locationMessage: 'Bitte erlaube den Standortzugriff oder suche manuell.',
   },
+
+  // ─── New keys covering the iter-1..28 UI additions ──────────
+  // These exist here so the EN/FR locales can provide their own
+  // translations now and the components can migrate from
+  // hardcoded German to t() calls incrementally — without
+  // breaking compile when a component referenced a missing key.
+
+  panel: {
+    travel: 'Anfahrt',
+    withYourVehicle: 'Mit deinem Fahrzeug',
+    fullTank: 'Volltanken',
+    fuelCostRoundTrip: 'Sprit-Aufwand Hin+Rück',
+    fullRange: 'Reichweite voll',
+    bestChoice: 'BESTE WAHL',
+    cheapestChip: 'günstigster',
+    belowAvg: 'ct unter Schnitt',
+    aboveAvg: 'ct über Schnitt',
+    routeDetail: 'Route',
+    savingsVsAvg: 'ct/L vs. Schnitt',
+  },
+
+  compare: {
+    trayLabel: 'zum Vergleich gewählt',
+    cta: 'Vergleichen',
+    clearAll: 'Vergleich leeren',
+    addedHint: 'Zum Vergleich hinzufügen',
+    removeHint: 'Aus Vergleich entfernen',
+    full: 'Vergleich voll (3/3)',
+  },
+
+  liveGps: {
+    sectionTitle: 'Privatsphäre & Standort',
+    toggleTitle: 'Live-Standort verfolgen',
+    toggleDesc:
+      'Aktualisiert deine Position automatisch während du dich bewegst, ' +
+      'damit Entfernungen und Reihenfolge sich anpassen. Schluckt mehr ' +
+      'Akku — daher standardmäßig aus.',
+    permission: 'Berechtigung',
+    permissionGranted: 'Erteilt',
+    permissionDenied: 'Verweigert',
+    permissionPrompt: 'Ausstehend',
+    trackingLabel: 'Tracking',
+    trackingActive: 'Live aktiv',
+    trackingInactive: 'Inaktiv',
+    accuracyLabel: 'Genauigkeit',
+    forgetLocation: 'Gespeicherten Standort vergessen',
+    forgetLocationDesc:
+      'Setzt deine Position zurück. Beim nächsten Öffnen wird sie neu ermittelt.',
+  },
+
+  bestDeal: {
+    eyebrow: 'Top Deal',
+    live: 'Live',
+    indexLabel: 'Live-Preisindex',
+    perFillSavings: 'Spar bis zu',
+    perFillUnit: 'pro Tankfüllung',
+    marketAvgTooltip: 'Markt-Durchschnitt',
+    bestPriceTooltip: 'Bester Preis',
+  },
+
+  routePlanner: {
+    summary: 'Routen-Übersicht',
+    distance: 'Strecke',
+    duration: 'Fahrzeit',
+    fuelCost: 'Sprit-Kosten',
+    estimatedWith: 'Geschätzt mit',
+    cheapestStop: 'günstigster Stopp',
+    openInMaps: 'In Google Maps öffnen',
+    moveUp: 'Nach oben',
+    moveDown: 'Nach unten',
+    removeStop: 'Stopp entfernen',
+    cheapStations: 'Günstige Tankstellen',
+    yourRoute: 'Deine Route',
+    noStops: 'Keine Stopps geplant.',
+    locationRequired: 'Standort benötigt',
+    locationRequiredHint:
+      'Aktiviere den Standort auf der Hauptseite, um den Routenplaner zu nutzen.',
+  },
+
+  fuelLog: {
+    monthlyOverview: 'Monatsübersicht',
+    lastNMonths: 'letzte {n} Monate',
+    currentMonth: 'aktuell',
+    cheapestMonth: '★ günstigster',
+    entriesPlural: 'Einträge',
+    entriesSingular: 'Eintrag',
+  },
+
+  alerts: {
+    armedShort: 'aktiv',
+    pausedShort: 'pausiert',
+    bulkActivate: 'Alle aktivieren',
+    bulkPause: 'Alle pausieren',
+    bulkActivateTitle: 'Alle Alarme aktivieren',
+    bulkPauseTitle: 'Alle Alarme vorübergehend pausieren',
+  },
+
+  shortcuts: {
+    title: 'Tastenkürzel',
+    cmdK: 'Befehlspalette öffnen',
+    esc: 'Dialoge & Popups schließen',
+    arrowKeys: 'In Listen navigieren',
+    enter: 'Auswahl bestätigen',
+    pinDrop: 'Pin auf Karte setzen',
+  },
+
+  pinDrop: {
+    toast: 'Suchzentrum gesetzt',
+  },
 } as const;
 
 // Recursively widen literal strings so other locales can provide their own values

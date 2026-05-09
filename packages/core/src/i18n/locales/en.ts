@@ -238,4 +238,106 @@ export const en: TranslationKeys = {
     locationTitle: 'Location unavailable',
     locationMessage: 'Please allow location access or search manually.',
   },
+
+  panel: {
+    travel: 'Travel',
+    withYourVehicle: 'With your vehicle',
+    fullTank: 'Full tank',
+    fuelCostRoundTrip: 'Round-trip fuel cost',
+    fullRange: 'Range on a full tank',
+    bestChoice: 'BEST CHOICE',
+    cheapestChip: 'cheapest',
+    belowAvg: 'ct below avg',
+    aboveAvg: 'ct above avg',
+    routeDetail: 'Route',
+    savingsVsAvg: 'p/L vs. avg',
+  },
+
+  compare: {
+    trayLabel: 'selected for compare',
+    cta: 'Compare',
+    clearAll: 'Clear compare',
+    addedHint: 'Add to compare',
+    removeHint: 'Remove from compare',
+    full: 'Compare full (3/3)',
+  },
+
+  liveGps: {
+    sectionTitle: 'Privacy & Location',
+    toggleTitle: 'Track live location',
+    toggleDesc:
+      'Auto-updates your position as you move so distances and ' +
+      'ordering keep refreshing. Uses more battery — off by default.',
+    permission: 'Permission',
+    permissionGranted: 'Granted',
+    permissionDenied: 'Denied',
+    permissionPrompt: 'Pending',
+    trackingLabel: 'Tracking',
+    trackingActive: 'Live',
+    trackingInactive: 'Inactive',
+    accuracyLabel: 'Accuracy',
+    forgetLocation: 'Forget stored location',
+    forgetLocationDesc:
+      'Resets your position. The next load will fetch a fresh fix.',
+  },
+
+  bestDeal: {
+    eyebrow: 'Top Deal',
+    live: 'Live',
+    indexLabel: 'Live price index',
+    perFillSavings: 'Save up to',
+    perFillUnit: 'per fill',
+    marketAvgTooltip: 'Market average',
+    bestPriceTooltip: 'Best price',
+  },
+
+  routePlanner: {
+    summary: 'Route summary',
+    distance: 'Distance',
+    duration: 'Travel time',
+    fuelCost: 'Fuel cost',
+    estimatedWith: 'Estimated with',
+    cheapestStop: 'cheapest stop',
+    openInMaps: 'Open in Google Maps',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    removeStop: 'Remove stop',
+    cheapStations: 'Cheap stations',
+    yourRoute: 'Your route',
+    noStops: 'No stops planned.',
+    locationRequired: 'Location required',
+    locationRequiredHint:
+      'Enable your location on the main page to use the route planner.',
+  },
+
+  fuelLog: {
+    monthlyOverview: 'Monthly overview',
+    lastNMonths: 'last {n} months',
+    currentMonth: 'current',
+    cheapestMonth: '★ cheapest',
+    entriesPlural: 'entries',
+    entriesSingular: 'entry',
+  },
+
+  alerts: {
+    armedShort: 'active',
+    pausedShort: 'paused',
+    bulkActivate: 'Activate all',
+    bulkPause: 'Pause all',
+    bulkActivateTitle: 'Activate all alarms',
+    bulkPauseTitle: 'Temporarily pause all alarms',
+  },
+
+  shortcuts: {
+    title: 'Keyboard shortcuts',
+    cmdK: 'Open command palette',
+    esc: 'Close dialogs & popups',
+    arrowKeys: 'Navigate lists',
+    enter: 'Confirm selection',
+    pinDrop: 'Drop pin on map',
+  },
+
+  pinDrop: {
+    toast: 'Search centre updated',
+  },
 } as const;
