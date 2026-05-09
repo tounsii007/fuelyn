@@ -24,6 +24,14 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    # Some past branches applied migrations (V2..V4) whose SQL
+    # files don't exist on `main` (those features moved or were
+    # archived). Flyway's default validation refuses to start in
+    # that state. The setting below tells it to tolerate "applied
+    # but no longer in source" entries — we still fully validate
+    # the migrations that ARE present, and new ones (V5+) still
+    # apply normally.
+    ignore-migration-patterns: "*:missing"
   cache:
     type: caffeine
     caffeine:

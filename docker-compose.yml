@@ -137,6 +137,13 @@ services:
       API_KEY_1: ${API_KEY_1}
       TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY}
       OPENCHARGEMAP_API_KEY: ${OPENCHARGEMAP_API_KEY}
+      # ─── Regret-loop nightly backfill ──────────────────────
+      # Reads `recommendation_logs` rows older than 24 h, looks
+      # up the cheapest price observed in the same lat/lng
+      # bucket within the 24 h after the request, and writes
+      # `regret_eur` so we have an empirical signal for tuning
+      # the Bayesian prior weights.
+      FUELYN_REGRET_BACKFILL_ENABLED: ${REGRET_BACKFILL_ENABLED:-true}
     expose:
       - "28810"
     healthcheck:
@@ -229,6 +236,12 @@ services:
         condition: service_healthy
       redpanda:
         condition: service_healthy
+      # Telemetry write-side: ai-service inserts into
+      # `recommendation_logs`, owned by price-service's Flyway. We
+      # depend on postgres-healthy so the migration has run before
+      # the first INSERT lands.
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "28820"
@@ -254,6 +267,15 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: redpanda:29092
       KAFKA_PRICES_TOPIC: fuelyn.prices.v1
       KAFKA_CONSUMER_ENABLED: ${KAFKA_CONSUMER_ENABLED:-true}
+      # ─── Regret-loop telemetry write-side ──────────────────
+      # Persists every advisor verdict in `recommendation_logs`
+      # (privacy-preserving: only 0.01° lat/lng buckets, no
+      # user/device ID). Set to "false" to fall back to JSON-only.
+      REGRET_DB_ENABLED: ${REGRET_DB_ENABLED:-true}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:25432/fuelyn
+      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: fuelyn
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     expose:
       - "28820"
     healthcheck:

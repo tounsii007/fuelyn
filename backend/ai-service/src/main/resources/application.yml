@@ -9,12 +9,52 @@ spring:
     caffeine:
       spec: maximumSize=200,expireAfterWrite=900s
 
+  # ─── Datasource (regret-loop telemetry only) ──────────────
+  # ai-service is otherwise stateless; the only reason it owns a
+  # JDBC pool is to INSERT into `recommendation_logs` (schema
+  # owned by price-service via Flyway, see V5). Pool kept tiny —
+  # writes are infrequent and fire-and-forget.
+  #
+  # When the env var REGRET_DB_ENABLED=false (or no datasource
+  # URL is configured) we silently skip the persistence layer
+  # and fall back to JSON-only logging. Configured via
+  # `spring.autoconfigure.exclude` below in that case.
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      pool-name: ai-service-regret
+      maximum-pool-size: 3
+      minimum-idle: 0
+      idle-timeout: 60000
+      connection-timeout: 5000
+  autoconfigure:
+    # Guard: if no datasource URL is set, skip JDBC autoconfig
+    # entirely so the service still boots in environments without
+    # a DB (CI, dev with `REGRET_DB_ENABLED=false`, etc.). The
+    # property is overridden via env in docker-compose.
+    exclude: ${SPRING_AUTOCONFIGURE_EXCLUDE:}
+
 fuelyn:
   security:
     hmac-secret: ${HMAC_SECRET:}
     jwt-public-key: ${JWT_PUBLIC_KEY:}
     jwt-private-key: ${JWT_PRIVATE_KEY:}
     service-id: ai-service
+
+  # ─── Regret-loop telemetry ──────────────────────────────────
+  # When enabled, every advisor verdict is also written to the
+  # `recommendation_logs` table (in addition to the JSON log
+  # line). A nightly cron in price-service then backfills the
+  # 24-h realised minimum and the resulting regret value. Both
+  # the persistence and the cron are independently toggleable
+  # so we can ship the write side first and turn the loop on
+  # later. Disabled by default; `docker-compose.yml` flips it
+  # on for the dev stack.
+  regret:
+    enabled: ${REGRET_DB_ENABLED:false}
 
   # ─── AI tiered pipeline ─────────────────────────────────────
   # Pipeline: cache → heuristic baseline → enrichment chain.

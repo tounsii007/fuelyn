@@ -40,6 +40,22 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
+
+        <!-- ─── Telemetry persistence (regret-loop) ─────────────
+             We keep this minimal: just JdbcTemplate + the PG
+             driver. No JPA/Hibernate, no DDL — Flyway in
+             price-service owns the schema (table:
+             recommendation_logs from V5). The ai-service is a
+             write-side client only. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
