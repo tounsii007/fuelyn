@@ -73,10 +73,69 @@ export default function ComparePage() {
       />
 
       {compared.length === 0 ? (
-        <EmptyState
-          title="Keine Tankstellen ausgewählt"
-          message="Wähle bis zu 3 Tankstellen auf der Karte oder in der Liste zum Vergleichen aus."
-        />
+        <>
+          <EmptyState
+            icon="⚖️"
+            title="Keine Tankstellen ausgewählt"
+            message={
+              <span className="block">
+                <span className="block mb-3">
+                  Wähle bis zu <strong className="text-gray-900 dark:text-gray-100">3 Tankstellen</strong>{' '}
+                  zum nebeneinanderstellen — der Vergleich rechnet
+                  Preise, Strecke und Sprit-Aufwand für jede aus.
+                </span>
+              </span>
+            }
+            action={{
+              label: 'Zur Karte',
+              onClick: () => { window.location.href = '/'; },
+            }}
+          />
+
+          {/*
+            How-to-add hints. Renders below the empty state so
+            users don't have to know the UX cold to be productive
+            — three concrete entry points, each with the matching
+            icon they'll see in the actual UI.
+          */}
+          <div className="mt-2 mx-auto max-w-md rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-4 text-sm">
+            <p className="font-semibold text-gray-700 dark:text-gray-200 mb-3 text-center">
+              So fügst du Tankstellen hinzu:
+            </p>
+            <ol className="space-y-2 text-gray-600 dark:text-gray-400">
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-bold">
+                  1
+                </span>
+                <span>
+                  Tippe einen Marker auf der Karte an und nutze den
+                  &nbsp;
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-white dark:bg-gray-900 ring-1 ring-gray-200 dark:ring-gray-700 align-text-bottom">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                    </svg>
+                  </span>
+                  &nbsp;Vergleich-Button im Detail-Panel.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-bold">
+                  2
+                </span>
+                <span>Oder tippe in der Liste rechts auf das gleiche Vergleichs-Icon.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 text-xs font-bold">
+                  3
+                </span>
+                <span>
+                  Sobald du mindestens eine Tankstelle gewählt hast, erscheint unten ein
+                  „Vergleichen"-Button — der bringt dich zurück hierher.
+                </span>
+              </li>
+            </ol>
+          </div>
+        </>
       ) : (
         <>
           {/* Compare Grid */}
