@@ -59,9 +59,19 @@ public class AIAdvisorController {
                     requestId, result.action(), result.confidence(), result.fromAI(), result.fromCache());
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
-            log.error("[{}] AI advisor error, using fallback: {}", requestId, e.getMessage());
-            AIAdvisorResponse fallback = LocalHeuristicFallback.analyze(request);
-            return ResponseEntity.ok(ApiResponse.success(fallback));
+            // If the failure was a thread interruption (Ollama HTTP client,
+            // OpenAI client, or any executor downstream), restore the
+            // interrupt flag before swallowing — otherwise the broad catch
+            // erases the cancellation signal and any wrapping executor
+            // (e.g. a request-timeout supervisor) would never see it.
+            if (e instanceof InterruptedException
+                    || e.getCause() instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                log.warn("[{}] AI advisor interrupted, returning fallback", requestId);
+            } else {
+                log.error("[{}] AI advisor error, using fallback: {}", requestId, e.getMessage());
+            }
+            return ResponseEntity.ok(ApiResponse.success(LocalHeuristicFallback.analyze(request)));
         }
     }
 
