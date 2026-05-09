@@ -1,5 +1,6 @@
 package com.fuelyn.price.service;
 
+import com.fuelyn.common.geo.GermanyBounds;
 import com.fuelyn.price.model.dto.TankerkoenigResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
@@ -61,7 +62,7 @@ public class TankerkoenigClient implements FuelStationClient {
     @Retry(name = "tankerkoenig")
     @RateLimiter(name = "external-api")
     public List<TankerkoenigResponse.Station> searchStations(double lat, double lng, double radiusKm) {
-        if (lat < 47.0 || lat > 55.0 || lng < 5.5 || lng > 15.5) {
+        if (!GermanyBounds.contains(lat, lng)) {
             log.warn("Coordinates ({}, {}) outside Germany bounds, skipping", lat, lng);
             return Collections.emptyList();
         }

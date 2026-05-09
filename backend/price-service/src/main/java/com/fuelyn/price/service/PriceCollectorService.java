@@ -1,6 +1,7 @@
 package com.fuelyn.price.service;
 
 import com.fuelyn.common.events.PriceUpdatedEvent;
+import com.fuelyn.common.geo.GermanyBounds;
 import com.fuelyn.price.config.CollectionProperties;
 import com.fuelyn.price.model.dto.CollectionResult;
 import com.fuelyn.price.model.dto.TankerkoenigResponse;
@@ -142,7 +143,7 @@ public class PriceCollectorService {
                 log.warn("Skipping configured city with blank name: lat={}, lng={}", c.getLat(), c.getLng());
                 continue;
             }
-            if (c.getLat() < 47.0 || c.getLat() > 55.0 || c.getLng() < 5.5 || c.getLng() > 15.5) {
+            if (!GermanyBounds.contains(c.getLat(), c.getLng())) {
                 log.warn("Skipping city {} — coordinates ({}, {}) outside Germany bounds",
                         c.getName(), c.getLat(), c.getLng());
                 continue;

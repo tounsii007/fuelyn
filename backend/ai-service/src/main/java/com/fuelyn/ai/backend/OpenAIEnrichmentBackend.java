@@ -45,6 +45,13 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
     private final String model;
     private final int maxTokens;
     private final double temperature;
+    /**
+     * Approximate USD cost per output token for the configured model. Keeps
+     * the cost-estimate log accurate as OpenAI repricings happen. Default
+     * matches gpt-4o-mini (60 ¢ / 1M output tokens, ≈ 0.0000006 USD/tok).
+     * Operators bumping the model should update this in lockstep.
+     */
+    private final double costPerToken;
 
     public OpenAIEnrichmentBackend(
             RestTemplateBuilder builder,
@@ -53,7 +60,8 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
             @Value("${fuelyn.ai.openai.model:gpt-4o-mini}") String model,
             @Value("${fuelyn.ai.openai.max-tokens:400}") int maxTokens,
             @Value("${fuelyn.ai.openai.temperature:0.6}") double temperature,
-            @Value("${fuelyn.ai.openai.timeout-ms:30000}") int timeoutMs
+            @Value("${fuelyn.ai.openai.timeout-ms:30000}") int timeoutMs,
+            @Value("${fuelyn.ai.openai.cost-per-token:0.00000060}") double costPerToken
     ) {
         this.restTemplate = builder
                 .connectTimeout(Duration.ofMillis(Math.min(15_000, timeoutMs)))
@@ -64,8 +72,9 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
         this.model = model;
         this.maxTokens = maxTokens;
         this.temperature = temperature;
-        log.info("OpenAIEnrichmentBackend ready — model={}, key={}", model,
-                hasUsableKey() ? "configured" : "MISSING");
+        this.costPerToken = costPerToken;
+        log.info("OpenAIEnrichmentBackend ready — model={}, costPerToken={}, key={}",
+                model, costPerToken, hasUsableKey() ? "configured" : "MISSING");
     }
 
     @Override
@@ -140,7 +149,7 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
         @SuppressWarnings("unchecked")
         Map<String, Object> usage = (Map<String, Object>) respBody.get("usage");
         if (usage != null && usage.get("total_tokens") instanceof Number tokens) {
-            double cost = tokens.doubleValue() * 0.00000060; // gpt-4o-mini approx
+            double cost = tokens.doubleValue() * costPerToken;
             log.info("[OpenAI] {}ms, {} tokens, ~${} cost",
                     durationMs, tokens.intValue(), String.format("%.6f", cost));
         }
