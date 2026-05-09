@@ -12,6 +12,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CompareTray } from '@/components/stations/CompareTray';
 import { useAppStore } from '@/lib/store/app-store';
 import { FUEL_TYPE_LABELS, RADIUS_OPTIONS_KM } from '@fuelyn/core';
 import type { FuelType } from '@fuelyn/core';
@@ -130,6 +131,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-1 overflow-hidden">{children}</main>
+
+      {/*
+        Floating compare-tray indicator. Mounts globally so it
+        follows the user across pages (hidden when empty or when
+        already on /compare). The component itself returns null
+        until something is in the compare set, so this line costs
+        nothing in the common case.
+      */}
+      <CompareTray />
     </div>
   );
 }
