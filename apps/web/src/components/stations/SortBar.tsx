@@ -14,7 +14,19 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'open', label: 'Geöffnet' },
 ];
 
-export function SortBar() {
+export interface SortBarProps {
+  /**
+   * Optional per-mode hit counts. When supplied, each sort pill
+   * renders a small number badge to its right ("Geöffnet 12").
+   * A `null` count is rendered as "—" so users see "data missing"
+   * instead of nothing — important for the Geöffnet pill which
+   * can legitimately be 0 vs. unknown. Pass `undefined` to
+   * suppress badging entirely (the original behaviour).
+   */
+  readonly counts?: Partial<Record<SortMode, number | null>>;
+}
+
+export function SortBar({ counts }: SortBarProps = {}) {
   const sortMode = useAppStore((s) => s.sortMode);
   const setSortMode = useAppStore((s) => s.setSortMode);
   const setFilterOpen = useAppStore((s) => s.setFilterOpen);
@@ -28,21 +40,43 @@ export function SortBar() {
 
   return (
     <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-      {SORT_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => setSortMode(opt.value)}
-          className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all
-            ${
-              sortMode === opt.value
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+      {SORT_OPTIONS.map((opt) => {
+        const count = counts ? counts[opt.value] : undefined;
+        const isActive = sortMode === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setSortMode(opt.value)}
+            className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all
+              ${
+                isActive
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+          >
+            <span>{opt.label}</span>
+            {/*
+              Inline count badge — gives the user a quick "are
+              there any open stations at all?" signal without
+              having to click the tab to find out. Tone follows
+              the active state: white-on-translucent for the
+              active pill, gray-on-soft for the inactive ones.
+            */}
+            {count !== undefined && (
+              <span
+                className={`tabular-nums rounded-full px-1.5 py-0.5 text-[10px] leading-none font-semibold ${
+                  isActive
+                    ? 'bg-white/25 text-white'
+                    : 'bg-white text-gray-500 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-700'
+                }`}
+              >
+                {count == null ? '—' : count > 99 ? '99+' : count}
+              </span>
+            )}
+          </button>
+        );
+      })}
 
       {/* Filter button */}
       <button

@@ -222,6 +222,26 @@ export default function HomePage() {
 
   const recommendations = useRecommendations(fuelStations);
 
+  // Per-mode hit counts for the SortBar pills. Cheap to compute
+  // (single pass over the recommendations array) and gives users
+  // a glanceable answer to "is the Geöffnet tab worth a click?"
+  // Memoised because the array reference changes on every store
+  // update and counts are O(n).
+  const fuelType = useAppStore((s) => s.filter.fuelType);
+  const sortCounts = useMemo(() => {
+    const total = recommendations.length;
+    const withPrice = recommendations.filter(
+      (r) => typeof r.station.prices?.[fuelType] === 'number',
+    ).length;
+    const open = recommendations.filter((r) => r.station.isOpen).length;
+    return {
+      recommended: total,
+      cheapest: withPrice,
+      nearest: total,
+      open,
+    };
+  }, [recommendations, fuelType]);
+
   const handleStationClick = useCallback(
     async (stationId: string) => {
       selectStation(stationId);
@@ -398,7 +418,7 @@ export default function HomePage() {
                 ].join(' ')}
               >
                 <div className="sticky top-0 z-10 bg-[var(--color-bg)]/85 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
-                  <SortBar />
+                  <SortBar counts={sortCounts} />
                   <div className="px-4 pt-3 pb-3">
                     <AddressSearch />
                   </div>
