@@ -8,7 +8,9 @@ import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -85,8 +88,20 @@ public class PriceStreamController {
     /** Total events fan-out so far; surfaced in the management endpoint. */
     private final AtomicLong eventsFanOut = new AtomicLong();
     private final AtomicLong dropsFromSlowClients = new AtomicLong();
+    private final AtomicLong subscriptionsRejected = new AtomicLong();
 
-    public PriceStreamController() {
+    /**
+     * Hard ceiling on concurrent SSE subscriptions per JVM. New connections
+     * over the limit are refused with 503 + Retry-After. Set generously so
+     * normal use never trips it; protects against unbounded growth from
+     * browsers leaking tabs or a runaway client reconnect loop.
+     */
+    private final int maxSubscriptions;
+
+    public PriceStreamController(
+            @Value("${fuelyn.stream.max-subscriptions:5000}") int maxSubscriptions
+    ) {
+        this.maxSubscriptions = maxSubscriptions;
         // Send a heartbeat comment to every connection every 15 s.
         heartbeats.scheduleAtFixedRate(this::sendHeartbeats, 15, 15, TimeUnit.SECONDS);
     }
@@ -124,6 +139,18 @@ public class PriceStreamController {
             @RequestParam(value = "stations", required = false) String stations,
             HttpServletResponse response
     ) {
+        // Reject new subscriptions over the cap before allocating any state.
+        // The check is intentionally racy (size() then add()) — exceeding the
+        // cap by one or two connections under contention is acceptable; what
+        // matters is that we never grow unbounded.
+        if (subscriptions.size() >= maxSubscriptions) {
+            subscriptionsRejected.incrementAndGet();
+            log.warn("SSE subscription rejected: cap of {} reached", maxSubscriptions);
+            response.setHeader("Retry-After", "30");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "SSE subscription cap reached");
+        }
+
         // Disable proxy buffering so events arrive in real time.
         response.setHeader("X-Accel-Buffering", "no");
         response.setHeader("Cache-Control", "no-cache, no-transform");
@@ -171,8 +198,10 @@ public class PriceStreamController {
     @GetMapping(value = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
     public String health() {
         return String.format(
-                "{\"subscriptions\":%d,\"eventsFanOut\":%d,\"dropsFromSlowClients\":%d}",
-                subscriptions.size(), eventsFanOut.get(), dropsFromSlowClients.get());
+                "{\"subscriptions\":%d,\"maxSubscriptions\":%d,\"eventsFanOut\":%d,"
+                        + "\"dropsFromSlowClients\":%d,\"subscriptionsRejected\":%d}",
+                subscriptions.size(), maxSubscriptions, eventsFanOut.get(),
+                dropsFromSlowClients.get(), subscriptionsRejected.get());
     }
 
     /**
@@ -238,16 +267,25 @@ public class PriceStreamController {
 
     private void sendHeartbeats() {
         if (subscriptions.isEmpty()) return;
+        // Hand each heartbeat off to the same virtual-thread executor that
+        // runs price fan-out. The single-threaded scheduler that calls this
+        // method must NOT block on per-subscriber I/O — one slow socket
+        // would otherwise stall heartbeats for every other subscriber and
+        // the proxy's read-timeout would tear down healthy connections.
         for (Subscription sub : subscriptions) {
-            try {
-                sub.emitter().send(SseEmitter.event().comment("hb"));
-            } catch (Exception broken) {
-                // Silent removal — broken pipe + heartbeat is normal
-                // when a browser closes a tab. We don't want this to
-                // bubble up to GlobalExceptionHandler as a 500.
-                subscriptions.remove(sub);
-                try { sub.emitter().complete(); } catch (Exception ignored) {}
-            }
+            fanOutExecutor.execute(() -> deliverHeartbeat(sub));
+        }
+    }
+
+    private void deliverHeartbeat(Subscription sub) {
+        try {
+            sub.emitter().send(SseEmitter.event().comment("hb"));
+        } catch (Exception broken) {
+            // Silent removal — broken pipe + heartbeat is normal when a
+            // browser closes a tab. We don't want this to bubble up to
+            // GlobalExceptionHandler as a 500.
+            subscriptions.remove(sub);
+            try { sub.emitter().complete(); } catch (Exception ignored) {}
         }
     }
 
