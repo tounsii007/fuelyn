@@ -54,6 +54,20 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
+
+        <!--
+            common is a TEST-scope dep so the gateway production classpath
+            stays free of spring-boot-starter-web (servlet) which would
+            collide with spring-cloud-starter-gateway (reactive). Tests
+            can still reference common's pure-Java helpers (e.g. for
+            cross-implementation parity assertions).
+        -->
+        <dependency>
+            <groupId>com.fuelyn</groupId>
+            <artifactId>fuelyn-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
