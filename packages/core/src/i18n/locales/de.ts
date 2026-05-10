@@ -665,6 +665,20 @@ export const de = {
     },
   },
 
+  chargingPlanner: {
+    eyebrow: 'EV-Ladeplaner',
+    title: 'Lade-Sitzung schätzen',
+    batteryKwh: 'Akku',
+    tariff: 'Tarif',
+    fromPct: 'Aktueller SoC',
+    toPct: 'Ziel-SoC',
+    chargerLabel: 'Lader',
+    energy: 'Energie',
+    duration: 'Dauer',
+    cost: 'Kosten',
+    summary: '+{range} km · {cost100} €/100 km · ⌀ {avg} kW',
+  },
+
   vehicleManager: {
     title: 'Deine Fahrzeuge',
     subtitle: 'Wähle das aktive Fahrzeug — alle Berechnungen folgen ihm.',

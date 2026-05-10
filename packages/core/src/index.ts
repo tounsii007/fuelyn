@@ -273,6 +273,13 @@ export {
 export type { TripCostEstimate, TripCostInputs } from './engine/trip-cost';
 export { estimateTripCost, haversineDistanceKm } from './engine/trip-cost';
 
+// EV charging-session planner
+export type {
+  ChargingPlanInputs,
+  ChargingPlanResult,
+} from './engine/ev-charging-planner';
+export { planChargingSession } from './engine/ev-charging-planner';
+
 // Multi-stop route optimisation (TSP)
 export type {
   OptimizeStopsInputs,

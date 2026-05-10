@@ -663,6 +663,20 @@ export const fr: TranslationKeys = {
     },
   },
 
+  chargingPlanner: {
+    eyebrow: 'Planificateur de recharge VE',
+    title: 'Estimer une session de recharge',
+    batteryKwh: 'Batterie',
+    tariff: 'Tarif',
+    fromPct: 'SoC actuel',
+    toPct: 'SoC cible',
+    chargerLabel: 'Borne',
+    energy: 'Énergie',
+    duration: 'Durée',
+    cost: 'Coût',
+    summary: '+{range} km · {cost100} €/100 km · moy {avg} kW',
+  },
+
   vehicleManager: {
     title: 'Vos véhicules',
     subtitle: 'Choisissez le véhicule actif — tous les calculs le suivent.',

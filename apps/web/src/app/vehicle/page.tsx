@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { VehicleForm } from '@/components/vehicle/VehicleForm';
 import { VehicleManager } from '@/components/vehicle/VehicleManager';
+import { ChargingPlannerCard } from '@/components/charging/ChargingPlannerCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@fuelyn/core';
 import { computeRemainingRange } from '@fuelyn/core';
@@ -135,6 +136,16 @@ export default function VehiclePage() {
 
           {/* Fuel Cost Calculator */}
           {vehicle && <FuelCostCalculator consumption={vehicle.consumption} />}
+
+          {/* EV Charging Planner — only show when the active vehicle
+              looks like it can plug in (battery capacity > 0 OR drive
+              type is hybrid/electric). Doesn't make sense for pure
+              ICE so we hide it there. */}
+          {vehicle && (vehicle.driveType === 'elektro' || vehicle.driveType === 'hybrid' || (vehicle.batteryCapacity ?? 0) > 0) && (
+            <div className="mt-4">
+              <ChargingPlannerCard />
+            </div>
+          )}
         </div>
       )}
     </div>

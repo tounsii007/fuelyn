@@ -663,6 +663,20 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  chargingPlanner: {
+    eyebrow: 'EV charging planner',
+    title: 'Estimate a charging session',
+    batteryKwh: 'Battery',
+    tariff: 'Tariff',
+    fromPct: 'Current SoC',
+    toPct: 'Target SoC',
+    chargerLabel: 'Charger',
+    energy: 'Energy',
+    duration: 'Duration',
+    cost: 'Cost',
+    summary: '+{range} mi · ${cost100}/100 mi · avg {avg} kW',
+  },
+
   vehicleManager: {
     title: 'Your vehicles',
     subtitle: 'Pick the active vehicle — all calculations follow it.',
