@@ -14,8 +14,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
 import { getOrCreateSession } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+import { publicAppOrigin } from '@/lib/config/runtime';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 export async function POST(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  const ip = getClientKey(request);
+  const rl = limiter.check(`portal:${ip}`);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 },
+    );
+  }
+
   const session = await getOrCreateSession(request);
   if (!session) return NextResponse.json({ error: 'No device id' }, { status: 401 });
 
@@ -30,8 +47,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const origin = request.headers.get('origin') ?? 'http://localhost:3000';
-  const returnUrl = `${origin}/settings?source=portal-return`;
+  // CRITICAL: never use the request's Origin header for the return URL —
+  // attacker-controlled. Always use the configured app origin.
+  const returnUrl = `${publicAppOrigin()}/settings?source=portal-return`;
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({

@@ -32,7 +32,12 @@ import { PumpPhotoCapture } from './PumpPhotoCapture';
 
 export interface PriceReportFormProps {
   stationId: string;
-  /** Most recent known price (per fuel) so the engine can classify the report. */
+  /**
+   * Iter AH: kept on the prop for callsite compatibility, but
+   * NO LONGER sent to the BFF. The server fetches the upstream
+   * price itself — accepting it from the client was a spoof
+   * vector that let attackers force matches-known classification.
+   */
   knownPrices?: Partial<Record<FuelType, number | null>>;
 }
 
@@ -52,7 +57,7 @@ const FUEL_LABELS: Record<FuelType, string> = {
   e10: 'Super E10',
 };
 
-export function PriceReportForm({ stationId, knownPrices = {} }: PriceReportFormProps) {
+export function PriceReportForm({ stationId }: PriceReportFormProps) {
   const { t } = useTranslations();
   const toast = useToast();
   const defaultFuel = useAppStore((s) => s.filter.fuelType);
@@ -120,14 +125,16 @@ export function PriceReportForm({ stationId, knownPrices = {} }: PriceReportForm
     try {
       const res = await fetch('/api/prices/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stationId,
-          fuelType,
-          price,
-          knownPrice: knownPrices[fuelType] ?? null,
-          photoVerified,
-        }),
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Fuelyn-Csrf': '1',
+        },
+        // Iter AH: knownPrice + photoVerified removed from the
+        // request — both were spoofable. The server now looks up
+        // the upstream price itself; photoVerified will return
+        // once a signed-OCR endpoint exists.
+        body: JSON.stringify({ stationId, fuelType, price }),
       });
       const data: ReportResponse = await res.json().catch(() => ({}));
 

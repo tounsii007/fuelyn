@@ -16,6 +16,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { buildWalletPass } from '@fuelyn/core';
 import { parseJson } from '@/lib/http/validate';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+import { allowedOrigins } from '@/lib/config/runtime';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
 const RequestSchema = z.object({
   stationId: z.string().min(1).max(120),
@@ -32,8 +37,33 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  const ip = getClientKey(request);
+  const rl = limiter.check(`wallet:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const parsed = await parseJson(request, RequestSchema);
   if (!parsed.success) return parsed.response;
+
+  // Reject deepLinks that aren't on our own origin — otherwise an
+  // attacker could trick a user into installing a wallet pass whose
+  // QR code points at a phishing page.
+  const origins = new Set(allowedOrigins());
+  let allowed = false;
+  try {
+    const u = new URL(parsed.data.deepLink);
+    allowed = origins.has(`${u.protocol}//${u.host}`);
+  } catch {
+    allowed = false;
+  }
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'deepLink must point to this app' },
+      { status: 400 },
+    );
+  }
 
   const result = buildWalletPass(parsed.data);
   return NextResponse.json(result, {

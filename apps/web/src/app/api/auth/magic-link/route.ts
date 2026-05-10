@@ -17,8 +17,10 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/db/client';
 import { sha256Hex } from '@/lib/auth/jwt';
 import { getOrCreateSession } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { parseJson } from '@/lib/http/validate';
 import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+import { isProduction, publicAppOrigin } from '@/lib/config/runtime';
 
 const limiter = createRateLimiter({ windowMs: 5 * 60 * 1000, max: 3 });
 
@@ -27,6 +29,9 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const ip = getClientKey(request);
   const rl = limiter.check(`magic-link:${ip}`);
   if (rl.limited) {
@@ -44,6 +49,17 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJson(request, RequestSchema);
   if (!parsed.success) return parsed.response;
 
+  // Refuse to process magic-link requests in production without a
+  // real mail transport — otherwise the dev branch (which echoes the
+  // link in the response body) would let any caller take over any
+  // email address by reading their own response.
+  if (isProduction() && !process.env.MAIL_TRANSPORT) {
+    return NextResponse.json(
+      { error: 'Mail transport not configured' },
+      { status: 503 },
+    );
+  }
+
   // Generate a 32-byte random token, store its sha256 only.
   const raw = randomBytes(32).toString('base64url');
   const tokenHash = sha256Hex(raw);
@@ -58,14 +74,17 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const origin = request.headers.get('origin') ?? 'http://localhost:3000';
+  // CRITICAL: build the magic link with the SERVER-CONFIGURED origin.
+  // Never use request.headers.get('origin') — attacker-controlled and
+  // would let evil.example craft a link mailed to victim@example.com
+  // pointing at evil.example/auth/claim.
+  const origin = publicAppOrigin();
   const link = `${origin}/auth/claim?token=${raw}&email=${encodeURIComponent(parsed.data.email)}`;
 
-  // Production path: hand off to MAIL_TRANSPORT. We support the
-  // simplest possible env-driven config: SMTP URL → fetch a small
-  // mailer module if available. For now we always log + return link
-  // in dev, and rely on the operator to wire a real transport later.
-  if (process.env.NODE_ENV !== 'production' || !process.env.MAIL_TRANSPORT) {
+  if (!isProduction()) {
+    // Development convenience — print + echo the link in the response
+    // body. Production refused the request earlier if MAIL_TRANSPORT
+    // wasn't set, so this branch only runs in a local dev setup.
     console.info('[auth/magic-link] dev — would email to:', parsed.data.email, link);
     return NextResponse.json({ success: true, devLink: link });
   }

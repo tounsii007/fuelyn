@@ -20,6 +20,9 @@ import {
   PrixCarburantsAdapter,
   type FuelType,
 } from '@fuelyn/core';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 
 function parseFloatOrNull(s: string | null): number | null {
   if (!s) return null;
@@ -27,20 +30,35 @@ function parseFloatOrNull(s: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function clampLat(n: number): number {
+  return Math.max(-90, Math.min(90, n));
+}
+function clampLng(n: number): number {
+  return Math.max(-180, Math.min(180, n));
+}
+
 export async function GET(request: NextRequest) {
+  const ip = getClientKey(request);
+  const rl = limiter.check(`border:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const sp = request.nextUrl.searchParams;
   const country = (sp.get('country') ?? '').toUpperCase();
-  const lat = parseFloatOrNull(sp.get('lat'));
-  const lng = parseFloatOrNull(sp.get('lng'));
+  const latRaw = parseFloatOrNull(sp.get('lat'));
+  const lngRaw = parseFloatOrNull(sp.get('lng'));
   const fuel = (sp.get('fuel') ?? 'e10') as FuelType;
   const radiusKm = Math.min(Math.max(parseFloatOrNull(sp.get('rad')) ?? 15, 1), 50);
 
-  if (lat == null || lng == null) {
+  if (latRaw == null || lngRaw == null) {
     return NextResponse.json(
       { error: 'Missing lat/lng' },
       { status: 400 },
     );
   }
+  // Clamp to valid earth coordinates so we never forward
+  // out-of-range values to upstream foreign feeds.
+  const lat = clampLat(latRaw);
+  const lng = clampLng(lngRaw);
   if (!['diesel', 'e5', 'e10'].includes(fuel)) {
     return NextResponse.json({ error: 'Invalid fuel' }, { status: 400 });
   }

@@ -48,6 +48,7 @@ async function flush(): Promise<void> {
       headers: {
         'Content-Type': 'application/json',
         'X-Fuelyn-Device': readDeviceId() ?? 'anonymous',
+        'X-Fuelyn-Csrf': '1',
       },
       keepalive: true, // survives page-unload
       body: JSON.stringify({ events: batch }),

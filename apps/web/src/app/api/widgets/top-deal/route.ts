@@ -28,6 +28,18 @@ import {
   priceFor,
   type WidgetData,
 } from './format';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+
+/**
+ * Quantize a coordinate to ~1.1 km resolution (2 decimal places).
+ * Stops cache-poisoning attacks where an attacker spams unique
+ * (lat, lng) tuples to fill the CDN cache with garbage entries.
+ */
+function quantizeCoord(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
 const client = new ApiClient({ baseUrl: API_BASE_URL });
 const service = new StationService({
@@ -60,9 +72,20 @@ function parseFuel(value: string | null): FuelType {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientKey(request);
+  const rl = limiter.check(`widget:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const { searchParams } = request.nextUrl;
-  const lat = parseCoord(searchParams.get('lat'), DEFAULT_LAT);
-  const lng = parseCoord(searchParams.get('lng'), DEFAULT_LNG);
+  // Quantize to 2 decimals (~1.1 km) so the CDN cache key is bounded.
+  // The widget's accuracy is fine at this resolution — it shows the
+  // single cheapest station within a 5 km radius.
+  const lat = quantizeCoord(
+    Math.max(-90, Math.min(90, parseCoord(searchParams.get('lat'), DEFAULT_LAT))),
+  );
+  const lng = quantizeCoord(
+    Math.max(-180, Math.min(180, parseCoord(searchParams.get('lng'), DEFAULT_LNG))),
+  );
   const radius = Math.min(
     Math.max(parseCoord(searchParams.get('rad'), DEFAULT_RADIUS_KM), 1),
     25,

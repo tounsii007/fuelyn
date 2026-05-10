@@ -17,17 +17,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/client';
 import { getOrCreateSession, buildSessionCookie } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { parseJson } from '@/lib/http/validate';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
 
-const KIND_PATTERN = /^[a-z][a-z0-9-]{1,40}$/;
+// Rate-limit per IP, separately for read (GET) and write (POST/DELETE).
+// Real apps push every ~1.5 s under user activity (debounced cloud
+// sync), so 40/min is comfortable while still capping abuse.
+const writeLimiter = createRateLimiter({ windowMs: 60_000, max: 40 });
+const readLimiter = createRateLimiter({ windowMs: 60_000, max: 60 });
+
+// Closed allow-list of sync-record kinds — stops attackers from
+// filling the (userId, kind) unique index with random keys.
+const SYNC_KINDS = [
+  'fuel-log', 'vehicles', 'active-vehicle',
+  'memberships', 'settings', 'subscription',
+  'saved-locations', 'geo-fences', 'price-alerts',
+  'dashboard-cards',
+] as const;
 
 const PushSchema = z.object({
   records: z
     .array(
       z.object({
-        kind: z.string().regex(KIND_PATTERN),
-        /** JSON-encoded payload — server stores it verbatim. */
-        payload: z.string().min(1).max(1_000_000),
+        kind: z.enum(SYNC_KINDS),
+        /** JSON-encoded payload — server stores it verbatim. Cap at
+         *  64 KB per record (40 records × 64 KB = 2.56 MB max body)
+         *  to keep DoS surface bounded. */
+        payload: z.string().min(1).max(64 * 1024),
         /** Optional client-side updatedAt for last-write-wins. */
         updatedAt: z.string().datetime().optional(),
       }),
@@ -36,6 +53,10 @@ const PushSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  const ip = getClientKey(request);
+  const rl = readLimiter.check(`sync-r:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const session = await getOrCreateSession(request);
   if (!session) {
     return NextResponse.json({ error: 'No device id' }, { status: 401 });
@@ -52,6 +73,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // CSRF — sync POST mutates user data, must reject cross-origin.
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  const ip = getClientKey(request);
+  const rl = writeLimiter.check(`sync-w:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const session = await getOrCreateSession(request);
   if (!session) {
     return NextResponse.json({ error: 'No device id' }, { status: 401 });
@@ -95,6 +124,13 @@ export async function POST(request: NextRequest) {
 
 /** Wipe every sync record for the user — used by "log out / start fresh". */
 export async function DELETE(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  const ip = getClientKey(request);
+  const rl = writeLimiter.check(`sync-d:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   const session = await getOrCreateSession(request);
   if (!session) {
     return NextResponse.json({ error: 'No device id' }, { status: 401 });

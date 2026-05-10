@@ -41,7 +41,11 @@ export function WalletPassButton(props: WalletPassButtonProps) {
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fuelyn.app';
       const res = await fetch('/api/wallet-pass', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Fuelyn-Csrf': '1',
+        },
         body: JSON.stringify({
           ...props,
           locale,

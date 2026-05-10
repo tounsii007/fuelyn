@@ -744,6 +744,19 @@ export const fr: TranslationKeys = {
     summary: '+{range} km · {cost100} €/100 km · moy {avg} kW',
   },
 
+  accountDelete: {
+    title: 'Supprimer le compte',
+    desc: 'Supprime votre compte et toutes les données — définitif.',
+    openCta: 'Supprimer le compte …',
+    confirmLabel: 'Tapez « {phrase} » pour confirmer.',
+    confirmCta: 'Supprimer définitivement',
+    cancel: 'Annuler',
+    deleting: 'Suppression …',
+    successTitle: 'Compte supprimé',
+    successDesc: 'Toutes les données ont été anonymisées ou supprimées.',
+    errorTitle: 'Échec de la suppression',
+  },
+
   dashboardCustomizer: {
     title: 'Personnaliser le tableau de bord',
     desc: 'Ordre et visibilité des cartes de la barre latérale.',

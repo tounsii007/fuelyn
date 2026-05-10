@@ -17,7 +17,19 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db/client';
 import { sha256Hex, signJwt } from '@/lib/auth/jwt';
 import { buildSessionCookie } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { parseJson } from '@/lib/http/validate';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+
+const limiter = createRateLimiter({ windowMs: 5 * 60 * 1000, max: 10 });
+
+// One opaque error message for every pre-success branch — denies
+// attackers an enumeration oracle on token existence / email
+// existence / expiry state.
+const GENERIC_REJECT = NextResponse.json(
+  { error: 'Invalid or expired link' },
+  { status: 400 },
+);
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -27,16 +39,30 @@ const RequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  // Per-IP rate limit caps brute-force + enumeration attempts even
+  // though 32-byte tokens are infeasible to guess by chance.
+  const ip = getClientKey(request);
+  const rl = limiter.check(`claim:${ip}`);
+  if (rl.limited) {
+    return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
+  }
+
   const parsed = await parseJson(request, RequestSchema);
   if (!parsed.success) return parsed.response;
 
+  // Every pre-success rejection returns the SAME error/status so the
+  // caller can't distinguish "token unknown" from "token expired"
+  // from "user vanished" — closes the email-enumeration oracle.
   const tokenHash = sha256Hex(parsed.data.token);
   const auth = await prisma.authToken.findUnique({ where: { tokenHash } });
   if (!auth || auth.kind !== 'magic-link' || auth.consumedAt) {
-    return NextResponse.json({ error: 'Invalid or used token' }, { status: 400 });
+    return GENERIC_REJECT;
   }
   if (auth.expiresAt.getTime() <= Date.now()) {
-    return NextResponse.json({ error: 'Expired token' }, { status: 400 });
+    return GENERIC_REJECT;
   }
 
   // The User who originally requested the magic link.
@@ -45,7 +71,7 @@ export async function POST(request: NextRequest) {
     select: { id: true, email: true, deviceId: true },
   });
   if (!requestingUser) {
-    return NextResponse.json({ error: 'User vanished' }, { status: 400 });
+    return GENERIC_REJECT;
   }
 
   // If another User already owns this email, we MERGE: every

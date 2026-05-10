@@ -9,7 +9,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db/client';
 import { getOrCreateSession } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { parseJson } from '@/lib/http/validate';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
 const EventSchema = z.object({
   name: z.string().min(1).max(80).regex(/^[a-z][a-z0-9.-]+$/),
@@ -22,6 +26,15 @@ const BatchSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // CSRF guard — even though telemetry events are nominally
+  // low-impact, they create DB rows attributed to the calling user.
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  const ip = getClientKey(request);
+  const rl = limiter.check(`telemetry:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   // Telemetry requires a session — getOrCreateSession upserts a User
   // row from X-Fuelyn-Device on first contact, so this never blocks
   // a real client (only callers with no device id are turned away).

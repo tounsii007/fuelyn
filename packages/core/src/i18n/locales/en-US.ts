@@ -744,6 +744,19 @@ export const enUS: TranslationKeys = {
     summary: '+{range} mi · ${cost100}/100 mi · avg {avg} kW',
   },
 
+  accountDelete: {
+    title: 'Delete account',
+    desc: 'Removes your account and all stored data — permanent.',
+    openCta: 'Delete account …',
+    confirmLabel: 'Type "{phrase}" to confirm.',
+    confirmCta: 'Delete forever',
+    cancel: 'Cancel',
+    deleting: 'Deleting …',
+    successTitle: 'Account deleted',
+    successDesc: 'All data has been anonymized or removed.',
+    errorTitle: 'Deletion failed',
+  },
+
   dashboardCustomizer: {
     title: 'Customize dashboard',
     desc: 'Order & visibility of the sidebar cards.',

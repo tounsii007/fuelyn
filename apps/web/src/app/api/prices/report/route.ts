@@ -28,30 +28,38 @@ import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
 import { parseJson } from '@/lib/http/validate';
 import { prisma } from '@/lib/db/client';
 import { getOrCreateSession } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { sha256Hex } from '@/lib/auth/jwt';
+import { backendFetch, BackendApiError } from '@/lib/api/backend-client';
 
 // One report per (IP, station, fuel) / 5 minutes — generous enough that
 // users can correct typos, tight enough to neuter trivial spam loops.
 const limiter = createRateLimiter({ windowMs: 5 * 60 * 1000, max: 1 });
 
+// Iter AH: client-controllable surface dramatically reduced.
+//   * `knownPrice` removed — was spoofable; would let an attacker
+//     pass `knownPrice === price` to game the validator into the
+//     "matches-known" classification at confidence 0.95. Server now
+//     fetches the upstream price itself.
+//   * `photoVerified` removed — was a free +0.1 confidence bump
+//     because nothing server-side actually verified the photo. The
+//     real OCR-server pipeline lives in a separate (future) endpoint
+//     that signs a photo-verification token; until that exists, no
+//     report carries the bonus.
 const RequestSchema = z.object({
-  stationId: z.string().min(1).max(120),
+  stationId: z.string().min(1).max(120).regex(/^[a-zA-Z0-9_-]+$/),
   fuelType: z.enum(['diesel', 'e5', 'e10']),
   price: z
     .number()
     .min(MIN_PLAUSIBLE_PRICE)
     .max(MAX_PLAUSIBLE_PRICE),
   observedAt: z.string().datetime().optional(),
-  knownPrice: z.number().positive().nullable().optional(),
-  /**
-   * True when the user attached a pump-display photo that the OCR
-   * pipeline successfully extracted a matching price from. The BFF
-   * uses this to bump the engine's confidence by +0.1 — capped at 1.
-   */
-  photoVerified: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const parsed = await parseJson(request, RequestSchema);
   if (!parsed.success) return parsed.response;
 
@@ -73,12 +81,44 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Clamp client-supplied observedAt — accept "now-24h" .. "now+5min"
+  // only. Without this, a maliciously-late or year-9999 timestamp
+  // pollutes the aggregation window logic.
+  let observedAtIso = parsed.data.observedAt;
+  if (observedAtIso) {
+    const t = new Date(observedAtIso).getTime();
+    const now = Date.now();
+    if (!Number.isFinite(t) || t < now - 24 * 3600 * 1000 || t > now + 5 * 60 * 1000) {
+      observedAtIso = new Date().toISOString();
+    }
+  }
+
+  // Server-side knownPrice lookup — the client doesn't get to declare
+  // what the upstream feed says. Falls back to null on failure (no
+  // classification bonus); the validator handles that case cleanly.
+  let knownPrice: number | null = null;
+  try {
+    const upstream = await backendFetch<{
+      success: boolean;
+      data?: { stations: Array<{ id: string; prices: Record<string, number | null> }> };
+    }>(`/api/v1/prices/stations?stationId=${encodeURIComponent(parsed.data.stationId)}`);
+    if (upstream.success && upstream.data?.stations?.[0]) {
+      const p = upstream.data.stations[0].prices?.[parsed.data.fuelType];
+      knownPrice = typeof p === 'number' && p > 0 ? p : null;
+    }
+  } catch (err) {
+    if (err instanceof BackendApiError) {
+      // Soft-fail — null means "no known price", which the validator
+      // tolerates (classification: 'no-known-price', confidence 0.5).
+    }
+  }
+
   const validation = validatePriceReport({
     stationId: parsed.data.stationId,
     fuelType: parsed.data.fuelType as FuelType,
     price: parsed.data.price,
-    observedAt: parsed.data.observedAt,
-    knownPrice: parsed.data.knownPrice ?? null,
+    observedAt: observedAtIso,
+    knownPrice,
   });
 
   if (!validation.ok) {
@@ -92,11 +132,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Photo-verified reports get a +0.1 confidence bump (capped at 1.0).
-  // Visual proof is the strongest signal we have for crowd reports.
-  const finalConfidence = parsed.data.photoVerified
-    ? Math.min(1, validation.confidence + 0.1)
-    : validation.confidence;
+  // photoVerified bonus removed — see schema comment. The bonus
+  // returns once a separate signed-OCR endpoint exists.
+  const finalConfidence = validation.confidence;
 
   // -----------------------------------------------------------------
   // Persistence + immediate aggregation
@@ -119,7 +157,9 @@ export async function POST(request: NextRequest) {
         observedAt: new Date(validation.record!.observedAt),
         classification: validation.classification,
         confidence: finalConfidence,
-        photoVerified: !!parsed.data.photoVerified,
+        // photoVerified always false until the signed-OCR pipeline
+        // exists (see schema comment).
+        photoVerified: false,
         ipHash,
       },
     });
@@ -153,7 +193,7 @@ export async function POST(request: NextRequest) {
         observedAt: r.observedAt.toISOString(),
         photoVerified: r.photoVerified,
       })),
-      { upstreamPrice: parsed.data.knownPrice ?? null },
+      { upstreamPrice: knownPrice },
     );
 
     // If the aggregation accepted a canonical price, mark every row in
@@ -181,7 +221,7 @@ export async function POST(request: NextRequest) {
       confidence: finalConfidence,
       deltaEurPerL: validation.deltaEurPerL,
       record: validation.record,
-      photoVerified: parsed.data.photoVerified ?? false,
+      photoVerified: false,
       aggregation,
     },
     {

@@ -73,6 +73,9 @@ async function push(
       headers: {
         'Content-Type': 'application/json',
         'X-Fuelyn-Device': deviceId,
+        // CSRF guard — endpoint requires this custom header on every
+        // state-changing request (Iter AH).
+        'X-Fuelyn-Csrf': '1',
       },
       body: JSON.stringify({ records }),
     });

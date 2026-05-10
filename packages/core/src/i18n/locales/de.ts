@@ -746,6 +746,19 @@ export const de = {
     summary: '+{range} km · {cost100} €/100 km · ⌀ {avg} kW',
   },
 
+  accountDelete: {
+    title: 'Konto löschen',
+    desc: 'Entfernt deinen Account und alle gespeicherten Daten unwiderruflich.',
+    openCta: 'Konto löschen …',
+    confirmLabel: 'Tippe „{phrase}" zum Bestätigen.',
+    confirmCta: 'Endgültig löschen',
+    cancel: 'Abbrechen',
+    deleting: 'Lösche …',
+    successTitle: 'Konto gelöscht',
+    successDesc: 'Alle Daten wurden anonymisiert oder entfernt.',
+    errorTitle: 'Löschung fehlgeschlagen',
+  },
+
   dashboardCustomizer: {
     title: 'Dashboard anpassen',
     desc: 'Reihenfolge & Sichtbarkeit der Sidebar-Karten.',

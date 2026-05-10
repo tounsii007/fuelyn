@@ -16,8 +16,19 @@
 // ============================================================
 
 import { createHmac, timingSafeEqual, randomBytes, createHash } from 'node:crypto';
+import { isProduction } from '@/lib/config/runtime';
 
+// Per-process random fallback ONLY for non-production. In production
+// a missing FUELYN_JWT_SECRET aborts at module load (see below) so we
+// never silently sign sessions with random secrets that won't survive
+// a worker restart.
 const DEV_SECRET_FALLBACK = randomBytes(32).toString('hex');
+
+if (isProduction() && !process.env.FUELYN_JWT_SECRET) {
+  throw new Error(
+    '[fuelyn-auth] FUELYN_JWT_SECRET must be set in production. Refusing to issue sessions with a per-process random fallback.',
+  );
+}
 
 function getSecret(): string {
   return process.env.FUELYN_JWT_SECRET ?? DEV_SECRET_FALLBACK;
@@ -79,12 +90,28 @@ export function verifyJwt(
     return { valid: false, reason: 'bad-signature' };
   }
 
-  let claims: JwtClaims;
+  let raw: unknown;
   try {
-    claims = JSON.parse(base64UrlDecode(payloadB64).toString('utf8')) as JwtClaims;
+    raw = JSON.parse(base64UrlDecode(payloadB64).toString('utf8'));
   } catch {
     return { valid: false, reason: 'malformed' };
   }
+
+  // Runtime shape validation — never trust an `as JwtClaims` cast on
+  // JSON we just parsed. A malicious-but-validly-signed token (which
+  // requires the secret, so already implausible) or an internally-
+  // misissued token mustn't be able to slip a string `exp` past the
+  // expiry check.
+  if (
+    typeof raw !== 'object' || raw === null ||
+    typeof (raw as Record<string, unknown>).sub !== 'string' ||
+    typeof (raw as Record<string, unknown>).exp !== 'number' ||
+    typeof (raw as Record<string, unknown>).iat !== 'number' ||
+    typeof (raw as Record<string, unknown>).typ !== 'string'
+  ) {
+    return { valid: false, reason: 'malformed' };
+  }
+  const claims = raw as JwtClaims;
 
   if (claims.exp <= now) return { valid: false, reason: 'expired' };
   if (claims.typ !== expectedType) return { valid: false, reason: 'wrong-type' };

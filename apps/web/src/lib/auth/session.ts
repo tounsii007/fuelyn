@@ -19,6 +19,18 @@
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/client';
 import { signJwt, verifyJwt } from './jwt';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+import { isProduction } from '@/lib/config/runtime';
+
+// Per-IP cap on first-contact User creation. Without this an attacker
+// rotating X-Fuelyn-Device values can fill the User table at line speed.
+// The cap is generous enough to let real users open the app from
+// multiple browsers on the same NAT, but harsh enough to make a
+// disk-fill attack uneconomical.
+const userCreationLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,                   // 10 new device-id upserts / IP / hour
+});
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
@@ -57,15 +69,41 @@ export async function getOrCreateSession(
   //    that don't carry a cookie.
   const deviceId = request.headers.get(DEVICE_HEADER);
   if (!deviceId || deviceId.length < 8 || deviceId.length > 64) return null;
+  // Reject device ids that aren't [a-zA-Z0-9-_]+ — neutralises any
+  // attempt to smuggle SQL/header-injection bytes through the upsert.
+  if (!/^[a-zA-Z0-9_-]+$/.test(deviceId)) return null;
 
-  // Atomic upsert keeps the User table free of duplicate rows even
-  // under racing first requests.
-  const user = await prisma.user.upsert({
+  // Existing-user lookups are free; only NEW user creations consume
+  // the per-IP budget. Keeps real users on shared NATs unaffected.
+  const existing = await prisma.user.findUnique({
     where: { deviceId },
-    update: {},
-    create: { deviceId },
     select: { id: true },
   });
+
+  let userId: string;
+  if (existing) {
+    userId = existing.id;
+  } else {
+    const ip = getClientKey(request);
+    const rl = userCreationLimiter.check(`user-create:${ip}`);
+    if (rl.limited) {
+      // Don't even hit the DB — log and reject. The user-creation
+      // cap is the line of defence against unbounded User row growth.
+      console.warn('[fuelyn-auth] user-create rate limit hit for', ip);
+      return null;
+    }
+    const created = await prisma.user.create({
+      data: { deviceId },
+      select: { id: true },
+    });
+    userId = created.id;
+  }
+  const user = { id: userId };
+  // Sanity: every prod deploy must have a JWT secret. We re-check
+  // here (cheap) so a runtime cycle that swapped envs notices fast.
+  if (isProduction() && !process.env.FUELYN_JWT_SECRET) {
+    throw new Error('[fuelyn-auth] FUELYN_JWT_SECRET missing at session-mint time');
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const newToken = signJwt({

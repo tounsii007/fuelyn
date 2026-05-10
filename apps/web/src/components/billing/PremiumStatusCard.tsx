@@ -31,6 +31,7 @@ export function PremiumStatusCard() {
       const res = await fetch('/api/billing/portal', {
         method: 'POST',
         credentials: 'include',
+        headers: { 'X-Fuelyn-Csrf': '1' },
       });
       const data = await res.json();
       if (!res.ok) {
@@ -52,16 +53,22 @@ export function PremiumStatusCard() {
       track('premium.checkout-started', priceLookupKey === 'fuelyn-annual' ? 'annual' : 'monthly');
       setBusy(true);
       try {
-        const origin = typeof window !== 'undefined' ? window.location.origin : '';
         const res = await fetch('/api/billing/checkout', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Fuelyn-Csrf': '1',
+          },
           body: JSON.stringify({
             priceLookupKey,
-            successUrl: `${origin}/settings?checkout=ok`,
-            cancelUrl: `${origin}/settings?checkout=cancel`,
-            clientReferenceId: 'local-user',
+            // Iter AH: success/cancel URLs are now path-only and
+            // composed server-side with the trusted public origin.
+            successPath: '/settings?checkout=ok',
+            cancelPath: '/settings?checkout=cancel',
             locale,
+            // Iter AH: clientReferenceId + stripeCustomerId removed
+            // — server pins them from the authenticated session.
           }),
         });
         const data = await res.json();

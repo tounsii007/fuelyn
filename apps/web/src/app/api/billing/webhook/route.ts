@@ -24,6 +24,7 @@ import {
 } from '@fuelyn/core';
 import { verifyStripeSignature } from '@/lib/billing/stripe-signature';
 import { prisma } from '@/lib/db/client';
+import { isProduction } from '@/lib/config/runtime';
 
 interface StripeEvent {
   id: string;
@@ -51,8 +52,16 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+  } else if (isProduction()) {
+    // In production we MUST verify. An unsigned webhook accepted in
+    // production lets anyone forge a subscription.created event for
+    // any customer id and grant themselves premium.
+    return NextResponse.json(
+      { error: 'STRIPE_WEBHOOK_SECRET not configured' },
+      { status: 503 },
+    );
   } else {
-    console.warn('[billing/webhook] STRIPE_WEBHOOK_SECRET not set — accepting unsigned payload');
+    console.warn('[billing/webhook] STRIPE_WEBHOOK_SECRET not set — dev mode accepts unsigned payload');
   }
 
   let evt: StripeEvent;
@@ -77,10 +86,14 @@ export async function POST(request: NextRequest) {
   }
 
   // -------- Persistence --------
-  // The User row is keyed by stripeCustomerId. If we don't have a
-  // matching User yet (e.g. the customer was created out-of-band),
-  // we create a placeholder anonymous row so the next sync from any
-  // device that supplies the same customer id will resolve to it.
+  // CRITICAL: update-only. We must NOT create a new User row from a
+  // webhook payload — the customer id is the only thing the event
+  // carries, and an attacker (or even a real Stripe event delivered
+  // to the wrong env) could conjure a fresh User with active
+  // subscription out of thin air. The User row was created during
+  // the /billing/checkout flow which pinned client_reference_id to
+  // the authenticated session; if we don't find a match here, the
+  // event is for someone else's deployment / a stale customer.
   if (sub.stripeCustomerId) {
     const updateData = {
       subscriptionStatus: sub.status,
@@ -88,14 +101,21 @@ export async function POST(request: NextRequest) {
       subscriptionPeriodEnd: sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null,
     };
     try {
-      await prisma.user.upsert({
+      const result = await prisma.user.updateMany({
         where: { stripeCustomerId: sub.stripeCustomerId },
-        update: updateData,
-        create: {
-          stripeCustomerId: sub.stripeCustomerId,
-          ...updateData,
-        },
+        data: updateData,
       });
+      if (result.count === 0) {
+        // No user owns this customer id. Acknowledge so Stripe stops
+        // retrying, but log loudly — this is the canary for either a
+        // dev-event hitting prod or a legitimate customer created
+        // outside our checkout flow.
+        console.warn(
+          '[billing/webhook] event for unknown customer id (ignored):',
+          sub.stripeCustomerId,
+        );
+        return NextResponse.json({ ignored: true, reason: 'unknown-customer' });
+      }
     } catch (err) {
       console.error('[billing/webhook] db write failed:', err);
       // Stripe will retry — we'd rather 5xx than ack-and-lose.

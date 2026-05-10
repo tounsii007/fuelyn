@@ -11,24 +11,34 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { prisma } from '@/lib/db/client';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 60 });
+
+const MAX_IDS_PER_BULK = 200;
 
 function adminAuthorized(request: NextRequest): boolean {
   const expected = process.env.FUELYN_ADMIN_TOKEN;
   if (!expected) return false;
   const auth = request.headers.get('authorization') ?? '';
   if (!auth.startsWith('Bearer ')) return false;
-  // Constant-time compare to neutralise timing attacks.
   const provided = auth.slice(7);
-  if (provided.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) {
-    diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-  }
-  return diff === 0;
+  // Compare sha256 digests of both — fixed-length 32-byte buffers
+  // sidestep both the length-leak (early-return on length mismatch
+  // would have leaked the secret length via response timing) and
+  // any encoding-related compare quirks.
+  const a = createHash('sha256').update(provided).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientKey(request);
+  const rl = limiter.check(`admin-r:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   if (!adminAuthorized(request)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
@@ -71,6 +81,10 @@ export async function GET(request: NextRequest) {
  *   { ids: number[], action: 'accept' | 'reject' }
  */
 export async function POST(request: NextRequest) {
+  const ip = getClientKey(request);
+  const rl = limiter.check(`admin-w:${ip}`);
+  if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
+
   if (!adminAuthorized(request)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
@@ -82,10 +96,15 @@ export async function POST(request: NextRequest) {
   }
   if (
     !Array.isArray(body.ids) ||
-    body.ids.some((id) => typeof id !== 'number') ||
+    body.ids.length === 0 ||
+    body.ids.length > MAX_IDS_PER_BULK ||
+    body.ids.some((id) => typeof id !== 'number' || !Number.isInteger(id) || id <= 0) ||
     (body.action !== 'accept' && body.action !== 'reject')
   ) {
-    return NextResponse.json({ error: 'invalid body' }, { status: 400 });
+    return NextResponse.json(
+      { error: `invalid body — ids must be 1..${MAX_IDS_PER_BULK} positive integers` },
+      { status: 400 },
+    );
   }
   const ids = body.ids as number[];
   if (body.action === 'accept') {
