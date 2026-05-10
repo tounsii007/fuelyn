@@ -71,6 +71,7 @@ function makeRecommendation(
       price: 0.9,
       distance: 0.9,
       reachability: 1.0,
+      openStatus: 1,
       favorite: 0,
     },
     reachabilityStatus: 'safe',
@@ -208,7 +209,7 @@ describe('StationList — Rules-of-Hooks regression (commit 913e8e1)', () => {
     // console.error containing #310 / "Rendered more hooks" / "Rules
     // of Hooks" would indicate a regression.
     const errorMessages = consoleErrorSpy.mock.calls
-      .map((args) => args.join(' '))
+      .map((args: unknown[]) => args.map((a) => String(a)).join(' '))
       .join('\n');
     expect(errorMessages).not.toMatch(/Rendered more hooks/i);
     expect(errorMessages).not.toMatch(/Rules of Hooks/i);
@@ -256,7 +257,7 @@ describe('StationList — Rules-of-Hooks regression (commit 913e8e1)', () => {
     expect(screen.getAllByTestId('station-card')).toHaveLength(SAMPLE.length);
 
     const errorMessages = consoleErrorSpy.mock.calls
-      .map((args) => args.join(' '))
+      .map((args: unknown[]) => args.map((a) => String(a)).join(' '))
       .join('\n');
     expect(errorMessages).not.toMatch(/Rendered more hooks/i);
   });
@@ -305,13 +306,13 @@ describe('StationList — source-level guard against hooks below early returns',
     const hookCallLines: number[] = [];
 
     for (let n = 0; n < lines.length; n++) {
-      const line = lines[n];
+      const line = lines[n] ?? '';
       // Match `  if (...) {` exactly at 2 spaces of indent.
       if (firstEarlyReturnLine === -1 && /^ {2}if \(/.test(line)) {
         // Look ahead for `    return` at 4 spaces — confirms it's a
         // guard, not a normal control-flow if.
         for (let m = n + 1; m < Math.min(lines.length, n + 4); m++) {
-          if (/^ {4}return\b/.test(lines[m])) {
+          if (/^ {4}return\b/.test(lines[m] ?? '')) {
             firstEarlyReturnLine = n;
             break;
           }
@@ -329,7 +330,7 @@ describe('StationList — source-level guard against hooks below early returns',
     const offending = hookCallLines.filter((n) => n > firstEarlyReturnLine);
 
     if (offending.length > 0) {
-      const preview = offending.map((n) => `L${n + 1}: ${lines[n].trim()}`).join('\n  ');
+      const preview = offending.map((n) => `L${n + 1}: ${(lines[n] ?? '').trim()}`).join('\n  ');
       throw new Error(
         `StationList has ${offending.length} top-level hook call(s) AFTER the first ` +
           `early-return guard at line ~${firstEarlyReturnLine + 1} — this is the ` +

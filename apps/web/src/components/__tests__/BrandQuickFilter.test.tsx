@@ -42,6 +42,7 @@ function makeRec(id: string, brand: string): StationRecommendation {
       price: 0.5,
       distance: 0.5,
       reachability: 1,
+      openStatus: 1,
       favorite: 0,
     },
     reachabilityStatus: 'safe',

@@ -14,6 +14,7 @@ import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { ToastProvider } from '@/components/ui/Toast';
 import { GeoFenceMount } from '@/lib/geo/GeoFenceMount';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 
 function ThemeSync() {
   const theme = useAppStore((s) => s.settings.theme);
@@ -111,20 +112,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <ToastProvider>
-          <StoreHydrator>
-            <ThemeSync />
-            <ServiceWorkerRegistrar />
-            <OfflineBanner />
-            <CommandPalette />
-            <GeoFenceMount />
-            {showSplash && splashReady && <SplashScreen onComplete={handleSplashComplete} />}
-            {children}
-          </StoreHydrator>
-        </ToastProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    // Root-level firewall: any render-phase exception below this
+    // boundary surfaces as a friendly fallback instead of Chrome's
+    // blank "couldn't load" overlay. Mounted at the providers level
+    // so the boundary itself doesn't depend on QueryClient/ThemeProvider —
+    // those CAN fail, and we still want to show the fallback UI.
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <ToastProvider>
+            <StoreHydrator>
+              <ThemeSync />
+              <ServiceWorkerRegistrar />
+              <OfflineBanner />
+              <CommandPalette />
+              <GeoFenceMount />
+              {showSplash && splashReady && <SplashScreen onComplete={handleSplashComplete} />}
+              {children}
+            </StoreHydrator>
+          </ToastProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
