@@ -665,6 +665,18 @@ export const de = {
     },
   },
 
+  offset: {
+    eyebrow: 'CO₂-Kompensation',
+    title: 'Deinen Fußabdruck ausgleichen',
+    subtitle: '{tons} Tonnen CO₂ insgesamt ({kg} kg) — kompensierbar bei diesen Anbietern:',
+    cheapestLabel: 'Günstigster',
+    permanenceLabel: 'Höchste Permanenz',
+    purchaseCta: 'Jetzt kompensieren ↗',
+    unlockCta: 'Mit Premium kompensieren',
+    showAll: 'Alle Anbieter zeigen',
+    premiumHint: 'Direkt-Kauflinks sind in Premium freigeschaltet — sonst Vorschau.',
+  },
+
   premium: {
     eyebrow: 'Fuelyn Premium',
     statusFree: 'Kostenlose Version',

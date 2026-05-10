@@ -401,6 +401,16 @@ export { computeSmartBuyingScore } from './engine/smart-buying-score';
 export type { BestTimeHeatmap, HeatmapCell } from './engine/best-time-heatmap';
 export { buildBestTimeHeatmap } from './engine/best-time-heatmap';
 
+// Carbon-offset marketplace
+export type {
+  OffsetProvider,
+  OffsetProjectType,
+  OffsetCertification,
+  OffsetOption,
+  OffsetRecommendation,
+} from './engine/carbon-offset';
+export { OFFSET_PROVIDERS, recommendOffsets } from './engine/carbon-offset';
+
 // CO₂ tracking
 export type { Co2Summary, MonthlyCo2Bucket } from './engine/co2-tracking';
 export {

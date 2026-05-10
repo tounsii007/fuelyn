@@ -663,6 +663,18 @@ export const fr: TranslationKeys = {
     },
   },
 
+  offset: {
+    eyebrow: 'Compensation carbone',
+    title: 'Compenser votre empreinte',
+    subtitle: '{tons} tonnes de CO₂ au total ({kg} kg) — compensables chez ces fournisseurs :',
+    cheapestLabel: 'Le moins cher',
+    permanenceLabel: 'Permanence maximale',
+    purchaseCta: 'Compenser ↗',
+    unlockCta: 'Compenser avec Premium',
+    showAll: 'Voir tous les fournisseurs',
+    premiumHint: 'Les liens d\'achat direct sont débloqués avec Premium — sinon aperçu seulement.',
+  },
+
   premium: {
     eyebrow: 'Fuelyn Premium',
     statusFree: 'Plan gratuit',

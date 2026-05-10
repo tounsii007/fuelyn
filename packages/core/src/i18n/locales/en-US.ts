@@ -663,6 +663,18 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  offset: {
+    eyebrow: 'Carbon offset',
+    title: 'Offset your footprint',
+    subtitle: '{tons} tons of CO₂ total ({kg} kg) — offsetable through these providers:',
+    cheapestLabel: 'Cheapest',
+    permanenceLabel: 'Highest permanence',
+    purchaseCta: 'Offset now ↗',
+    unlockCta: 'Offset with Premium',
+    showAll: 'Show all providers',
+    premiumHint: 'Direct purchase links unlock with Premium — otherwise preview only.',
+  },
+
   premium: {
     eyebrow: 'Fuelyn Premium',
     statusFree: 'Free plan',

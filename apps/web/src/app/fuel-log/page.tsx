@@ -16,6 +16,7 @@ import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { ReceiptScanner } from '@/components/fuelLog/ReceiptScanner';
 import { Co2Dashboard } from '@/components/fuelLog/Co2Dashboard';
+import { CarbonOffsetCard } from '@/components/co2/CarbonOffsetCard';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { IconButton } from '@/components/ui/IconButton';
@@ -191,6 +192,12 @@ export default function FuelLogPage() {
       {/* CO₂ tracking dashboard — auto-suppresses when the log
           is empty so it never crowds the empty state. */}
       <Co2Dashboard className="mb-4" />
+
+      {/* Carbon-offset marketplace (Iter U) — sits next to the CO₂
+          dashboard so the user can act on what they just saw. */}
+      <div className="mb-4">
+        <CarbonOffsetCard />
+      </div>
 
       {/* Stats Summary — lifetime totals */}
       {stats && (
