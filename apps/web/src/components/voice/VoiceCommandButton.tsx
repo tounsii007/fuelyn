@@ -20,6 +20,7 @@ import { useVoiceCommand } from '@/lib/hooks/use-voice-command';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { useToast } from '@/components/ui/Toast';
 import { useAppStore } from '@/lib/store/app-store';
+import { hapticImpact } from '@/lib/native/bridge';
 import type { VoiceIntent } from '@fuelyn/core';
 
 export function VoiceCommandButton() {
@@ -69,6 +70,8 @@ export function VoiceCommandButton() {
       <button
         type="button"
         onClick={() => {
+          // Tactile confirmation on iOS / Android — silent on web.
+          void hapticImpact('LIGHT');
           setOpen(true);
           voice.reset();
           voice.start();
