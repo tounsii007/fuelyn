@@ -28,6 +28,7 @@ import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { PricePredictionCard } from '@/components/intelligence/PricePredictionCard';
 import { SmartBuyingScoreCard } from '@/components/intelligence/SmartBuyingScoreCard';
+import { SavingTipsCard } from '@/components/intelligence/SavingTipsCard';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
@@ -436,6 +437,7 @@ export default function HomePage() {
                 <SearchHistory />
                 <BestDealCard recommendations={recommendations} />
                 <SmartBuyingScoreCard />
+                <SavingTipsCard />
                 <PricePredictionCard />
                 <PriceStats recommendations={recommendations} />
 

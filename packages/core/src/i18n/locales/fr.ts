@@ -443,6 +443,24 @@ export const fr: TranslationKeys = {
     },
   },
 
+  savingTips: {
+    title: 'Conseils d’économie pour vous',
+    subtitle: 'Suggestions personnalisées issues de votre journal carburant',
+    perYear: 'par an',
+    'switch-hour': {
+      title: 'Faites le plein à une autre heure',
+      body: 'Vous faites le plein vers {currentHour}. Essayez {betterHour} — environ {ctPerL} ct/L moins cher.',
+    },
+    'switch-day': {
+      title: 'Essayez un autre jour',
+      body: 'Vous faites le plein le {currentDay}. Le {betterDay} est en moyenne {ctPerL} ct/L moins cher.',
+    },
+    'compare-stations': {
+      title: 'Comparez avant chaque plein',
+      body: '{sharePct}% de vos pleins sont chez {brand}. Un coup d’œil à la carte économise presque toujours 2-4 ct/L.',
+    },
+  },
+
   achievements: {
     title: 'Réalisations',
     menuDesc: 'Mur de trophées & points',

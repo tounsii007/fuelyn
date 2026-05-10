@@ -445,6 +445,24 @@ export const de = {
     },
   },
 
+  savingTips: {
+    title: 'Spar-Tipps für dich',
+    subtitle: 'Personalisierte Empfehlungen aus deinem Tank-Logbuch',
+    perYear: 'pro Jahr',
+    'switch-hour': {
+      title: 'Tank zu einer anderen Uhrzeit',
+      body: 'Du tankst meistens um {currentHour}. Probier mal {betterHour} — etwa {ctPerL} ct/L günstiger.',
+    },
+    'switch-day': {
+      title: 'Probier einen anderen Wochentag',
+      body: 'Du tankst meistens am {currentDay}. {betterDay} ist im Schnitt {ctPerL} ct/L günstiger.',
+    },
+    'compare-stations': {
+      title: 'Vergleich vor jedem Tanken',
+      body: '{sharePct}% deiner Tankvorgänge sind bei {brand}. Ein kurzer Blick auf die Karte spart fast immer 2-4 ct/L.',
+    },
+  },
+
   achievements: {
     title: 'Erfolge',
     menuDesc: 'Trophäen-Wand & Punkte',

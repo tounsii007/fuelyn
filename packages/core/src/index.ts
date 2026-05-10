@@ -269,6 +269,15 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Personalized saving tips
+export type {
+  SavingTip,
+  SavingTipsResult,
+  SavingTipsInputs,
+  TipSeverity,
+} from './engine/saving-tips';
+export { computeSavingTips } from './engine/saving-tips';
+
 // Achievements
 export type {
   Achievement,

@@ -443,6 +443,24 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  savingTips: {
+    title: 'Saving tips for you',
+    subtitle: 'Personalized suggestions from your fuel log',
+    perYear: 'per year',
+    'switch-hour': {
+      title: 'Fuel up at a different time',
+      body: 'You usually fill at {currentHour}. Try {betterHour} — about {ctPerL}¢/L cheaper.',
+    },
+    'switch-day': {
+      title: 'Try a different weekday',
+      body: 'You usually fill on {currentDay}. {betterDay} is on average {ctPerL}¢/L cheaper.',
+    },
+    'compare-stations': {
+      title: 'Compare before each fill',
+      body: '{sharePct}% of your fills are at {brand}. A quick glance at the map almost always saves 2-4¢/L.',
+    },
+  },
+
   achievements: {
     title: 'Achievements',
     menuDesc: 'Trophy wall & points',
