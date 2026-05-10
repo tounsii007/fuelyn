@@ -273,6 +273,19 @@ export {
 export type { TripCostEstimate, TripCostInputs } from './engine/trip-cost';
 export { estimateTripCost, haversineDistanceKm } from './engine/trip-cost';
 
+// Wallet-pass (Apple / Google) builder
+export type {
+  WalletPassInputs,
+  WalletPassResult,
+  ApplePassJson,
+  GooglePassJson,
+} from './engine/wallet-pass';
+export {
+  buildWalletPass,
+  buildAppleManifest,
+  rgbCss as walletRgbCss,
+} from './engine/wallet-pass';
+
 // EV charging-session planner
 export type {
   ChargingPlanInputs,

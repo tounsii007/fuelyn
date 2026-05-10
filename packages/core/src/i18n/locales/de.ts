@@ -665,6 +665,14 @@ export const de = {
     },
   },
 
+  walletPass: {
+    cta: 'Zur Wallet hinzufügen',
+    loading: 'Erstelle …',
+    successTitle: 'Wallet-Pass erstellt',
+    successDesc: 'Pass-Datei wurde heruntergeladen.',
+    errorTitle: 'Pass konnte nicht erstellt werden',
+  },
+
   chargingPlanner: {
     eyebrow: 'EV-Ladeplaner',
     title: 'Lade-Sitzung schätzen',

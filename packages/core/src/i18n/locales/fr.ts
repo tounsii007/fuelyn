@@ -663,6 +663,14 @@ export const fr: TranslationKeys = {
     },
   },
 
+  walletPass: {
+    cta: 'Ajouter à Wallet',
+    loading: 'Construction …',
+    successTitle: 'Pass Wallet prêt',
+    successDesc: 'Fichier de pass téléchargé.',
+    errorTitle: 'Impossible de créer le pass',
+  },
+
   chargingPlanner: {
     eyebrow: 'Planificateur de recharge VE',
     title: 'Estimer une session de recharge',

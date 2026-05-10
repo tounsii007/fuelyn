@@ -657,6 +657,14 @@ export const en: TranslationKeys = {
     },
   },
 
+  walletPass: {
+    cta: 'Add to Wallet',
+    loading: 'Building …',
+    successTitle: 'Wallet pass ready',
+    successDesc: 'Pass file downloaded.',
+    errorTitle: 'Could not build pass',
+  },
+
   chargingPlanner: {
     eyebrow: 'EV charging planner',
     title: 'Estimate a charging session',

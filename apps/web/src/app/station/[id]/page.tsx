@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { OpeningHoursDetail } from '@/components/stations/OpeningHoursDetail';
 import { PriceHistoryChart } from '@/components/stations/PriceHistoryChart';
 import { PriceReportForm } from '@/components/stations/PriceReportForm';
+import { WalletPassButton } from '@/components/stations/WalletPassButton';
 import { PriceHistoryChart as PriceTrendChart } from '@/components/charts/PriceHistoryChart';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import {
@@ -196,18 +197,33 @@ export default function StationDetailPage({
         <PriceHistoryChart stationId={station.id} />
         <div className="mb-4" />
 
-        {/* Anonymous price-correction submission. Sits between the price
-            history and the AI panels — easy to find when someone notices
-            a stale number. */}
+        {/* Anonymous price-correction submission + Add-to-Wallet shortcut.
+            The two share a row because they're both "act on this station's
+            current price" affordances. */}
         <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-subtle)]/30 p-4 mb-4">
-          <PriceReportForm
-            stationId={station.id}
-            knownPrices={{
-              diesel: station.prices?.diesel ?? null,
-              e5: station.prices?.e5 ?? null,
-              e10: station.prices?.e10 ?? null,
-            }}
-          />
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <PriceReportForm
+              stationId={station.id}
+              knownPrices={{
+                diesel: station.prices?.diesel ?? null,
+                e5: station.prices?.e5 ?? null,
+                e10: station.prices?.e10 ?? null,
+              }}
+            />
+            {(station.prices?.[filter.fuelType] ?? null) != null && (
+              <WalletPassButton
+                stationId={station.id}
+                stationLabel={station.brand || station.name}
+                cityLine={`${station.postCode} ${station.place}`}
+                fuelLabel={FUEL_TYPE_LABELS[filter.fuelType]}
+                priceEurPerL={(station.prices[filter.fuelType] ?? 0)
+                  .toFixed(3)
+                  .replace('.', ',')
+                  .replace(/0+$/, '')
+                  .replace(/,$/, '')}
+              />
+            )}
+          </div>
         </div>
 
         {/* KI Price Trend Chart */}
