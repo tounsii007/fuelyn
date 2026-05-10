@@ -388,6 +388,12 @@ export const fr: TranslationKeys = {
     settingsDesc: 'Thème, langue, confidentialité',
   },
 
+  searchHistory: {
+    title: 'Recherches récentes',
+    clearLabel: 'Effacer',
+    justNow: 'à l’instant',
+  },
+
   appShell: {
     mainNavAria: 'Navigation principale',
     fuelTypeAria: 'Choisir le carburant',

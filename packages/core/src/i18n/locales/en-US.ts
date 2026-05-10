@@ -388,6 +388,12 @@ export const enUS: TranslationKeys = {
     settingsDesc: 'Theme, language, privacy',
   },
 
+  searchHistory: {
+    title: 'Recent searches',
+    clearLabel: 'Clear',
+    justNow: 'just now',
+  },
+
   appShell: {
     mainNavAria: 'Main navigation',
     fuelTypeAria: 'Choose fuel type',

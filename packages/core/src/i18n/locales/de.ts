@@ -390,6 +390,12 @@ export const de = {
     settingsDesc: 'Theme, Sprache, Privatsphäre',
   },
 
+  searchHistory: {
+    title: 'Letzte Suchen',
+    clearLabel: 'Löschen',
+    justNow: 'gerade eben',
+  },
+
   appShell: {
     mainNavAria: 'Hauptnavigation',
     fuelTypeAria: 'Kraftstoffart wählen',
