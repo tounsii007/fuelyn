@@ -269,6 +269,14 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Achievements
+export type {
+  Achievement,
+  AchievementsResult,
+  AchievementCategory,
+} from './engine/achievements';
+export { computeAchievements } from './engine/achievements';
+
 // Smart-Buying Score
 export type {
   SmartBuyingScore,

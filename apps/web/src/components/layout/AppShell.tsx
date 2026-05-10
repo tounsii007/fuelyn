@@ -557,6 +557,7 @@ function MoreMenu() {
         { kind: 'link', href: '/stats',         label: t('moreMenu.statsLabel'),       desc: t('moreMenu.statsDesc'),         icon: <ChartIcon /> },
         { kind: 'link', href: '/route-planner', label: t('moreMenu.routePlannerLabel'), desc: t('moreMenu.routePlannerDesc'), icon: <RouteIcon /> },
         { kind: 'link', href: '/ai-chat',       label: t('aiChat.title'),               desc: t('aiChat.subtitle'),            icon: <SparkleIcon /> },
+        { kind: 'link', href: '/achievements',  label: t('achievements.title'),         desc: t('achievements.menuDesc'),      icon: <TrophyIcon /> },
       ],
     },
     {
@@ -882,6 +883,14 @@ function RouteIcon() {
       <circle cx="6" cy="6" r="2" />
       <circle cx="18" cy="18" r="2" />
       <path {...stroke} d="M6 8v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4" />
+    </svg>
+  );
+}
+function TrophyIcon() {
+  return (
+    <svg {...menuIconProps}>
+      <path {...stroke} d="M8 21h8M12 17v4M6 4h12v3a6 6 0 1 1-12 0V4Z" />
+      <path {...stroke} d="M6 6H4v2a3 3 0 0 0 3 3M18 6h2v2a3 3 0 0 1-3 3" />
     </svg>
   );
 }
