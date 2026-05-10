@@ -145,6 +145,22 @@ export {
   getAllGasStations,
 } from './services';
 
+// Multi-country fuel adapters (Iter Z) — re-exported from root so
+// the BFF can pull them with one import.
+export {
+  SpritpreisrechnerAdapter,
+  PrixCarburantsAdapter,
+  OsservaPrezziAdapter,
+  parseMimitCsv,
+} from './services/adapters';
+export type {
+  SpritpreisrechnerAdapterConfig,
+  PrixCarburantsAdapterConfig,
+  OsservaPrezziAdapterConfig,
+  OsservaPrezziDataLoader,
+  ItStationRow,
+} from './services/adapters';
+
 // Engine
 export {
   computeRecommendations,

@@ -785,6 +785,8 @@ export const de = {
     savingPerL: 'Geschätzte Ersparnis pro Liter',
     savingPerFill: 'Pro Tankfüllung',
     disclaimer: 'Schätzung auf Basis EU-Marktdaten — nicht Live-Preise.',
+    liveBadge: 'Live-Preis',
+    liveDisclaimer: 'Live-Preis vom offiziellen Open-Data-Feed des Nachbarlandes.',
   },
 
   voice: {

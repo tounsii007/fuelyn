@@ -783,6 +783,8 @@ export const fr: TranslationKeys = {
     savingPerL: 'Économie estimée par litre',
     savingPerFill: 'Par plein',
     disclaimer: 'Estimation basée sur les données de marché de l\'UE — pas un prix en direct.',
+    liveBadge: 'Prix en direct',
+    liveDisclaimer: 'Prix en direct depuis le flux open-data officiel du pays voisin.',
   },
 
   voice: {

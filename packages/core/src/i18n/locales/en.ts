@@ -777,6 +777,8 @@ export const en: TranslationKeys = {
     savingPerL: 'Estimated saving per litre',
     savingPerFill: 'Per fill-up',
     disclaimer: 'Estimate based on EU market data — not live station prices.',
+    liveBadge: 'Live price',
+    liveDisclaimer: 'Live price from the neighbouring country\'s official open-data feed.',
   },
 
   voice: {

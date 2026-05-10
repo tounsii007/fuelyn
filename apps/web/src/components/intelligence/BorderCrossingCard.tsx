@@ -15,11 +15,11 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
-import { evaluateBorderHints, type BorderCountry } from '@fuelyn/core';
+import { evaluateBorderHints, isFeatureUnlocked, type BorderCountry } from '@fuelyn/core';
 
 const COUNTRY_FLAG: Record<BorderCountry, string> = {
   LU: '🇱🇺',
@@ -39,6 +39,9 @@ export function BorderCrossingCard() {
   const userLocation = useAppStore((s) => s.userLocation);
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const vehicle = useAppStore((s) => s.vehicle);
+  const subscription = useAppStore((s) => s.subscription);
+  const canUseLive = isFeatureUnlocked('border-crossing-live', subscription);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
 
   const result = useMemo(() => {
     if (!userLocation) return null;
@@ -48,6 +51,32 @@ export function BorderCrossingCard() {
       vehicleTankL: vehicle?.tankCapacity ?? undefined,
     });
   }, [userLocation, fuelType, vehicle]);
+
+  // Premium-gated: free users see the static estimate. Premium users
+  // see the live foreign-station price for AT/FR (more countries to
+  // come as their open-data adapters land).
+  useEffect(() => {
+    if (!canUseLive || !result?.best) return;
+    if (!['AT', 'FR'].includes(result.best.country)) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    const url = new URL('/api/border-crossing', window.location.origin);
+    url.searchParams.set('country', result.best.country);
+    // Use the foreign waypoint coords (already in BORDER_WAYPOINTS).
+    // We can re-derive lat/lng from the result's distance vector;
+    // simplest is to pass the user's location and rely on the BFF
+    // to find the nearest foreign station.
+    if (userLocation) {
+      url.searchParams.set('lat', String(userLocation.lat));
+      url.searchParams.set('lng', String(userLocation.lng));
+    }
+    url.searchParams.set('fuel', fuelType);
+    fetch(url.toString(), { signal: controller.signal })
+      .then((r) => r.json())
+      .then((j) => { if (!cancelled) setLivePrice(j.cheapestPrice ?? null); })
+      .catch(() => { /* fall through to static estimate */ });
+    return () => { cancelled = true; controller.abort(); };
+  }, [canUseLive, fuelType, result, userLocation]);
 
   if (!hydrated || !result || !result.best) return null;
 
@@ -108,8 +137,21 @@ export function BorderCrossingCard() {
         )}
       </div>
 
+      {/* Live-price banner (Premium only). Falls back silently to
+          the static estimate when the foreign adapter is empty. */}
+      {canUseLive && livePrice != null && (
+        <p className="mt-3 rounded-lg bg-[var(--color-success-50)] dark:bg-[var(--color-success-900)]/30
+                       text-[11px] text-[var(--color-success-700)] dark:text-[var(--color-success-300)]
+                       px-2 py-1.5 inline-flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success-500)] animate-pulse" />
+          {t('borderCrossing.liveBadge')}: {livePrice.toFixed(3).replace('.', ',')} €/L
+        </p>
+      )}
+
       <p className="mt-3 text-[10px] text-[var(--color-fg-subtle)]">
-        {t('borderCrossing.disclaimer')}
+        {canUseLive && livePrice != null
+          ? t('borderCrossing.liveDisclaimer')
+          : t('borderCrossing.disclaimer')}
       </p>
     </section>
   );
