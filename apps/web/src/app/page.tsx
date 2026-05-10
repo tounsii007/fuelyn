@@ -30,6 +30,7 @@ import { PricePredictionCard } from '@/components/intelligence/PricePredictionCa
 import { SmartBuyingScoreCard } from '@/components/intelligence/SmartBuyingScoreCard';
 import { SavingTipsCard } from '@/components/intelligence/SavingTipsCard';
 import { CounterfactualCard } from '@/components/intelligence/CounterfactualCard';
+import { BorderCrossingCard } from '@/components/intelligence/BorderCrossingCard';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
@@ -437,6 +438,7 @@ export default function HomePage() {
                 </div>
                 <SearchHistory />
                 <BestDealCard recommendations={recommendations} />
+                <BorderCrossingCard />
                 <SmartBuyingScoreCard />
                 <SavingTipsCard />
                 <CounterfactualCard />

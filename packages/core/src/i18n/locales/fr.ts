@@ -630,6 +630,14 @@ export const fr: TranslationKeys = {
     mostExpensiveColLabel: 'Le plus cher',
   },
 
+  borderCrossing: {
+    eyebrow: 'Frontière à portée',
+    hint: 'Vous pouvez économiser environ {ctPerL} ct/L de {fuel} en passant la frontière.',
+    savingPerL: 'Économie estimée par litre',
+    savingPerFill: 'Par plein',
+    disclaimer: 'Estimation basée sur les données de marché de l\'UE — pas un prix en direct.',
+  },
+
   voice: {
     title: 'Commande vocale',
     openMicAria: 'Lancer la commande vocale',

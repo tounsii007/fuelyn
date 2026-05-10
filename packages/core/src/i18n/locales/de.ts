@@ -632,6 +632,14 @@ export const de = {
     mostExpensiveColLabel: 'Teuerste',
   },
 
+  borderCrossing: {
+    eyebrow: 'Grenze in Reichweite',
+    hint: 'In {fuel} sparst du in der Nachbarschaft etwa {ctPerL} ct/L.',
+    savingPerL: 'Geschätzte Ersparnis pro Liter',
+    savingPerFill: 'Pro Tankfüllung',
+    disclaimer: 'Schätzung auf Basis EU-Marktdaten — nicht Live-Preise.',
+  },
+
   voice: {
     title: 'Sprachbefehl',
     openMicAria: 'Sprachbefehl starten',

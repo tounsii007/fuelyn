@@ -624,6 +624,14 @@ export const en: TranslationKeys = {
     mostExpensiveColLabel: 'Highest',
   },
 
+  borderCrossing: {
+    eyebrow: 'Border in range',
+    hint: 'You can save about {ctPerL} ct/L on {fuel} across the border.',
+    savingPerL: 'Estimated saving per litre',
+    savingPerFill: 'Per fill-up',
+    disclaimer: 'Estimate based on EU market data — not live station prices.',
+  },
+
   voice: {
     title: 'Voice command',
     openMicAria: 'Start voice command',

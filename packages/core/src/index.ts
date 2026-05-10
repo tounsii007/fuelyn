@@ -280,6 +280,18 @@ export type {
 } from './engine/multi-stop';
 export { optimizeStops } from './engine/multi-stop';
 
+// Border-crossing fuel-cost estimator
+export type {
+  BorderCountry,
+  BorderHint,
+  BorderHintInputs,
+  BorderHintResult,
+} from './engine/border-crossing';
+export {
+  evaluateBorderHints,
+  BORDER_WAYPOINTS,
+} from './engine/border-crossing';
+
 // Brand membership / loyalty cards
 export type { MembershipDiscount, MembershipId } from './engine/membership-tiers';
 export {
