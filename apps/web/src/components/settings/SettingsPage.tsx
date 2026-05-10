@@ -154,9 +154,9 @@ export function SettingsPage() {
           id="sec-theme"
           title={t('settings.theme')}
           currentValue={
-            settings.theme === 'light' ? 'Hell'
-              : settings.theme === 'dark' ? 'Dunkel'
-              : 'System'
+            settings.theme === 'light' ? t('settingsExtra.themeLightShort')
+              : settings.theme === 'dark' ? t('settingsExtra.themeDarkShort')
+              : t('settingsExtra.themeSystemShort')
           }
         >
           <div className="grid grid-cols-3 gap-2">
@@ -184,7 +184,7 @@ export function SettingsPage() {
           {/* Background variant picker — applies live via data-bg on <html> */}
           <div className="mt-5">
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">
-              Hintergrund
+              {t('settingsExtra.background')}
             </h3>
             <div className="grid grid-cols-3 gap-2">
               {BG_OPTIONS.map((opt) => {
@@ -229,10 +229,10 @@ export function SettingsPage() {
           id="sec-map"
           title={t('settings.mapStyle')}
           currentValue={
-            settings.mapStyle === 'standard'   ? 'Standard'
-              : settings.mapStyle === 'dark'      ? 'Dark'
-              : settings.mapStyle === 'satellite' ? 'Satellit'
-              : 'Gelände'
+            settings.mapStyle === 'standard'   ? t('settings.mapStandard')
+              : settings.mapStyle === 'dark'      ? t('settings.mapDark')
+              : settings.mapStyle === 'satellite' ? t('settings.mapSatellite')
+              : t('settings.mapTerrain')
           }
         >
           <div className="grid grid-cols-2 gap-3">
@@ -454,6 +454,7 @@ export function SettingsPage() {
 //         Validation is intentionally light because this is a
 //         self-restore path, not a public API surface.
 function ImportExportRow() {
+  const { t } = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ kind: 'idle' | 'ok' | 'err'; message: string }>({
     kind: 'idle',
@@ -484,12 +485,12 @@ function ImportExportRow() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setStatus({ kind: 'ok', message: 'Export gestartet' });
+      setStatus({ kind: 'ok', message: t('settingsExtra.exportStarted') });
       setTimeout(() => setStatus({ kind: 'idle', message: '' }), 3000);
     } catch (e) {
-      setStatus({ kind: 'err', message: 'Export fehlgeschlagen' });
+      setStatus({ kind: 'err', message: t('settingsExtra.exportFailed') });
     }
-  }, []);
+  }, [t]);
 
   const importData = useCallback(async (file: File) => {
     try {
@@ -507,13 +508,13 @@ function ImportExportRow() {
         savedLocations: Array.isArray(data.savedLocations) ? data.savedLocations : cur.savedLocations,
         searchHistory: Array.isArray(data.searchHistory) ? data.searchHistory : cur.searchHistory,
       }));
-      setStatus({ kind: 'ok', message: 'Import erfolgreich' });
+      setStatus({ kind: 'ok', message: t('settingsExtra.importSuccess') });
       setTimeout(() => setStatus({ kind: 'idle', message: '' }), 3000);
     } catch {
-      setStatus({ kind: 'err', message: 'Datei konnte nicht gelesen werden' });
+      setStatus({ kind: 'err', message: t('settingsExtra.importReadFailed') });
       setTimeout(() => setStatus({ kind: 'idle', message: '' }), 4000);
     }
-  }, []);
+  }, [t]);
 
   return (
     <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3 space-y-2">
@@ -596,6 +597,7 @@ function ImportExportRow() {
 // for the whole page; pulling it into a separate file would scatter
 // related UI across the codebase for no real benefit at this size.
 function PrivacySection() {
+  const { t } = useTranslations();
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const permission = useAppStore((s) => s.locationPermission);
@@ -612,7 +614,11 @@ function PrivacySection() {
         ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
         : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
   const permissionLabel =
-    permission === 'granted' ? 'Erteilt' : permission === 'denied' ? 'Verweigert' : 'Ausstehend';
+    permission === 'granted'
+      ? t('liveGps.permissionGranted')
+      : permission === 'denied'
+        ? t('liveGps.permissionDenied')
+        : t('liveGps.permissionPrompt');
 
   return (
     <section
@@ -620,19 +626,17 @@ function PrivacySection() {
       className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5 scroll-mt-24"
     >
       <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
-        Privatsphäre & Standort
+        {t('liveGps.sectionTitle')}
       </h2>
 
       {/* Live-tracking toggle row */}
       <div className="flex items-start justify-between gap-4 py-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            Live-Standort verfolgen
+            {t('liveGps.toggleTitle')}
           </p>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Aktualisiert deine Position automatisch während du dich bewegst,
-            damit Entfernungen und Reihenfolge sich anpassen. Schluckt mehr
-            Akku — daher standardmäßig aus.
+            {t('liveGps.toggleDesc')}
           </p>
         </div>
         <button
@@ -656,7 +660,7 @@ function PrivacySection() {
       <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3 text-center">
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Berechtigung
+            {t('liveGps.permission')}
           </p>
           <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${permissionTone}`}>
             {permissionLabel}
@@ -664,7 +668,7 @@ function PrivacySection() {
         </div>
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Tracking
+            {t('liveGps.trackingLabel')}
           </p>
           <span
             className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -673,12 +677,12 @@ function PrivacySection() {
                 : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
             }`}
           >
-            {liveTracking ? 'Live aktiv' : 'Inaktiv'}
+            {liveTracking ? t('liveGps.trackingActive') : t('liveGps.trackingInactive')}
           </span>
         </div>
         <div>
           <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Genauigkeit
+            {t('liveGps.accuracyLabel')}
           </p>
           <span className="mt-1 inline-block rounded-full bg-gray-200 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:text-gray-300">
             {accuracy != null && Number.isFinite(accuracy) ? `±${Math.round(accuracy)} m` : '—'}
@@ -694,9 +698,9 @@ function PrivacySection() {
                    text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800
                    transition-colors"
       >
-        <span className="font-medium">Gespeicherten Standort vergessen</span>
+        <span className="font-medium">{t('settingsExtra.forgetLocation')}</span>
         <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          Setzt deine Position zurück. Beim nächsten Öffnen wird sie neu ermittelt.
+          {t('settingsExtra.forgetLocationDesc')}
         </span>
       </button>
     </section>
@@ -757,20 +761,21 @@ function SettingsSection({
  * and stay synced with the section titles even as those evolve.
  */
 function SettingsJumpNav() {
+  const { t } = useTranslations();
   const items: { href: string; label: string }[] = [
-    { href: '#sec-language', label: 'Sprache' },
-    { href: '#sec-theme', label: 'Theme' },
-    { href: '#sec-map', label: 'Karte' },
-    { href: '#sec-fuel', label: 'Kraftstoff' },
-    { href: '#sec-radius', label: 'Radius' },
-    { href: '#sec-privacy', label: 'Privatsphäre' },
-    { href: '#sec-notifications', label: 'Alarme' },
-    { href: '#sec-data', label: 'Daten' },
-    { href: '#sec-about', label: 'Über' },
+    { href: '#sec-language',      label: t('settingsExtra.jumpLanguage') },
+    { href: '#sec-theme',         label: t('settingsExtra.jumpTheme') },
+    { href: '#sec-map',           label: t('settingsExtra.jumpMap') },
+    { href: '#sec-fuel',          label: t('settingsExtra.jumpFuel') },
+    { href: '#sec-radius',        label: t('settingsExtra.jumpRadius') },
+    { href: '#sec-privacy',       label: t('settingsExtra.jumpPrivacy') },
+    { href: '#sec-notifications', label: t('settingsExtra.jumpAlerts') },
+    { href: '#sec-data',          label: t('settingsExtra.jumpData') },
+    { href: '#sec-about',         label: t('settingsExtra.jumpAbout') },
   ];
   return (
     <nav
-      aria-label="Schnell-Navigation"
+      aria-label={t('settingsExtra.jumpNavAria')}
       className="sticky top-0 -mx-6 px-6 py-2 mb-4 z-10
                  bg-[var(--color-bg)]/85 backdrop-blur-md
                  border-b border-[var(--color-border-subtle)]"

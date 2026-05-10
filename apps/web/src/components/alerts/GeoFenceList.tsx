@@ -13,6 +13,7 @@
 
 import { useMemo, useState } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import type { GeoFenceState } from '@/lib/store/app-store';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -29,6 +30,7 @@ const FUEL_LABELS: Record<'diesel' | 'e5' | 'e10', string> = {
 };
 
 export function GeoFenceList() {
+  const { t } = useTranslations();
   const fences = useAppStore((s) => s.geoFences);
   const removeGeoFence = useAppStore((s) => s.removeGeoFence);
   const setGeoFenceEnabled = useAppStore((s) => s.setGeoFenceEnabled);
@@ -60,10 +62,10 @@ export function GeoFenceList() {
       <header className="flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold text-[var(--color-fg)]">
-            Standort-Alarme
+            {t('geoFence.sectionTitle')}
           </h2>
           <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">
-            Werde benachrichtigt, wenn du in der Nähe einer günstigen Tanke bist.
+            {t('geoFence.sectionDesc')}
           </p>
         </div>
         <Button
@@ -71,7 +73,7 @@ export function GeoFenceList() {
           onClick={() => setIsAdding(true)}
           leadingIcon={<PlusIcon />}
         >
-          Neu
+          {t('geoFence.newCta')}
         </Button>
       </header>
 
@@ -81,14 +83,14 @@ export function GeoFenceList() {
             <span aria-hidden className="text-2xl">🔔</span>
             <div className="flex-1">
               <div className="text-sm font-medium text-[var(--color-fg)]">
-                Push-Benachrichtigungen aktivieren
+                {t('geoFence.enableNotificationsTitle')}
               </div>
               <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
-                Sonst siehst du Alarme nur, solange die App geöffnet ist.
+                {t('geoFence.enableNotificationsDesc')}
               </p>
             </div>
             <Button size="sm" variant="outline" onClick={handleEnableNotifications}>
-              Aktivieren
+              {t('geoFence.enableCta')}
             </Button>
           </div>
         </Card>
@@ -103,10 +105,18 @@ export function GeoFenceList() {
             📍
           </div>
           <p className="text-sm text-[var(--color-fg)]">
-            Noch keine Standort-Alarme angelegt.
+            {t('geoFence.emptyTitle')}
           </p>
           <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
-            Tippe auf <strong>Neu</strong>, um deinen ersten Alarm einzurichten.
+            {/* The {newCta} placeholder is replaced inline so we
+                can wrap it in <strong> for emphasis — the locale
+                template just carries the surrounding sentence. */}
+            {t('geoFence.emptyHint').split('{newCta}').map((seg, i, arr) => (
+              <span key={i}>
+                {seg}
+                {i < arr.length - 1 && <strong>{t('geoFence.newCta')}</strong>}
+              </span>
+            ))}
           </p>
         </Card>
       ) : (
@@ -135,6 +145,7 @@ interface FenceCardProps {
 }
 
 function FenceCard({ fence, onToggle, onDelete }: FenceCardProps) {
+  const { t } = useTranslations();
   const dimmed = !fence.enabled;
   return (
     <Card
@@ -150,17 +161,17 @@ function FenceCard({ fence, onToggle, onDelete }: FenceCardProps) {
             </span>
             {fence.enabled ? (
               <Badge tone="success" size="sm" leadingIcon={<DotIcon />}>
-                aktiv
+                {t('geoFence.badgeActive')}
               </Badge>
             ) : (
-              <Badge tone="neutral" size="sm">pausiert</Badge>
+              <Badge tone="neutral" size="sm">{t('geoFence.badgePaused')}</Badge>
             )}
           </div>
           <div className="text-xs text-[var(--color-fg-subtle)] mt-1">
-            {FUEL_LABELS[fence.fuelType]} · {fence.radiusKm.toFixed(1)} km Radius
+            {FUEL_LABELS[fence.fuelType]} · {fence.radiusKm.toFixed(1)} km {t('geoFence.radiusSuffix')}
             {fence.maxPrice != null && (
               <>
-                {' · max '}
+                {' · '}{t('geoFence.maxPrefix')}{' '}
                 <strong className="text-[var(--color-fg)]">
                   {fence.maxPrice.toFixed(3).replace('.', ',')} €/L
                 </strong>
@@ -173,12 +184,12 @@ function FenceCard({ fence, onToggle, onDelete }: FenceCardProps) {
           <ToggleSwitch
             checked={fence.enabled}
             onChange={onToggle}
-            label={fence.enabled ? 'Alarm pausieren' : 'Alarm aktivieren'}
+            label={fence.enabled ? t('geoFence.pauseAria') : t('geoFence.activateAria')}
           />
           <button
             type="button"
             onClick={onDelete}
-            aria-label="Alarm löschen"
+            aria-label={t('geoFence.deleteAria')}
             className="w-8 h-8 rounded-full grid place-items-center text-[var(--color-fg-subtle)]
                        hover:text-[var(--color-danger-500)] hover:bg-[var(--color-surface-hover)] fy-press"
           >
@@ -197,6 +208,7 @@ interface NewFenceFormProps {
 }
 
 function NewFenceForm({ onClose }: NewFenceFormProps) {
+  const { t } = useTranslations();
   const userLocation = useAppStore((s) => s.userLocation);
   const favorites = useAppStore((s) => s.favorites);
   const addGeoFence = useAppStore((s) => s.addGeoFence);
@@ -213,7 +225,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
       if (!userLocation) return null;
       return {
         stationId: 'current-location',
-        stationName: 'Aktueller Standort',
+        stationName: t('geoFence.currentLocation'),
         center: userLocation,
       };
     }
@@ -234,8 +246,8 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
     if (!targetData) {
       toast.show({
         tone: 'warning',
-        title: 'Standort fehlt',
-        description: 'Erlaube den Standortzugriff oder wähle einen Favoriten.',
+        title: t('geoFence.toastLocationMissingTitle'),
+        description: t('geoFence.toastLocationMissingDesc'),
       });
       return;
     }
@@ -243,7 +255,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
       ? Number(maxPriceStr.replace(',', '.'))
       : null;
     if (max != null && (!Number.isFinite(max) || max <= 0 || max > 5)) {
-      toast.show({ tone: 'warning', title: 'Preis-Schwelle ungültig' });
+      toast.show({ tone: 'warning', title: t('geoFence.toastInvalidThreshold') });
       return;
     }
     const id =
@@ -270,12 +282,12 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
     <Card elevation="raised" padding="md" className="fy-enter">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[var(--color-fg)]">
-          Neuer Standort-Alarm
+          {t('geoFence.formTitle')}
         </h3>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Abbrechen"
+          aria-label={t('geoFence.cancelAria')}
           className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] text-lg leading-none"
         >
           ×
@@ -284,14 +296,14 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
 
       <div className="space-y-4">
         <Input
-          label="Bezeichnung (optional)"
-          placeholder="z. B. Aral am Heimweg"
+          label={t('geoFence.labelLabel')}
+          placeholder={t('geoFence.labelPlaceholder')}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-[var(--color-fg)]">Standort</span>
+          <span className="text-sm font-medium text-[var(--color-fg)]">{t('geoFence.locationLabel')}</span>
           <select
             value={target}
             onChange={(e) => setTarget(e.target.value)}
@@ -301,7 +313,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
                        focus:shadow-[var(--shadow-glow-brand)]"
           >
             <option value="current" disabled={!userLocation}>
-              {userLocation ? 'Aktueller Standort' : 'Aktueller Standort (nicht verfügbar)'}
+              {userLocation ? t('geoFence.currentLocation') : t('geoFence.currentLocationUnavailable')}
             </option>
             {favorites.map((fav) => (
               <option key={fav.stationId} value={fav.stationId}>
@@ -313,7 +325,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[var(--color-fg)]">Radius</span>
+            <span className="text-sm font-medium text-[var(--color-fg)]">{t('geoFence.radiusLabel')}</span>
             <span className="text-sm tabular-nums font-semibold text-[var(--color-brand-600)]">
               {radiusKm.toFixed(1)} km
             </span>
@@ -336,7 +348,7 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-[var(--color-fg)]">Sorte</span>
+            <span className="text-sm font-medium text-[var(--color-fg)]">{t('geoFence.fuelTypeLabel')}</span>
             <select
               value={fuelType}
               onChange={(e) => setFuelType(e.target.value as 'diesel' | 'e5' | 'e10')}
@@ -351,23 +363,23 @@ function NewFenceForm({ onClose }: NewFenceFormProps) {
             </select>
           </div>
           <Input
-            label="Max. Preis €/L"
+            label={t('geoFence.maxPriceLabel')}
             type="text"
             inputMode="decimal"
             placeholder="1,75"
             value={maxPriceStr}
             onChange={(e) => setMaxPriceStr(e.target.value)}
-            hint="Optional. Leer = jeder Preis."
+            hint={t('geoFence.maxPriceHint')}
           />
         </div>
       </div>
 
       <div className="flex items-center justify-end gap-2 mt-4">
         <Button variant="ghost" onClick={onClose}>
-          Abbrechen
+          {t('geoFence.cancelCta')}
         </Button>
         <Button onClick={handleSubmit} disabled={!canSubmit}>
-          Alarm anlegen
+          {t('geoFence.createCta')}
         </Button>
       </div>
     </Card>
