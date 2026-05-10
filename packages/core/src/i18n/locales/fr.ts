@@ -630,6 +630,38 @@ export const fr: TranslationKeys = {
     mostExpensiveColLabel: 'Le plus cher',
   },
 
+  priceReport: {
+    cta: 'Signaler un prix erroné',
+    title: 'Signaler le prix',
+    formAria: 'Signaler le prix',
+    closeAria: 'Fermer',
+    priceLabel: 'Prix réel',
+    submit: 'Envoyer',
+    submitting: 'Envoi …',
+    successTitle: 'Merci pour le signalement',
+    errorTitle: 'Échec du signalement',
+    errorGeneric: 'Veuillez réessayer plus tard.',
+    invalidPriceTitle: 'Prix invalide',
+    invalidPriceDesc: 'Veuillez entrer un prix entre {min} et {max} €/L.',
+    rateLimitedTitle: 'Trop de signalements',
+    rateLimitedDesc: 'Veuillez attendre {seconds} secondes avant de signaler à nouveau.',
+    privacyHint: 'Les signalements sont anonymes — aucune connexion requise.',
+    classification: {
+      'matches-known': 'Correspond au prix actuel.',
+      'minor-correction': 'Correction mineure enregistrée.',
+      'major-correction': 'Correction significative enregistrée — merci !',
+      'suspicious': 'Écart important — sera vérifié avec d\'autres signalements.',
+      'no-known-price': 'Correction enregistrée.',
+    },
+    rejection: {
+      'price-not-finite': 'Le prix n\'est pas un nombre valide.',
+      'price-out-of-range': 'Prix en dehors de la plage plausible.',
+      'station-id-empty': 'ID de la station manquant.',
+      'fuel-type-invalid': 'Type de carburant invalide.',
+      'observed-at-invalid': 'Horodatage invalide.',
+    },
+  },
+
   borderCrossing: {
     eyebrow: 'Frontière à portée',
     hint: 'Vous pouvez économiser environ {ctPerL} ct/L de {fuel} en passant la frontière.',

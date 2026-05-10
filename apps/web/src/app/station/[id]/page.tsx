@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { OpeningHoursDetail } from '@/components/stations/OpeningHoursDetail';
 import { PriceHistoryChart } from '@/components/stations/PriceHistoryChart';
+import { PriceReportForm } from '@/components/stations/PriceReportForm';
 import { PriceHistoryChart as PriceTrendChart } from '@/components/charts/PriceHistoryChart';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import {
@@ -194,6 +195,20 @@ export default function StationDetailPage({
 
         <PriceHistoryChart stationId={station.id} />
         <div className="mb-4" />
+
+        {/* Anonymous price-correction submission. Sits between the price
+            history and the AI panels — easy to find when someone notices
+            a stale number. */}
+        <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-subtle)]/30 p-4 mb-4">
+          <PriceReportForm
+            stationId={station.id}
+            knownPrices={{
+              diesel: station.prices?.diesel ?? null,
+              e5: station.prices?.e5 ?? null,
+              e10: station.prices?.e10 ?? null,
+            }}
+          />
+        </div>
 
         {/* KI Price Trend Chart */}
         <PriceTrendChart fuelType={filter.fuelType} className="mb-4" />

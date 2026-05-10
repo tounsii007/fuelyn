@@ -280,6 +280,18 @@ export type {
 } from './engine/multi-stop';
 export { optimizeStops } from './engine/multi-stop';
 
+// Anonymous price-report validator
+export type {
+  PriceReportInput,
+  PriceReportValidation,
+  ReportClassification,
+} from './engine/price-report';
+export {
+  validatePriceReport,
+  MIN_PLAUSIBLE_PRICE,
+  MAX_PLAUSIBLE_PRICE,
+} from './engine/price-report';
+
 // Border-crossing fuel-cost estimator
 export type {
   BorderCountry,

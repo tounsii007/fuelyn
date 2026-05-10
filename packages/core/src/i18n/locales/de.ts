@@ -632,6 +632,38 @@ export const de = {
     mostExpensiveColLabel: 'Teuerste',
   },
 
+  priceReport: {
+    cta: 'Preis korrigieren',
+    title: 'Preis melden',
+    formAria: 'Preis melden',
+    closeAria: 'Schließen',
+    priceLabel: 'Tatsächlicher Preis',
+    submit: 'Senden',
+    submitting: 'Sende …',
+    successTitle: 'Danke für die Meldung',
+    errorTitle: 'Meldung fehlgeschlagen',
+    errorGeneric: 'Bitte versuche es später erneut.',
+    invalidPriceTitle: 'Ungültiger Preis',
+    invalidPriceDesc: 'Bitte einen Preis zwischen {min} und {max} €/L angeben.',
+    rateLimitedTitle: 'Zu viele Meldungen',
+    rateLimitedDesc: 'Bitte warte {seconds} Sekunden bis zur nächsten Meldung.',
+    privacyHint: 'Meldungen sind anonym — keine Anmeldung nötig.',
+    classification: {
+      'matches-known': 'Stimmt mit dem aktuellen Preis überein.',
+      'minor-correction': 'Kleine Korrektur erfasst.',
+      'major-correction': 'Größere Korrektur erfasst — danke für die Aufmerksamkeit!',
+      'suspicious': 'Größerer Unterschied erkannt — wird gegen weitere Meldungen geprüft.',
+      'no-known-price': 'Korrektur erfasst.',
+    },
+    rejection: {
+      'price-not-finite': 'Preis ist keine gültige Zahl.',
+      'price-out-of-range': 'Preis liegt außerhalb des plausiblen Bereichs.',
+      'station-id-empty': 'Tankstellen-ID fehlt.',
+      'fuel-type-invalid': 'Ungültiger Kraftstofftyp.',
+      'observed-at-invalid': 'Zeitstempel ist ungültig.',
+    },
+  },
+
   borderCrossing: {
     eyebrow: 'Grenze in Reichweite',
     hint: 'In {fuel} sparst du in der Nachbarschaft etwa {ctPerL} ct/L.',

@@ -624,6 +624,38 @@ export const en: TranslationKeys = {
     mostExpensiveColLabel: 'Highest',
   },
 
+  priceReport: {
+    cta: 'Report wrong price',
+    title: 'Report price',
+    formAria: 'Report price',
+    closeAria: 'Close',
+    priceLabel: 'Actual price',
+    submit: 'Submit',
+    submitting: 'Sending …',
+    successTitle: 'Thanks for the report',
+    errorTitle: 'Report failed',
+    errorGeneric: 'Please try again later.',
+    invalidPriceTitle: 'Invalid price',
+    invalidPriceDesc: 'Please enter a price between {min} and {max} €/L.',
+    rateLimitedTitle: 'Too many reports',
+    rateLimitedDesc: 'Please wait {seconds} seconds before reporting again.',
+    privacyHint: 'Reports are anonymous — no sign-in required.',
+    classification: {
+      'matches-known': 'Matches the current feed price.',
+      'minor-correction': 'Minor correction recorded.',
+      'major-correction': 'Significant correction recorded — thanks!',
+      'suspicious': 'Large discrepancy — will be cross-checked against other reports.',
+      'no-known-price': 'Correction recorded.',
+    },
+    rejection: {
+      'price-not-finite': 'Price is not a valid number.',
+      'price-out-of-range': 'Price is outside the plausible range.',
+      'station-id-empty': 'Station ID is missing.',
+      'fuel-type-invalid': 'Invalid fuel type.',
+      'observed-at-invalid': 'Invalid timestamp.',
+    },
+  },
+
   borderCrossing: {
     eyebrow: 'Border in range',
     hint: 'You can save about {ctPerL} ct/L on {fuel} across the border.',
