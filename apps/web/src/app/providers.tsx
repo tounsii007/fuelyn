@@ -7,6 +7,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useHydrateStore } from '@/lib/hooks/use-vehicle';
+import { useCloudSync } from '@/lib/hooks/use-cloud-sync';
 import { useAppStore } from '@/lib/store/app-store';
 import { SplashScreen } from '@/components/splash/SplashScreen';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
@@ -77,6 +78,10 @@ function ServiceWorkerRegistrar() {
 
 function StoreHydrator({ children }: { children: React.ReactNode }) {
   useHydrateStore();
+  // Cloud-sync runs alongside local hydration: pulls any newer
+  // server records into the store, then push-mirrors local
+  // changes after a 1.5 s debounce. No-ops on the server.
+  useCloudSync();
   return <>{children}</>;
 }
 

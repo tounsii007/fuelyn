@@ -45,3 +45,125 @@ model CollectionRun {
   status        String    @default("running") // running, completed, failed
   error         String?
 }
+
+// ────────────────────────────────────────────────────────────
+// User accounts + cloud-sync (Iter W)
+// ────────────────────────────────────────────────────────────
+//
+// Anonymous-first: every device gets a `User` row keyed by an
+// opaque `deviceId` written to localStorage on first launch.
+// Optionally upgradable to an email-based account by claiming
+// the device-id with a magic-link login (handled by /api/auth/*).
+//
+// All sync rows are owned by a single User; we never mix data
+// between users. Conflict resolution is "last-write-wins" on
+// `updatedAt`, which is fine for the kinds of payloads we sync
+// (per-user fuel-log, settings, vehicle list, subscription).
+
+model User {
+  id           String   @id @default(uuid())
+  /** Stable opaque id stored client-side; lets unauthenticated devices sync. */
+  deviceId     String?  @unique
+  /** Optional email — set when the user upgrades from anonymous to a real account. */
+  email        String?  @unique
+  createdAt    DateTime @default(now())
+  /** Stripe customer id once they've opened the checkout flow. */
+  stripeCustomerId  String? @unique
+  /** Mirror of subscription status for fast read; webhook keeps it fresh. */
+  subscriptionStatus String  @default("free")
+  subscriptionPlan   String?
+  subscriptionPeriodEnd DateTime?
+
+  syncRecords  SyncRecord[]
+  priceReports PriceReport[]
+  authTokens   AuthToken[]
+  events       TelemetryEvent[]
+}
+
+/**
+ * Generic key-value sync envelope. Each kind is one of the user-
+ * data slices the client persists locally; payload is opaque JSON
+ * (the client's Zod schemas validate). updatedAt drives last-write-
+ * wins conflict resolution.
+ */
+model SyncRecord {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** "fuel-log" | "vehicles" | "settings" | "memberships" | "saved-locations" | "geo-fences" | … */
+  kind      String
+  payload   String   // JSON-encoded
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind])
+  @@index([userId])
+}
+
+/**
+ * Magic-link / refresh token table for the optional email upgrade flow.
+ * Single-use, short TTL.
+ */
+model AuthToken {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** sha256 of the random token; we never store the raw value. */
+  tokenHash String   @unique
+  /** "magic-link" | "session" */
+  kind      String
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/**
+ * Persisted price reports (Iter Y). Multiple reports vote on the
+ * canonical price; the engine picks the median once enough confidence
+ * accumulates. Each row carries the validation classification that
+ * the @fuelyn/core engine assigned at ingest time.
+ */
+model PriceReport {
+  id              Int      @id @default(autoincrement())
+  /** Optional — anonymous reports are still accepted, just lower-weighted. */
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stationId       String
+  fuelType        String
+  price           Float
+  observedAt      DateTime
+  createdAt       DateTime @default(now())
+  classification  String   // matches-known | minor-correction | major-correction | suspicious | no-known-price
+  confidence      Float
+  photoVerified   Boolean  @default(false)
+  /** ip-hash for spam-detection; never the raw IP. */
+  ipHash          String?
+  /** Set by the moderation pipeline when this report contributes to canonical price. */
+  acceptedAt      DateTime?
+
+  @@index([stationId, fuelType, createdAt])
+  @@index([createdAt])
+}
+
+/**
+ * Privacy-respecting telemetry (Iter AC). Only stores aggregate-friendly
+ * event counts; never the parameters / payloads. No PII.
+ */
+model TelemetryEvent {
+  id        Int      @id @default(autoincrement())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /** Stable event name like "voice.intent.find-cheapest" or "checkout.started" */
+  name      String
+  /** Pricing/copy variant token for A/B tests; null = control. */
+  variant   String?
+  /** Day-resolution timestamp — we don't need second-precision, and rounding helps anonymity. */
+  day       String   // ISO yyyy-mm-dd
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name, variant, day])
+  @@index([name, day])
+}
