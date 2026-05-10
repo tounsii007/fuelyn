@@ -26,6 +26,7 @@ export default function FuelLogPage() {
   const { t } = useTranslations();
   const toast = useToast();
   const fuelLog = useAppStore((s) => s.fuelLog);
+  const setFuelLog = useAppStore((s) => s.setFuelLog);
   const addFuelLogEntry = useAppStore((s) => s.addFuelLogEntry);
   const removeFuelLogEntry = useAppStore((s) => s.removeFuelLogEntry);
 
@@ -382,7 +383,20 @@ export default function FuelLogPage() {
       {fuelLog.length === 0 ? (
         <EmptyState
           title="Noch keine Einträge"
-          message="Protokolliere deine Tankfüllungen, um Kosten und Verbrauch zu tracken."
+          message="Protokolliere deine Tankfüllungen, um Kosten und Verbrauch zu tracken — oder probier die App mit Beispieldaten aus."
+          action={{
+            label: 'Mit Beispieldaten ausprobieren',
+            onClick: () => {
+              // Generate ~14 deterministic demo fills so the dashboard
+              // (CO₂, smart-buying, heatmap, achievements, …) lights up
+              // immediately. The first row carries a "demo" note so
+              // users can find + delete it in one tap.
+              import('@fuelyn/core').then(({ generateDemoFuelLog }) => {
+                const demo = generateDemoFuelLog({});
+                setFuelLog(demo);
+              });
+            },
+          }}
         />
       ) : (
         <ul className="space-y-3">

@@ -330,6 +330,10 @@ export type {
 } from './engine/multi-stop';
 export { optimizeStops } from './engine/multi-stop';
 
+// Demo / cold-start mitigation
+export type { DemoOptions } from './demo/demo-fuel-log';
+export { generateDemoFuelLog } from './demo/demo-fuel-log';
+
 // Anonymous price-report aggregation engine
 export type {
   AggregationInput,
