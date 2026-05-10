@@ -437,6 +437,24 @@ export const en: TranslationKeys = {
     },
   },
 
+  spritmonitor: {
+    title: 'Spritmonitor.de import',
+    desc: 'Import a CSV exported from Spritmonitor into your fuel log',
+    cta: 'Choose CSV',
+    busyCta: 'Reading…',
+    pickAria: 'Pick a Spritmonitor CSV',
+    statImported: 'Imported',
+    statDuplicates: 'Duplicates',
+    statSkipped: 'Errors',
+    showSkipped: 'Show skipped rows',
+    row: 'Row',
+    andMore: '… and {n} more',
+    confirmCta: 'Import {n} entries',
+    successTitle: 'Import complete',
+    successDesc: '{imported} imported, {duplicates} duplicates skipped, {skipped} rows with errors.',
+    errorTitle: 'Could not read CSV',
+  },
+
   receiptScanner: {
     cta: 'Scan receipt',
     busyCta: 'Reading receipt…',

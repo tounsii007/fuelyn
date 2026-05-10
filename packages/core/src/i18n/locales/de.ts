@@ -445,6 +445,24 @@ export const de = {
     },
   },
 
+  spritmonitor: {
+    title: 'Spritmonitor.de Import',
+    desc: 'CSV-Export von Spritmonitor in dein Tank-Logbuch übernehmen',
+    cta: 'CSV wählen',
+    busyCta: 'Lese…',
+    pickAria: 'Spritmonitor-CSV auswählen',
+    statImported: 'Importiert',
+    statDuplicates: 'Duplikate',
+    statSkipped: 'Fehler',
+    showSkipped: 'Übersprungene Zeilen anzeigen',
+    row: 'Zeile',
+    andMore: '… und {n} weitere',
+    confirmCta: '{n} Einträge importieren',
+    successTitle: 'Import abgeschlossen',
+    successDesc: '{imported} importiert, {duplicates} Duplikate übersprungen, {skipped} Zeilen mit Fehlern.',
+    errorTitle: 'CSV konnte nicht gelesen werden',
+  },
+
   receiptScanner: {
     cta: 'Beleg scannen',
     busyCta: 'Lese Beleg…',

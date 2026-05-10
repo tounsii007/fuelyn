@@ -12,6 +12,7 @@ import { useTranslations } from '@/lib/hooks/use-translations';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from '@fuelyn/core';
 import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
+import { SpritmonitorImport } from '@/components/settings/SpritmonitorImport';
 
 // ─── Background variants ────────────────────────────────────
 //
@@ -394,6 +395,13 @@ export function SettingsPage() {
                 merges it back. The full action lives in
                 ImportExportRow so the existing render stays scannable. */}
             <ImportExportRow />
+
+            {/* Spritmonitor.de CSV import — separate row because
+                it's a one-way bridge from a third-party tool, not
+                a Fuelyn-native backup format. Same Data card so
+                everything that touches stored history is in one
+                place. */}
+            <SpritmonitorImport />
 
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-gray-400 dark:text-gray-500">

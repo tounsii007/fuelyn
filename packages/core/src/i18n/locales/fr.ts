@@ -443,6 +443,24 @@ export const fr: TranslationKeys = {
     },
   },
 
+  spritmonitor: {
+    title: 'Import Spritmonitor.de',
+    desc: 'Importez un CSV exporté depuis Spritmonitor dans votre journal',
+    cta: 'Choisir un CSV',
+    busyCta: 'Lecture…',
+    pickAria: 'Choisir un CSV Spritmonitor',
+    statImported: 'Importés',
+    statDuplicates: 'Doublons',
+    statSkipped: 'Erreurs',
+    showSkipped: 'Afficher les lignes ignorées',
+    row: 'Ligne',
+    andMore: '… et {n} de plus',
+    confirmCta: 'Importer {n} entrées',
+    successTitle: 'Import terminé',
+    successDesc: '{imported} importés, {duplicates} doublons ignorés, {skipped} lignes avec erreurs.',
+    errorTitle: 'CSV illisible',
+  },
+
   receiptScanner: {
     cta: 'Scanner le ticket',
     busyCta: 'Lecture du ticket…',

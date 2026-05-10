@@ -257,6 +257,18 @@ export {
   AVERAGE_SPEED_KMH,
 } from './config/constants';
 
+// Spritmonitor.de CSV importer (consumed by web's settings page)
+export type {
+  SpritmonitorImportResult,
+  SpritmonitorRow,
+  ImportError as SpritmonitorImportError,
+  ImportOptions as SpritmonitorImportOptions,
+} from './spritmonitor/import';
+export {
+  parseSpritmonitorCsv,
+  splitCsvRow as splitSpritmonitorCsvRow,
+} from './spritmonitor/import';
+
 // Lightweight 24h price prediction
 export type {
   PricePrediction,

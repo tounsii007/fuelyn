@@ -39,6 +39,15 @@ function ThemeSync() {
 }
 
 import { SettingsPage } from '../settings/SettingsPage';
+import { ToastProvider } from '../ui/Toast';
+
+// Wrap in ToastProvider — SpritmonitorImport (mounted in the
+// Data section) calls useToast(), so without the provider the
+// whole SettingsPage render fails. Fake context kept minimal:
+// the test doesn't interact with the import button at all.
+function renderSettings(node: React.ReactNode) {
+  return render(<ToastProvider>{node}</ToastProvider>);
+}
 
 describe('Background variant picker', () => {
   beforeEach(() => {
@@ -52,14 +61,14 @@ describe('Background variant picker', () => {
   afterEach(() => cleanup());
 
   it('initial render — store default propagates to <html data-bg>', async () => {
-    render(<><ThemeSync /><SettingsPage /></>);
+    renderSettings(<><ThemeSync /><SettingsPage /></>);
     // First effect cycle should land on aurora
     await act(async () => {});
     expect(document.documentElement.getAttribute('data-bg')).toBe('aurora');
   });
 
   it('clicking Sunset updates store AND cascades to <html data-bg="sunset">', async () => {
-    render(<><ThemeSync /><SettingsPage /></>);
+    renderSettings(<><ThemeSync /><SettingsPage /></>);
 
     const sunsetButton = screen.getByRole('button', { name: /Sunset/ });
     fireEvent.click(sunsetButton);
@@ -74,7 +83,7 @@ describe('Background variant picker', () => {
   it.each<BackgroundVariant>(['aurora', 'sunset', 'ocean', 'forest', 'cyber', 'minimal'])(
     'all six variants round-trip cleanly: %s',
     async (variant) => {
-      render(<><ThemeSync /><SettingsPage /></>);
+      renderSettings(<><ThemeSync /><SettingsPage /></>);
       const button = screen.getByRole('button', { name: new RegExp(variant, 'i') });
 
       fireEvent.click(button);
@@ -86,7 +95,7 @@ describe('Background variant picker', () => {
   );
 
   it('aria-pressed reflects the active variant', async () => {
-    render(<><ThemeSync /><SettingsPage /></>);
+    renderSettings(<><ThemeSync /><SettingsPage /></>);
     const ocean = screen.getByRole('button', { name: /Ocean/ });
 
     expect(ocean).toHaveAttribute('aria-pressed', 'false');
