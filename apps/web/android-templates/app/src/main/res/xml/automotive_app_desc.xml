@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Fuelyn — Android Auto descriptor.
+  Place at app/src/main/res/xml/automotive_app_desc.xml after `pnpm cap:add:android`.
+  Then reference from AndroidManifest.xml:
+
+    <meta-data android:name="com.google.android.gms.car.application"
+               android:resource="@xml/automotive_app_desc" />
+-->
+<automotiveApp>
+  <uses name="template" />
+</automotiveApp>
