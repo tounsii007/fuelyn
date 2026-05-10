@@ -359,6 +359,18 @@ export const enUS: TranslationKeys = {
     removeAria: 'Delete alert',
   },
 
+  appShell: {
+    mainNavAria: 'Main navigation',
+    fuelTypeAria: 'Choose fuel type',
+    radiusAria: 'Choose search radius',
+    toggleListView: 'Show list view',
+    toggleMapView: 'Show map view',
+    brandHomeAria: 'Fuelyn home',
+    commandPaletteAria: 'Open quick search',
+    moreLabel: 'More',
+    searchPlaceholder: 'Search',
+  },
+
   hero: {
     headlinePart1: 'Fill up,',
     headlinePart2: 'when it’s genuinely cheap.',

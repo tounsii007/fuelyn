@@ -19,8 +19,10 @@ import type { FuelType } from '@fuelyn/core';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/lib/theme/ThemeProvider';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslations();
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const setFuelType = useAppStore((s) => s.setFuelType);
   const radiusKm = useAppStore((s) => s.filter.radiusKm);
@@ -74,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ┌─────────┐ │ ┌──────────────────┐ │ ┌──────────┐ │ ┌──────────────┐ │ ┌─────┐
               │ Search  │ │ │ Fuel · Radius    │ │ │ View     │ │ │ Personal     │ │ │ More│
               └─────────┘ │ └──────────────────┘ │ └──────────┘ │ └──────────────┘ │ └─────┘ */}
-          <nav aria-label="Hauptnavigation" className="flex items-center gap-1.5">
+          <nav aria-label={t('appShell.mainNavAria')} className="flex items-center gap-1.5">
             <CommandTrigger />
 
             <Divider />
@@ -87,31 +89,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 value,
                 label,
               }))}
-              ariaLabel="Kraftstoffart wählen"
+              ariaLabel={t('appShell.fuelTypeAria')}
             />
             <PopoverSelect
               icon={<RadiusIcon />}
               value={String(radiusKm)}
               onChange={(v) => setFilter({ radiusKm: Number(v) })}
               options={RADIUS_OPTIONS_KM.map((r) => ({ value: String(r), label: `${r} km` }))}
-              ariaLabel="Suchradius wählen"
+              ariaLabel={t('appShell.radiusAria')}
             />
 
             <Divider />
 
             <IconButton
               onClick={toggleView}
-              label={isMapView ? 'Listenansicht anzeigen' : 'Kartenansicht anzeigen'}
+              label={isMapView ? t('appShell.toggleListView') : t('appShell.toggleMapView')}
             >
               {isMapView ? <ListIcon /> : <MapIcon />}
             </IconButton>
 
             <Divider />
 
-            <IconLink href="/vehicle" label="Fahrzeug">
+            <IconLink href="/vehicle" label={t('nav.vehicle')}>
               <CarIcon />
             </IconLink>
-            <IconLink href="/favorites" label="Favoriten">
+            <IconLink href="/favorites" label={t('nav.favorites')}>
               <HeartIcon />
             </IconLink>
 
@@ -121,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <ThemeQuickToggle />
 
-            <IconLink href="/settings" label="Einstellungen">
+            <IconLink href="/settings" label={t('nav.settings')}>
               <CogIcon />
             </IconLink>
 
@@ -147,8 +149,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 // ─── Brand ─────────────────────────────────────────────────
 
 function Brand() {
+  const { t } = useTranslations();
   return (
-    <Link href="/" className="flex items-center gap-2.5 group" aria-label="Fuelyn Startseite">
+    <Link href="/" className="flex items-center gap-2.5 group" aria-label={t('appShell.brandHomeAria')}>
       {/*
         Fuelyn glyph — abstract "F" cut from a fuel-drop silhouette.
         Lives inside a deep-navy → electric-blue → violet gradient
@@ -192,20 +195,21 @@ function Brand() {
 // ─── Command palette trigger (⌘K) ────────────────────────
 
 function CommandTrigger() {
+  const { t } = useTranslations();
   return (
     <button
       type="button"
       onClick={() => {
         window.dispatchEvent(new CustomEvent('tp:open-command-palette'));
       }}
-      aria-label="Schnellsuche öffnen"
+      aria-label={t('appShell.commandPaletteAria')}
       className="hidden md:inline-flex items-center gap-2 h-8 px-3 rounded-[var(--radius-pill)]
                  fy-glass-subtle text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
                  border border-[var(--color-border)] fy-press
                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-500)]/40"
     >
       <SearchIcon />
-      <span>Suchen</span>
+      <span>{t('appShell.searchPlaceholder')}</span>
       <kbd
         className="ml-1 hidden lg:inline-block text-[10px] font-mono text-[var(--color-fg-subtle)]
                    border border-[var(--color-border)] rounded px-1.5 py-0.5 leading-none"
@@ -473,6 +477,7 @@ type MoreMenuItem =
   | { kind: 'action'; onClick: () => void; label: string; desc: string; icon: React.ReactNode };
 
 function MoreMenu() {
+  const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -562,7 +567,7 @@ function MoreMenu() {
     {
       title: 'Hilfe',
       items: [
-        { kind: 'action', onClick: () => setShortcutsOpen((v) => !v), label: 'Tastenkürzel', desc: 'Befehle und Shortcuts', icon: <KeyboardIcon /> },
+        { kind: 'action', onClick: () => setShortcutsOpen((v) => !v), label: t('shortcuts.title'), desc: 'Befehle und Shortcuts', icon: <KeyboardIcon /> },
         { kind: 'link', href: '/settings', label: 'Einstellungen & Über', desc: 'Theme, Sprache, Privatsphäre', icon: <CogIcon /> },
       ],
     },
@@ -570,7 +575,7 @@ function MoreMenu() {
 
   return (
     <div className="relative" ref={menuRef}>
-      <IconButton onClick={() => setOpen(!open)} label="Mehr">
+      <IconButton onClick={() => setOpen(!open)} label={t('appShell.moreLabel')}>
         <DotsIcon />
       </IconButton>
 
@@ -634,7 +639,10 @@ function MoreMenu() {
                       // toggle so users can flip the popup without
                       // re-opening the menu; close on every other
                       // action so the focus returns to the page.
-                      if (item.label !== 'Tastenkürzel') setOpen(false);
+                      // Compare against the active locale's label
+                      // string so the check stays correct when the
+                      // user has switched language.
+                      if (item.label !== t('shortcuts.title')) setOpen(false);
                     }}
                     role="menuitem"
                     className={cls}
@@ -652,12 +660,12 @@ function MoreMenu() {
           {shortcutsOpen && (
             <div className="mt-2 rounded-[var(--radius-lg)] bg-gray-50 dark:bg-gray-800/60 p-3
                             text-xs text-[var(--color-fg-subtle)] space-y-1.5">
-              <div className="font-semibold text-[var(--color-fg)] mb-1">Tastenkürzel</div>
-              <KbdRow keys={['⌘ / Ctrl', 'K']}   label="Befehlspalette öffnen" />
-              <KbdRow keys={['Esc']}              label="Dialoge & Popups schließen" />
-              <KbdRow keys={['↑ / ↓']}             label="In Listen navigieren" />
-              <KbdRow keys={['Enter']}             label="Auswahl bestätigen" />
-              <KbdRow keys={['Rechtsklick / Halten']} label="Pin auf Karte setzen" />
+              <div className="font-semibold text-[var(--color-fg)] mb-1">{t('shortcuts.title')}</div>
+              <KbdRow keys={['⌘ / Ctrl', 'K']}   label={t('shortcuts.cmdK')} />
+              <KbdRow keys={['Esc']}              label={t('shortcuts.esc')} />
+              <KbdRow keys={['↑ / ↓']}             label={t('shortcuts.arrowKeys')} />
+              <KbdRow keys={['Enter']}             label={t('shortcuts.enter')} />
+              <KbdRow keys={['Rechtsklick / Halten']} label={t('shortcuts.pinDrop')} />
             </div>
           )}
 

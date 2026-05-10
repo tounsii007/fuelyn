@@ -361,6 +361,18 @@ export const de = {
     removeAria: 'Alarm löschen',
   },
 
+  appShell: {
+    mainNavAria: 'Hauptnavigation',
+    fuelTypeAria: 'Kraftstoffart wählen',
+    radiusAria: 'Suchradius wählen',
+    toggleListView: 'Listenansicht anzeigen',
+    toggleMapView: 'Kartenansicht anzeigen',
+    brandHomeAria: 'Fuelyn Startseite',
+    commandPaletteAria: 'Schnellsuche öffnen',
+    moreLabel: 'Mehr',
+    searchPlaceholder: 'Suchen',
+  },
+
   hero: {
     headlinePart1: 'Tanken,',
     headlinePart2: 'wenn es wirklich günstig ist.',

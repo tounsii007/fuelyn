@@ -359,6 +359,18 @@ export const fr: TranslationKeys = {
     removeAria: 'Supprimer l’alerte',
   },
 
+  appShell: {
+    mainNavAria: 'Navigation principale',
+    fuelTypeAria: 'Choisir le carburant',
+    radiusAria: 'Choisir le rayon de recherche',
+    toggleListView: 'Afficher la liste',
+    toggleMapView: 'Afficher la carte',
+    brandHomeAria: 'Accueil Fuelyn',
+    commandPaletteAria: 'Ouvrir la recherche rapide',
+    moreLabel: 'Plus',
+    searchPlaceholder: 'Rechercher',
+  },
+
   hero: {
     headlinePart1: 'Faites le plein,',
     headlinePart2: 'quand c’est vraiment moins cher.',

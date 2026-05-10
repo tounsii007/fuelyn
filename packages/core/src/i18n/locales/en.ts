@@ -353,6 +353,18 @@ export const en: TranslationKeys = {
     removeAria: 'Delete alarm',
   },
 
+  appShell: {
+    mainNavAria: 'Main navigation',
+    fuelTypeAria: 'Choose fuel type',
+    radiusAria: 'Choose search radius',
+    toggleListView: 'Show list view',
+    toggleMapView: 'Show map view',
+    brandHomeAria: 'Fuelyn home',
+    commandPaletteAria: 'Open quick search',
+    moreLabel: 'More',
+    searchPlaceholder: 'Search',
+  },
+
   hero: {
     headlinePart1: 'Fuel up,',
     headlinePart2: 'when it’s actually cheap.',
