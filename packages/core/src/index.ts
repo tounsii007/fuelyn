@@ -246,6 +246,22 @@ export {
   formatAddress,
 } from './utils';
 
+// Locale-aware unit conversion (Iter AG — en-US imperial polish)
+export type { UnitSystem } from './utils/units';
+export {
+  unitSystemForLocale,
+  kmToMiles,
+  milesToKm,
+  litresToGallons,
+  gallonsToLitres,
+  eurPerLiterToUsdPerGallon,
+  lPer100kmToMpg,
+  mpgToLPer100km,
+  formatDistanceLocalized,
+  formatPriceLocalized,
+  formatConsumptionLocalized,
+} from './utils/units';
+
 // Config
 export {
   API_BASE_URL,
