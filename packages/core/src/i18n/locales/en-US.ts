@@ -359,6 +359,26 @@ export const enUS: TranslationKeys = {
     removeAria: 'Delete alert',
   },
 
+  hero: {
+    headlinePart1: 'Fill up,',
+    headlinePart2: 'when it’s genuinely cheap.',
+    body: 'Allow location access for live prices nearby — or look around Berlin first.',
+    ctaShare: 'Share location',
+    ctaDemo: 'Open demo (Berlin)',
+    highlightLive: 'Live prices',
+    highlightSmart: 'Smart pick',
+    highlightTrend: 'Price trends',
+    highlightEv: 'EV + hydrogen',
+    featureSmartTitle: 'Smart pick',
+    featureSmartBody: 'Not just the cheapest — the smartest station for your route.',
+    featureMarketTitle: 'Market context',
+    featureMarketBody: '±¢ vs. avg for every station. Knowing what cheap actually means.',
+    featureBestTimeTitle: 'Best time',
+    featureBestTimeBody: 'When it typically gets cheaper — by weekday and hour.',
+    privacyNote:
+      '🔒 Your location never leaves your device. We send coordinates only — never identifiers.',
+  },
+
   shortcuts: {
     title: 'Keyboard shortcuts',
     cmdK: 'Open command palette',

@@ -361,6 +361,26 @@ export const de = {
     removeAria: 'Alarm löschen',
   },
 
+  hero: {
+    headlinePart1: 'Tanken,',
+    headlinePart2: 'wenn es wirklich günstig ist.',
+    body: 'Erlaube den Standortzugriff für Live-Preise in deiner Nähe — oder schaue dich erstmal in Berlin um.',
+    ctaShare: 'Standort freigeben',
+    ctaDemo: 'Demo öffnen (Berlin)',
+    highlightLive: 'Live-Preise',
+    highlightSmart: 'Smart-Empfehlung',
+    highlightTrend: 'Preis-Trends',
+    highlightEv: 'EV + Wasserstoff',
+    featureSmartTitle: 'Smart-Empfehlung',
+    featureSmartBody: 'Nicht nur die billigste — die sinnvollste Tankstelle für deine Strecke.',
+    featureMarketTitle: 'Markt-Kontext',
+    featureMarketBody: '±ct vs. Schnitt für jede Tankstelle. Wissen, was günstig wirklich heißt.',
+    featureBestTimeTitle: 'Beste Zeit',
+    featureBestTimeBody: 'Wann es typischerweise billiger wird — pro Wochentag und Uhrzeit.',
+    privacyNote:
+      '🔒 Dein Standort verlässt nie dein Gerät. Wir senden nur Koordinaten an unseren Server, niemals Identifier.',
+  },
+
   shortcuts: {
     title: 'Tastenkürzel',
     cmdK: 'Befehlspalette öffnen',

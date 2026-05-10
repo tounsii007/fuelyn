@@ -359,6 +359,26 @@ export const fr: TranslationKeys = {
     removeAria: 'Supprimer l’alerte',
   },
 
+  hero: {
+    headlinePart1: 'Faites le plein,',
+    headlinePart2: 'quand c’est vraiment moins cher.',
+    body: 'Autorisez la localisation pour les prix en direct près de chez vous — ou explorez d’abord Berlin.',
+    ctaShare: 'Partager ma position',
+    ctaDemo: 'Ouvrir la démo (Berlin)',
+    highlightLive: 'Prix en direct',
+    highlightSmart: 'Choix intelligent',
+    highlightTrend: 'Tendances de prix',
+    highlightEv: 'VE + hydrogène',
+    featureSmartTitle: 'Choix intelligent',
+    featureSmartBody: 'Pas la moins chère — la plus pertinente pour votre trajet.',
+    featureMarketTitle: 'Contexte marché',
+    featureMarketBody: '±ct vs moyenne pour chaque station. Savoir ce que « pas cher » signifie vraiment.',
+    featureBestTimeTitle: 'Meilleur moment',
+    featureBestTimeBody: 'Quand le prix baisse typiquement — par jour de la semaine et heure.',
+    privacyNote:
+      '🔒 Votre position ne quitte jamais votre appareil. Nous envoyons uniquement des coordonnées au serveur, jamais d’identifiants.',
+  },
+
   shortcuts: {
     title: 'Raccourcis clavier',
     cmdK: 'Ouvrir la palette de commandes',

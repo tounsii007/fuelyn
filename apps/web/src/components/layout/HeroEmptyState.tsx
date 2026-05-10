@@ -7,17 +7,22 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 interface HeroEmptyStateProps {
   onRequestLocation: () => void;
   onUseDemoLocation: () => void;
 }
 
+// Highlight chip definitions — labels resolved at render time
+// from the active locale via the matching `hero.highlight*` key.
+// IDs are kept stable (used as React keys + tone lookup) so the
+// list shape stays intact across translations.
 const HIGHLIGHTS = [
-  { icon: '⚡', label: 'Live-Preise', tone: 'brand' as const },
-  { icon: '🎯', label: 'Smart-Empfehlung', tone: 'accent' as const },
-  { icon: '📈', label: 'Preis-Trends', tone: 'info' as const },
-  { icon: '🔋', label: 'EV + Wasserstoff', tone: 'warning' as const },
+  { id: 'live',  icon: '⚡', labelKey: 'hero.highlightLive',  tone: 'brand'   as const },
+  { id: 'smart', icon: '🎯', labelKey: 'hero.highlightSmart', tone: 'accent'  as const },
+  { id: 'trend', icon: '📈', labelKey: 'hero.highlightTrend', tone: 'info'    as const },
+  { id: 'ev',    icon: '🔋', labelKey: 'hero.highlightEv',    tone: 'warning' as const },
 ];
 
 const TONE_CLASS = {
@@ -31,6 +36,7 @@ export function HeroEmptyState({
   onRequestLocation,
   onUseDemoLocation,
 }: HeroEmptyStateProps) {
+  const { t } = useTranslations();
   return (
     <section className="relative w-full h-full flex items-center justify-center overflow-hidden">
       {/* Layered mesh + decorative orbs */}
@@ -64,23 +70,22 @@ export function HeroEmptyState({
 
         {/* Headline */}
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.05]">
-          <span className="fy-text-gradient">Tanken,</span> wenn es{' '}
+          <span className="fy-text-gradient">{t('hero.headlinePart1')}</span>{' '}
           <br className="hidden md:block" />
-          wirklich günstig ist.
+          {t('hero.headlinePart2')}
         </h1>
 
         <p className="mt-5 text-base md:text-lg text-[var(--color-fg-muted)] max-w-md mx-auto leading-relaxed">
-          Erlaube den Standortzugriff für Live-Preise in deiner Nähe — oder schaue
-          dich erstmal in Berlin um.
+          {t('hero.body')}
         </p>
 
         {/* CTAs */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button size="lg" onClick={onRequestLocation} leadingIcon={<LocationIcon />}>
-            Standort freigeben
+            {t('hero.ctaShare')}
           </Button>
           <Button size="lg" variant="ghost" onClick={onUseDemoLocation}>
-            Demo öffnen (Berlin)
+            {t('hero.ctaDemo')}
           </Button>
         </div>
 
@@ -88,7 +93,7 @@ export function HeroEmptyState({
         <ul className="mt-10 flex flex-wrap items-center justify-center gap-2">
           {HIGHLIGHTS.map((h, i) => (
             <li
-              key={h.label}
+              key={h.id}
               className={[
                 'inline-flex items-center gap-1.5 h-8 px-3 rounded-[var(--radius-pill)]',
                 'text-xs font-medium fy-glass-subtle border border-[var(--color-border-subtle)]',
@@ -97,7 +102,7 @@ export function HeroEmptyState({
               style={{ animation: `fy-enter 350ms var(--ease-spring) ${i * 60 + 120}ms both` }}
             >
               <span aria-hidden>{h.icon}</span>
-              {h.label}
+              {t(h.labelKey)}
             </li>
           ))}
         </ul>
@@ -112,25 +117,24 @@ export function HeroEmptyState({
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
           <FeatureTile
             icon="🎯"
-            title="Smart-Empfehlung"
-            body="Nicht nur die billigste — die sinnvollste Tankstelle für deine Strecke."
+            title={t('hero.featureSmartTitle')}
+            body={t('hero.featureSmartBody')}
           />
           <FeatureTile
             icon="📈"
-            title="Markt-Kontext"
-            body="±ct vs. Schnitt für jede Tankstelle. Wissen, was günstig wirklich heißt."
+            title={t('hero.featureMarketTitle')}
+            body={t('hero.featureMarketBody')}
           />
           <FeatureTile
             icon="⏰"
-            title="Beste Zeit"
-            body="Wann es typischerweise billiger wird — pro Wochentag und Uhrzeit."
+            title={t('hero.featureBestTimeTitle')}
+            body={t('hero.featureBestTimeBody')}
           />
         </div>
 
         {/* Privacy note */}
         <p className="mt-8 text-xs text-[var(--color-fg-subtle)]">
-          🔒 Dein Standort verlässt nie dein Gerät. Wir senden nur Koordinaten an unseren Server,
-          niemals Identifier.
+          {t('hero.privacyNote')}
         </p>
       </div>
     </section>
