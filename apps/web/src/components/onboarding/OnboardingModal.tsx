@@ -8,16 +8,17 @@
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { FuelType } from '@fuelyn/core';
 
-const STEPS = [
-  { id: 'welcome', title: 'Willkommen bei Fuelyn' },
-  { id: 'fuel', title: 'Dein Kraftstoff' },
-  { id: 'tips', title: 'So funktioniert es' },
-] as const;
+// STEPS array kept as IDs only — the visible titles are pulled
+// from the active locale at render time so we never carry a
+// hardcoded German title around in the bundled JS.
+const STEP_IDS = ['welcome', 'fuel', 'tips'] as const;
 
 export function OnboardingModal() {
+  const { t } = useTranslations();
   const hydrated = useIsHydrated();
   const onboardingDone = useAppStore((s) => s.onboardingDone);
   const setOnboardingDone = useAppStore((s) => s.setOnboardingDone);
@@ -32,7 +33,7 @@ export function OnboardingModal() {
       setFuelType(selectedFuel);
       updateSettings({ defaultFuelType: selectedFuel });
     }
-    if (step < STEPS.length - 1) {
+    if (step < STEP_IDS.length - 1) {
       setStep(step + 1);
     } else {
       setOnboardingDone(true);
@@ -59,7 +60,7 @@ export function OnboardingModal() {
                       rounded-3xl shadow-xl animate-scale-in overflow-hidden">
         {/* Progress dots */}
         <div className="flex justify-center gap-2 pt-5">
-          {STEPS.map((_, i) => (
+          {STEP_IDS.map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -81,11 +82,10 @@ export function OnboardingModal() {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Willkommen bei Fuelyn
+                {t('onboarding.welcome')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                Finde nicht nur die billigste, sondern die <strong>sinnvollste</strong> Tankstelle
-                in deiner N&auml;he &mdash; basierend auf Preis, Entfernung und Erreichbarkeit.
+                {t('onboarding.welcomeBody')}
               </p>
             </div>
           )}
@@ -94,10 +94,10 @@ export function OnboardingModal() {
           {step === 1 && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 text-center">
-                Was tankst du?
+                {t('onboarding.fuelQuestion')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 text-center">
-                W&auml;hle deinen Standard-Kraftstoff
+                {t('onboarding.fuelSelect')}
               </p>
               <div className="space-y-2">
                 {(Object.entries(FUEL_TYPE_LABELS) as [FuelType, string][]).map(([value, label]) => (
@@ -135,23 +135,23 @@ export function OnboardingModal() {
           {step === 2 && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
-                So funktioniert&apos;s
+                {t('onboarding.howItWorks')}
               </h2>
               <div className="space-y-4">
                 <TipRow
                   icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>}
-                  title="Karte & Liste"
-                  text="Wechsle zwischen Karten- und Listenansicht"
+                  title={t('onboarding.tipMapTitle')}
+                  text={t('onboarding.tipMapText')}
                 />
                 <TipRow
                   icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>}
-                  title="Beste Empfehlung"
-                  text="Der Stern zeigt dir die sinnvollste Tankstelle"
+                  title={t('onboarding.tipStarTitle')}
+                  text={t('onboarding.tipStarText')}
                 />
                 <TipRow
                   icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>}
-                  title="Fahrzeugprofil"
-                  text="Hinterlege dein Auto für Reichweiten-Checks"
+                  title={t('onboarding.tipVehicleTitle')}
+                  text={t('onboarding.tipVehicleText')}
                 />
               </div>
             </div>
@@ -164,7 +164,9 @@ export function OnboardingModal() {
             className="w-full mt-6 py-3 bg-brand-600 text-white text-sm font-semibold
                        rounded-xl hover:bg-brand-700 active:bg-brand-800 transition-colors shadow-sm"
           >
-            {step < STEPS.length - 1 ? 'Weiter' : 'Los geht\u2019s'}
+            {step < STEP_IDS.length - 1
+              ? t('onboarding.continue')
+              : t('onboarding.getStarted')}
           </button>
 
           {/* Skip */}
@@ -174,7 +176,7 @@ export function OnboardingModal() {
               onClick={() => setOnboardingDone(true)}
               className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              &Uuml;berspringen
+              {t('onboarding.skip')}
             </button>
           )}
         </div>

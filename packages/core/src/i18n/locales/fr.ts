@@ -213,6 +213,8 @@ export const fr: TranslationKeys = {
 
   onboarding: {
     welcome: 'Bienvenue sur Fuelyn',
+    welcomeBody:
+      'Trouvez non pas la station la moins chère, mais la plus pertinente près de chez vous — selon le prix, la distance et l’accessibilité.',
     subtitle: 'Trouvez la meilleure station — pas seulement la moins chère.',
     fuelQuestion: 'Quel carburant utilisez-vous ?',
     fuelSelect: 'Choisissez votre carburant par défaut',

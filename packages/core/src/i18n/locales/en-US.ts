@@ -214,6 +214,8 @@ export const enUS: TranslationKeys = {
 
   onboarding: {
     welcome: 'Welcome to Fuelyn',
+    welcomeBody:
+      'Find not just the cheapest gas station, but the smartest one nearby — weighing price, distance, and how reachable it actually is.',
     subtitle: 'Find the best gas station — not just the cheapest.',
     fuelQuestion: 'What do you drive?',
     fuelSelect: 'Pick your default fuel',

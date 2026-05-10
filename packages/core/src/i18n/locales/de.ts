@@ -209,6 +209,8 @@ export const de = {
 
   onboarding: {
     welcome: 'Willkommen bei Fuelyn',
+    welcomeBody:
+      'Finde nicht nur die billigste, sondern die sinnvollste Tankstelle in deiner Nähe — basierend auf Preis, Entfernung und Erreichbarkeit.',
     subtitle: 'Finde die beste Tankstelle — nicht nur die billigste.',
     fuelQuestion: 'Was tankst du?',
     fuelSelect: 'Wähle deinen Standard-Kraftstoff',
