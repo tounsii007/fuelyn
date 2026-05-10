@@ -1,0 +1,10 @@
+{
+  "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+  "stationBrand": "Fuelyn",
+  "address": "Standort wird geladen…",
+  "pricePerLiter": "—",
+  "distanceKm": "—",
+  "fuelType": "E10",
+  "updatedRelative": "gerade eben",
+  "deepLink": "/?source=widget-top-deal"
+}

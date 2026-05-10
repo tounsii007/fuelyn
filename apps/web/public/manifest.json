@@ -10,7 +10,59 @@
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Map",
+      "short_name": "Map",
+      "url": "/?source=shortcut-map",
+      "description": "Open the live fuel-station map",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Best Deal",
+      "short_name": "Top Deal",
+      "url": "/?source=shortcut-best-deal",
+      "description": "Jump to today's cheapest reachable station",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Fuel Log",
+      "short_name": "Log",
+      "url": "/fuel-log?source=shortcut-log",
+      "description": "Add a new fill-up entry",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Achievements",
+      "short_name": "Trophies",
+      "url": "/achievements?source=shortcut-trophies",
+      "description": "Your fuel-saving trophies",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Fuelyn — Top Deal",
+      "short_name": "Top Deal",
+      "description": "Live tile showing today's cheapest reachable station for your default fuel.",
+      "tag": "fuelyn-top-deal",
+      "ms_ac_template": "/widgets/top-deal/template.json",
+      "data": "/api/widgets/top-deal",
+      "type": "application/json",
+      "icons": [
+        { "src": "/icon.svg", "sizes": "any" }
+      ],
+      "auth": false,
+      "update": 900
+    }
+  ],
+  "categories": ["travel", "utilities", "productivity"],
+  "lang": "de",
+  "dir": "ltr",
+  "orientation": "any",
+  "prefer_related_applications": false
 }

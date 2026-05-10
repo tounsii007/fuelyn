@@ -1,0 +1,82 @@
+{
+  "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.6",
+  "speak": "Best fuel deal: ${stationBrand} at ${pricePerLiter} per litre",
+  "body": [
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "TOP DEAL · LIVE",
+          "weight": "bolder",
+          "size": "small",
+          "color": "accent",
+          "spacing": "none"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${stationBrand}",
+          "weight": "bolder",
+          "size": "extraLarge",
+          "spacing": "small",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "${address}",
+          "isSubtle": true,
+          "spacing": "none",
+          "size": "small",
+          "wrap": true
+        },
+        {
+          "type": "ColumnSet",
+          "spacing": "medium",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${pricePerLiter} €/L",
+                  "size": "extraLarge",
+                  "weight": "bolder",
+                  "color": "good"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${distanceKm} km · ${fuelType}",
+                  "isSubtle": true,
+                  "size": "small"
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "Updated ${updatedRelative}",
+                  "isSubtle": true,
+                  "size": "small",
+                  "spacing": "none"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.OpenUrl",
+      "title": "Open in Fuelyn",
+      "url": "${deepLink}"
+    }
+  ]
+}
