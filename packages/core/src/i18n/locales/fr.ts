@@ -443,6 +443,19 @@ export const fr: TranslationKeys = {
     },
   },
 
+  tripCost: {
+    title: 'Estimation coût carburant',
+    distance: 'Distance',
+    liters: 'Litres',
+    co2: 'CO₂',
+    roundTrip: 'Aller-retour',
+    modeRoad: 'Distance routière',
+    modeAir: 'Distance à vol d’oiseau',
+    needsRefuel: 'Vous aurez besoin de ~{fills} pleins — prévoyez un arrêt.',
+    assumesPrice: 'Hypothèse : {price}/L (moyenne régionale 30 jours)',
+    needsVehicle: 'Ajoutez votre véhicule pour estimer le coût carburant.',
+  },
+
   memberships: {
     title: 'Cartes de fidélité',
     subtitle: 'Activez vos cartes — les prix effectifs intègrent automatiquement la remise.',

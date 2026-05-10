@@ -443,6 +443,19 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  tripCost: {
+    title: 'Fuel-cost estimate',
+    distance: 'Distance',
+    liters: 'Liters',
+    co2: 'CO₂',
+    roundTrip: 'Round trip',
+    modeRoad: 'Road distance',
+    modeAir: 'Air distance',
+    needsRefuel: 'You need ~{fills} tank fills — plan a stop.',
+    assumesPrice: 'Assumes {price}/L (30-day regional average)',
+    needsVehicle: 'Add your vehicle to compute fuel costs.',
+  },
+
   memberships: {
     title: 'Loyalty cards',
     subtitle: 'Activate your cards — effective prices factor in the discount automatically.',

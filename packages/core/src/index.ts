@@ -269,6 +269,10 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Trip cost calculator
+export type { TripCostEstimate, TripCostInputs } from './engine/trip-cost';
+export { estimateTripCost, haversineDistanceKm } from './engine/trip-cost';
+
 // Brand membership / loyalty cards
 export type { MembershipDiscount, MembershipId } from './engine/membership-tiers';
 export {

@@ -445,6 +445,19 @@ export const de = {
     },
   },
 
+  tripCost: {
+    title: 'Spritkosten-Schätzung',
+    distance: 'Strecke',
+    liters: 'Liter',
+    co2: 'CO₂',
+    roundTrip: 'Hin & zurück',
+    modeRoad: 'Routendistanz',
+    modeAir: 'Luftlinie',
+    needsRefuel: 'Du brauchst etwa {fills} Tankfüllungen — plane einen Stopp ein.',
+    assumesPrice: 'Annahme: {price}/L (30-Tage-Mittel deiner Region)',
+    needsVehicle: 'Trage dein Fahrzeug ein, um Spritkosten zu berechnen.',
+  },
+
   memberships: {
     title: 'Tankkarten / Programme',
     subtitle: 'Aktiviere deine Karten — die Effektivpreise rechnen den Rabatt automatisch ein.',
