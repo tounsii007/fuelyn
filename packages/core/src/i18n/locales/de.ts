@@ -692,6 +692,7 @@ export const de = {
     errorTitle: 'Checkout fehlgeschlagen',
     stubTitle: 'Premium aktiviert (Dev-Modus)',
     stubDesc: 'Stripe-Schlüssel nicht gesetzt — Premium ist lokal aktiviert.',
+    managePortalCta: 'Abo verwalten',
     featureTitles: {
       'ai-chat-pro':           'KI-Chat ohne Limit',
       'price-prediction-7d':   '7-Tage-Preis-Prognose',

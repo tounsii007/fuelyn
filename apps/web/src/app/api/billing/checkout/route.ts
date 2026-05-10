@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { buildCheckoutSessionPayload } from '@fuelyn/core';
 import { parseJson } from '@/lib/http/validate';
+import { getOrCreateSession } from '@/lib/auth/session';
 
 const RequestSchema = z.object({
   priceLookupKey: z.enum(['fuelyn-monthly', 'fuelyn-annual']),
@@ -28,7 +29,13 @@ export async function POST(request: NextRequest) {
   const parsed = await parseJson(request, RequestSchema);
   if (!parsed.success) return parsed.response;
 
-  const payload = buildCheckoutSessionPayload(parsed.data, parsed.data.clientReferenceId);
+  // Resolve the calling user so we can pin client_reference_id to a
+  // real DB id (overriding any client-supplied value, which would
+  // otherwise be a spoof vector).
+  const session = await getOrCreateSession(request);
+  const clientRef = session?.userId ?? parsed.data.clientReferenceId;
+
+  const payload = buildCheckoutSessionPayload(parsed.data, clientRef);
 
   // Without real Stripe credentials we still want the UI flow to be
   // testable end-to-end. Echo the payload back with a stub URL so the

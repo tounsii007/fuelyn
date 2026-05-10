@@ -690,6 +690,7 @@ export const enUS: TranslationKeys = {
     errorTitle: 'Checkout failed',
     stubTitle: 'Premium activated (dev mode)',
     stubDesc: 'No Stripe key configured — premium is enabled locally.',
+    managePortalCta: 'Manage subscription',
     featureTitles: {
       'ai-chat-pro':           'Unlimited AI chat',
       'price-prediction-7d':   '7-day price forecast',

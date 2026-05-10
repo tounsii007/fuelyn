@@ -24,6 +24,28 @@ export function PremiumStatusCard() {
   const premium = isPremium(sub);
   const days = daysUntilExpiry(sub);
 
+  const openPortal = useCallback(async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/billing/portal', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.show({
+          tone: 'danger',
+          title: t('premium.errorTitle'),
+          description: data?.detail ?? data?.error ?? `HTTP ${res.status}`,
+        });
+        return;
+      }
+      if (data?.url) window.location.href = data.url;
+    } finally {
+      setBusy(false);
+    }
+  }, [t, toast]);
+
   const startCheckout = useCallback(
     async (priceLookupKey: 'fuelyn-monthly' | 'fuelyn-annual') => {
       setBusy(true);
@@ -92,6 +114,19 @@ export function PremiumStatusCard() {
           </span>
         )}
       </div>
+
+      {premium && (
+        <button
+          type="button"
+          onClick={openPortal}
+          disabled={busy}
+          className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2.5
+                     text-sm font-medium hover:bg-[var(--color-surface-hover)]
+                     disabled:opacity-50 transition-colors"
+        >
+          {t('premium.managePortalCta')}
+        </button>
+      )}
 
       {!premium && (
         <div className="grid grid-cols-2 gap-2">

@@ -690,6 +690,7 @@ export const fr: TranslationKeys = {
     errorTitle: 'Échec du paiement',
     stubTitle: 'Premium activé (mode dev)',
     stubDesc: 'Aucune clé Stripe configurée — premium activé localement.',
+    managePortalCta: 'Gérer l\'abonnement',
     featureTitles: {
       'ai-chat-pro':           'Chat IA illimité',
       'price-prediction-7d':   'Prévision 7 jours',
