@@ -35,7 +35,14 @@ npm-debug.log*
 .env.*.local
 *.pem
 *.key
+*.crt
 !apps/web/certificates/*.example.pem
+
+## ── Build output ────────────────────────────
+# packages/core publishes from src/ directly, dist/ is only built
+# locally for IDE inspection — never committed.
+packages/*/dist/
+**/dist/
 
 ## ── DB / data ───────────────────────────────
 backend/price-service/data/
