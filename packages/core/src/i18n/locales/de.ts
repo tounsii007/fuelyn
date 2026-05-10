@@ -445,6 +445,19 @@ export const de = {
     },
   },
 
+  memberships: {
+    title: 'Tankkarten / Programme',
+    subtitle: 'Aktiviere deine Karten — die Effektivpreise rechnen den Rabatt automatisch ein.',
+    cards: {
+      'aral-klubkarte':   { label: 'Aral Klubkarte' },
+      'shell-clubsmart':  { label: 'Shell ClubSmart' },
+      'esso-card':        { label: 'Esso Card' },
+      'total-card':       { label: 'Total Card' },
+      'jet-jetpoints':    { label: 'JET JetPoints' },
+      'star-prime':       { label: 'STAR Prime' },
+    },
+  },
+
   counterfactual: {
     title: 'Was wäre wenn …',
     subtitle: 'Hochrechnung auf Basis deines Logbuchs ({start} – {end})',

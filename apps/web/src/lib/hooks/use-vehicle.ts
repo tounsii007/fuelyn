@@ -100,6 +100,13 @@ const geoFencesStorage = createTypedStorage<z.infer<typeof geoFenceSchema>[]>(
   [],
 );
 
+const activeMembershipsStorage = createTypedStorage<string[]>(
+  adapter,
+  STORAGE_KEYS.ACTIVE_MEMBERSHIPS,
+  z.array(z.string()),
+  [],
+);
+
 const savedLocationsStorage = createTypedStorage<SavedLocation[]>(
   adapter,
   STORAGE_KEYS.SAVED_LOCATIONS,
@@ -129,6 +136,7 @@ export function useHydrateStore() {
   const fuelLog = useAppStore((s) => s.fuelLog);
   const savedLocations = useAppStore((s) => s.savedLocations);
   const geoFences = useAppStore((s) => s.geoFences);
+  const activeMemberships = useAppStore((s) => s.activeMemberships);
 
   // One-time hydration
   useEffect(() => {
@@ -136,7 +144,7 @@ export function useHydrateStore() {
     hydrated.current = true;
 
     void (async () => {
-      const [v, f, s, ob, pa, fl, sl, gf] = await Promise.all([
+      const [v, f, s, ob, pa, fl, sl, gf, am] = await Promise.all([
         vehicleStorage.get(),
         favoritesStorage.get(),
         settingsStorage.get(),
@@ -145,6 +153,7 @@ export function useHydrateStore() {
         fuelLogStorage.get(),
         savedLocationsStorage.get(),
         geoFencesStorage.get(),
+        activeMembershipsStorage.get(),
       ]);
 
       if (v) setVehicle(v);
@@ -161,6 +170,7 @@ export function useHydrateStore() {
         const store = useAppStore.getState();
         for (const fence of gf) store.addGeoFence(fence);
       }
+      if (am.length > 0) useAppStore.getState().setActiveMemberships(am);
     })();
   }, [setVehicle]);
 
@@ -204,6 +214,11 @@ export function useHydrateStore() {
     if (!hydrated.current) return;
     void geoFencesStorage.set(geoFences);
   }, [geoFences]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    void activeMembershipsStorage.set(activeMemberships);
+  }, [activeMemberships]);
 }
 
 /**

@@ -106,6 +106,7 @@ export const STORAGE_KEYS = {
   FUEL_LOG: 'fuelyn:fuelLog',
   PRICE_HISTORY: 'fuelyn:priceHistory',
   SAVED_LOCATIONS: 'fuelyn:savedLocations',
+  ACTIVE_MEMBERSHIPS: 'fuelyn:activeMemberships',
 } as const;
 
 // ─── Brands (common German fuel station brands) ──────────────

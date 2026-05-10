@@ -13,6 +13,7 @@ import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from '@fuelyn/core';
 import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
 import { SpritmonitorImport } from '@/components/settings/SpritmonitorImport';
+import { MembershipPicker } from '@/components/settings/MembershipPicker';
 
 // ─── Background variants ────────────────────────────────────
 //
@@ -290,6 +291,9 @@ export function SettingsPage() {
             ))}
           </div>
         </SettingsSection>
+
+        {/* ── Section: Brand-Loyalty Cards ─────────────── */}
+        <MembershipPicker />
 
         {/* ── Section: Search Radius ───────────────────── */}
         <SettingsSection

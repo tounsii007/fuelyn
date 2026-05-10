@@ -443,6 +443,19 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  memberships: {
+    title: 'Loyalty cards',
+    subtitle: 'Activate your cards — effective prices factor in the discount automatically.',
+    cards: {
+      'aral-klubkarte':   { label: 'Aral Klubkarte' },
+      'shell-clubsmart':  { label: 'Shell ClubSmart' },
+      'esso-card':        { label: 'Esso Card' },
+      'total-card':       { label: 'Total Card' },
+      'jet-jetpoints':    { label: 'JET JetPoints' },
+      'star-prime':       { label: 'STAR Prime' },
+    },
+  },
+
   counterfactual: {
     title: 'What if …',
     subtitle: 'Projected from your log ({start} – {end})',

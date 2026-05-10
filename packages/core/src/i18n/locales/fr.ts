@@ -443,6 +443,19 @@ export const fr: TranslationKeys = {
     },
   },
 
+  memberships: {
+    title: 'Cartes de fidélité',
+    subtitle: 'Activez vos cartes — les prix effectifs intègrent automatiquement la remise.',
+    cards: {
+      'aral-klubkarte':   { label: 'Aral Klubkarte' },
+      'shell-clubsmart':  { label: 'Shell ClubSmart' },
+      'esso-card':        { label: 'Esso Card' },
+      'total-card':       { label: 'Total Card' },
+      'jet-jetpoints':    { label: 'JET JetPoints' },
+      'star-prime':       { label: 'STAR Prime' },
+    },
+  },
+
   counterfactual: {
     title: 'Et si …',
     subtitle: 'Projection à partir de votre journal ({start} – {end})',

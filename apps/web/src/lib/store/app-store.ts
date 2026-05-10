@@ -97,6 +97,14 @@ interface AppState {
   setTheme: (theme: ThemeMode) => void;
   setLocale: (locale: AppLocale) => void;
 
+  // Brand membership / loyalty cards.
+  // Stored as a string-array of `MembershipId` values from
+  // @fuelyn/core. Stations of matching brands display the
+  // effective price (sticker minus card discount).
+  activeMemberships: string[];
+  toggleMembership: (id: string) => void;
+  setActiveMemberships: (ids: string[]) => void;
+
   // Map search (search from map center when panning)
   mapCenter: Coordinates | null;
   mapRadiusKm: number;
@@ -279,6 +287,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Settings
   settings: DEFAULT_SETTINGS,
+  activeMemberships: [],
+  toggleMembership: (id) =>
+    set((s) => ({
+      activeMemberships: s.activeMemberships.includes(id)
+        ? s.activeMemberships.filter((x) => x !== id)
+        : [...s.activeMemberships, id],
+    })),
+  setActiveMemberships: (ids) => set({ activeMemberships: [...new Set(ids)] }),
   updateSettings: (partial) =>
     set((s) => ({ settings: { ...s.settings, ...partial } })),
   setTheme: (theme) =>

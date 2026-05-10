@@ -269,6 +269,15 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Brand membership / loyalty cards
+export type { MembershipDiscount, MembershipId } from './engine/membership-tiers';
+export {
+  MEMBERSHIPS,
+  applyMembership,
+  findMembershipForBrand,
+  getMembershipById,
+} from './engine/membership-tiers';
+
 // Counterfactual scenarios
 export type {
   CounterfactualResult,
