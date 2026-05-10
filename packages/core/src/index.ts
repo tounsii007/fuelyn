@@ -269,6 +269,10 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Best-time heatmap
+export type { BestTimeHeatmap, HeatmapCell } from './engine/best-time-heatmap';
+export { buildBestTimeHeatmap } from './engine/best-time-heatmap';
+
 // CO₂ tracking
 export type { Co2Summary, MonthlyCo2Bucket } from './engine/co2-tracking';
 export {

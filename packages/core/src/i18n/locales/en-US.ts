@@ -443,6 +443,19 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  bestTimeHeatmap: {
+    title: 'Best time to fill up',
+    subtitle: 'Weekday × hour · {count} snapshots',
+    bestLabel: 'Cheapest slot',
+    worstLabel: 'Priciest slot',
+    empty: 'No price snapshots yet. Browse the map for a few days, then your pattern will show up here.',
+    confidence: {
+      high: 'high confidence',
+      medium: 'medium confidence',
+      low: 'low confidence',
+    },
+  },
+
   co2Dashboard: {
     title: 'CO₂ footprint',
     subtitle: 'Your emissions from the fuel log',

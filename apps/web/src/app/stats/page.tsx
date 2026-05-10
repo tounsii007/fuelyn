@@ -11,6 +11,7 @@ import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PriceHistoryChart } from '@/components/charts/PriceHistoryChart';
 import { ConsumptionTracker } from '@/components/intelligence/ConsumptionTracker';
+import { BestTimeHeatmap } from '@/components/stats/BestTimeHeatmap';
 
 export default function StatsPage() {
   const fuelLog = useAppStore((s) => s.fuelLog);
@@ -88,6 +89,11 @@ export default function StatsPage() {
 
       {/* KI Preisverlauf-Chart */}
       <PriceHistoryChart className="mb-4" />
+
+      {/* Best-Time heatmap — derived from the same priceHistory
+          stream as PriceHistoryChart but rendered as a 7×24 grid
+          so the user spots day/hour patterns at a glance. */}
+      <BestTimeHeatmap className="mb-4" />
 
       {/* Verbrauchstracker Widget */}
       <ConsumptionTracker className="mb-4" />

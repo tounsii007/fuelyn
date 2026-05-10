@@ -445,6 +445,19 @@ export const de = {
     },
   },
 
+  bestTimeHeatmap: {
+    title: 'Bester Tank-Zeitpunkt',
+    subtitle: 'Wochentag × Uhrzeit · {count} Snapshots',
+    bestLabel: 'Günstigster Slot',
+    worstLabel: 'Teuerster Slot',
+    empty: 'Noch keine Preis-Snapshots gesammelt. Browse die Karte ein paar Tage, dann erscheint hier dein Muster.',
+    confidence: {
+      high: 'hohe Konfidenz',
+      medium: 'mittlere Konfidenz',
+      low: 'geringe Konfidenz',
+    },
+  },
+
   co2Dashboard: {
     title: 'CO₂-Bilanz',
     subtitle: 'Deine Emissionen aus dem Tank-Logbuch',

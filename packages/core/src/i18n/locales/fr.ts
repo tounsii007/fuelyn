@@ -443,6 +443,19 @@ export const fr: TranslationKeys = {
     },
   },
 
+  bestTimeHeatmap: {
+    title: 'Meilleur moment pour faire le plein',
+    subtitle: 'Jour × heure · {count} relevés',
+    bestLabel: 'Créneau le moins cher',
+    worstLabel: 'Créneau le plus cher',
+    empty: 'Aucun relevé de prix encore. Explorez la carte quelques jours, votre motif apparaîtra ici.',
+    confidence: {
+      high: 'forte confiance',
+      medium: 'confiance moyenne',
+      low: 'faible confiance',
+    },
+  },
+
   co2Dashboard: {
     title: 'Empreinte CO₂',
     subtitle: 'Vos émissions issues du journal carburant',
