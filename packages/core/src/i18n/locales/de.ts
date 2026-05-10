@@ -445,6 +445,19 @@ export const de = {
     },
   },
 
+  counterfactual: {
+    title: 'Was wäre wenn …',
+    subtitle: 'Hochrechnung auf Basis deines Logbuchs ({start} – {end})',
+    scenario: {
+      'switch-to-hybrid':       { title: 'Mit Hybrid', desc: '~30% weniger Verbrauch.' },
+      'switch-to-ev':           { title: 'Mit Elektroauto', desc: '~18 kWh/100 km bei 0,45 €/kWh.' },
+      'switch-to-diesel':       { title: 'Mit Diesel-Auto', desc: 'Günstigere Kraftstoff­steuer + 15% weniger Verbrauch.' },
+      'switch-to-e10':          { title: 'Mit Super E10 statt E5', desc: '~1,5% billiger, ~1,5% mehr Verbrauch.' },
+      'fill-at-best-station':   { title: 'Bei der günstigsten Tanke', desc: 'Pro Tankvorgang die beste Säule im Umkreis.' },
+      'fill-before-8am':        { title: 'Vor 8 Uhr getankt', desc: 'Konsequent in der Morgen-Cheapness-Window.' },
+    },
+  },
+
   savingTips: {
     title: 'Spar-Tipps für dich',
     subtitle: 'Personalisierte Empfehlungen aus deinem Tank-Logbuch',

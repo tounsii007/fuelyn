@@ -443,6 +443,19 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  counterfactual: {
+    title: 'What if …',
+    subtitle: 'Projected from your log ({start} – {end})',
+    scenario: {
+      'switch-to-hybrid':       { title: 'With a hybrid', desc: '~30% lower consumption.' },
+      'switch-to-ev':           { title: 'With an EV', desc: '~18 kWh/100km at €0.45/kWh.' },
+      'switch-to-diesel':       { title: 'With a diesel', desc: 'Cheaper duty + ~15% lower consumption.' },
+      'switch-to-e10':          { title: 'On E10 instead of E5', desc: '~1.5% cheaper, ~1.5% more consumption.' },
+      'fill-at-best-station':   { title: 'At the cheapest station', desc: 'Always the best pump nearby.' },
+      'fill-before-8am':        { title: 'Filling before 8am', desc: 'Consistently in the morning cheap window.' },
+    },
+  },
+
   savingTips: {
     title: 'Saving tips for you',
     subtitle: 'Personalized suggestions from your fuel log',

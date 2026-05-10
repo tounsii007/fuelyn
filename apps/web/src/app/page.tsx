@@ -29,6 +29,7 @@ import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { PricePredictionCard } from '@/components/intelligence/PricePredictionCard';
 import { SmartBuyingScoreCard } from '@/components/intelligence/SmartBuyingScoreCard';
 import { SavingTipsCard } from '@/components/intelligence/SavingTipsCard';
+import { CounterfactualCard } from '@/components/intelligence/CounterfactualCard';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
@@ -438,6 +439,7 @@ export default function HomePage() {
                 <BestDealCard recommendations={recommendations} />
                 <SmartBuyingScoreCard />
                 <SavingTipsCard />
+                <CounterfactualCard />
                 <PricePredictionCard />
                 <PriceStats recommendations={recommendations} />
 

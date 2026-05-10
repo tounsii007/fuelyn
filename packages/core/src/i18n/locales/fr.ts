@@ -443,6 +443,19 @@ export const fr: TranslationKeys = {
     },
   },
 
+  counterfactual: {
+    title: 'Et si …',
+    subtitle: 'Projection à partir de votre journal ({start} – {end})',
+    scenario: {
+      'switch-to-hybrid':       { title: 'Avec un hybride', desc: '~30% de consommation en moins.' },
+      'switch-to-ev':           { title: 'Avec un véhicule électrique', desc: '~18 kWh/100km à 0,45 €/kWh.' },
+      'switch-to-diesel':       { title: 'Avec un diesel', desc: 'Taxe moins chère + ~15% de consommation en moins.' },
+      'switch-to-e10':          { title: 'En E10 au lieu de E5', desc: '~1,5% moins cher, ~1,5% de consommation en plus.' },
+      'fill-at-best-station':   { title: 'À la station la moins chère', desc: 'Toujours la meilleure pompe à proximité.' },
+      'fill-before-8am':        { title: 'Plein avant 8h', desc: 'Constamment dans la fenêtre du matin.' },
+    },
+  },
+
   savingTips: {
     title: 'Conseils d’économie pour vous',
     subtitle: 'Suggestions personnalisées issues de votre journal carburant',

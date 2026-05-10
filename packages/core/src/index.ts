@@ -269,6 +269,15 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Counterfactual scenarios
+export type {
+  CounterfactualResult,
+  CounterfactualInputs,
+  ScenarioResult,
+  ScenarioId,
+} from './engine/counterfactual';
+export { computeCounterfactuals, SCENARIO_PARAMS } from './engine/counterfactual';
+
 // Personalized saving tips
 export type {
   SavingTip,
