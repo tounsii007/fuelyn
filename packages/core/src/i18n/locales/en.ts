@@ -419,6 +419,19 @@ export const en: TranslationKeys = {
     jumpAbout: 'About',
   },
 
+  receiptScanner: {
+    cta: 'Scan receipt',
+    busyCta: 'Reading receipt…',
+    pickAria: 'Pick a receipt photo',
+    statusLoadingEngine: 'Loading OCR engine…',
+    statusRecognizing: 'Reading receipt —',
+    statusParsing: 'Parsing…',
+    errorPrefix: 'Error',
+    errorGeneric: 'Could not read the receipt',
+    toastTitle: 'Receipt scanned',
+    toastDesc: '{percent}% of fields detected — please review.',
+  },
+
   aiChat: {
     title: 'Fuelyn Assistant',
     subtitle: 'Ask about prices, routes, savings',

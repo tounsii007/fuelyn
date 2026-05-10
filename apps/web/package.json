@@ -16,10 +16,10 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@fuelyn/core": "*",
     "@libsql/client": "^0.17.2",
     "@prisma/adapter-libsql": "^7.7.0",
     "@prisma/client": "^7.7.0",
-    "@fuelyn/core": "*",
     "@tanstack/react-query": "^5.99.0",
     "leaflet": "^1.9.4",
     "next": "^16.2.3",
@@ -28,6 +28,7 @@
     "react-dom": "^19.2.5",
     "react-leaflet": "^5.0.0",
     "react-leaflet-cluster": "^4.1.3",
+    "tesseract.js": "5.1.1",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },

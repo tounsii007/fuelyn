@@ -256,3 +256,15 @@ export {
   KNOWN_H2_OPERATORS,
   AVERAGE_SPEED_KMH,
 } from './config/constants';
+
+// Receipt OCR parser (consumed by web's fuel-log scanner)
+export type { ParsedReceipt } from './receipt/parse-receipt';
+export {
+  parseReceipt,
+  extractDate as extractReceiptDate,
+  extractBrand as extractReceiptBrand,
+  extractFuelType as extractReceiptFuelType,
+  extractLiters as extractReceiptLiters,
+  extractPricePerLiter as extractReceiptPricePerLiter,
+  extractTotal as extractReceiptTotal,
+} from './receipt/parse-receipt';

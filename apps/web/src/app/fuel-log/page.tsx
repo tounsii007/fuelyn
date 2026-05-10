@@ -7,17 +7,22 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
-import type { FuelType } from '@fuelyn/core';
+import type { FuelType, ParsedReceipt } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConsumptionTracker } from '@/components/intelligence/ConsumptionTracker';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { ReceiptScanner } from '@/components/fuelLog/ReceiptScanner';
+import { useToast } from '@/components/ui/Toast';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { IconButton } from '@/components/ui/IconButton';
 import { StatCard } from '@/components/ui/StatCard';
 
 export default function FuelLogPage() {
+  const { t } = useTranslations();
+  const toast = useToast();
   const fuelLog = useAppStore((s) => s.fuelLog);
   const addFuelLogEntry = useAppStore((s) => s.addFuelLogEntry);
   const removeFuelLogEntry = useAppStore((s) => s.removeFuelLogEntry);
@@ -32,6 +37,40 @@ export default function FuelLogPage() {
     odometer: 0,
     note: '',
   });
+
+  /**
+   * OCR pre-fill handler — receives a ParsedReceipt from the
+   * ReceiptScanner and merges it into the new-entry form.
+   * Only overrides fields the user hasn't typed yet (anything
+   * still at its default), otherwise the user could lose work
+   * by accidentally tapping the scan button mid-form-fill.
+   */
+  const handleScanResult = useCallback(
+    (parsed: ParsedReceipt) => {
+      setIsAdding(true);
+      setForm((prev) => ({
+        stationName: prev.stationName || parsed.stationBrand || '',
+        stationBrand: prev.stationBrand || parsed.stationBrand || '',
+        fuelType: parsed.fuelType ?? prev.fuelType,
+        liters: parsed.liters ?? prev.liters,
+        pricePerLiter: parsed.pricePerLiter ?? prev.pricePerLiter,
+        odometer: prev.odometer,
+        note: prev.note,
+      }));
+      // Toast the user with the result so they know something
+      // happened — and what fraction of fields landed.
+      const filled = Math.round(parsed.confidence * 100);
+      toast.show({
+        tone: parsed.confidence >= 0.5 ? 'success' : 'warning',
+        title: t('receiptScanner.toastTitle'),
+        description: t('receiptScanner.toastDesc').replace(
+          '{percent}',
+          String(filled),
+        ),
+      });
+    },
+    [toast, t],
+  );
   const totalPreview = Number.isFinite(form.liters * form.pricePerLiter)
     ? form.liters * form.pricePerLiter
     : 0;
@@ -248,6 +287,16 @@ export default function FuelLogPage() {
           >
             Neue Tankfüllung
           </h3>
+          {/*
+            Receipt scanner — lazy-loads Tesseract.js the first
+            time the user taps it, parses the OCR'd text via the
+            core parseReceipt() function, and pre-fills the form
+            below. Same place the user would otherwise type from
+            scratch — no separate flow, no surprise reroute.
+          */}
+          <div className="mb-4">
+            <ReceiptScanner onResult={handleScanResult} />
+          </div>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div className="col-span-2">
               <Input

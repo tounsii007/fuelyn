@@ -427,6 +427,19 @@ export const de = {
     jumpAbout: 'Über',
   },
 
+  receiptScanner: {
+    cta: 'Beleg scannen',
+    busyCta: 'Lese Beleg…',
+    pickAria: 'Beleg-Foto auswählen',
+    statusLoadingEngine: 'OCR-Engine wird geladen…',
+    statusRecognizing: 'Lese Beleg —',
+    statusParsing: 'Werte aus…',
+    errorPrefix: 'Fehler',
+    errorGeneric: 'Beleg konnte nicht gelesen werden',
+    toastTitle: 'Beleg eingelesen',
+    toastDesc: '{percent}% der Felder erkannt — bitte prüfen.',
+  },
+
   aiChat: {
     title: 'Fuelyn Assistent',
     subtitle: 'Frage zu Preisen, Routen, Sparen',

@@ -425,6 +425,19 @@ export const fr: TranslationKeys = {
     jumpAbout: 'À propos',
   },
 
+  receiptScanner: {
+    cta: 'Scanner le ticket',
+    busyCta: 'Lecture du ticket…',
+    pickAria: 'Choisir une photo de ticket',
+    statusLoadingEngine: 'Chargement du moteur OCR…',
+    statusRecognizing: 'Lecture du ticket —',
+    statusParsing: 'Analyse en cours…',
+    errorPrefix: 'Erreur',
+    errorGeneric: 'Impossible de lire le ticket',
+    toastTitle: 'Ticket scanné',
+    toastDesc: '{percent}% des champs détectés — à vérifier.',
+  },
+
   aiChat: {
     title: 'Assistant Fuelyn',
     subtitle: 'Posez vos questions sur les prix, trajets, économies',
