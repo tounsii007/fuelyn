@@ -84,7 +84,62 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 }
 
+/**
+ * Minimal locale dictionary for the error fallback. We deliberately
+ * DO NOT call `useTranslations()` here: the boundary catches every
+ * render-phase exception below it, including ones that originate
+ * inside the translations system or the Zustand store that backs it.
+ * If t() were the source of the crash, the fallback itself would
+ * crash too — and the user would see Chrome's blank "couldn't load"
+ * overlay all over again.
+ *
+ * Instead we read the browser language directly (window-only API,
+ * no React state) and pick from a tiny inline dictionary covering
+ * the four supported locales. Falls back to English when nothing
+ * matches.
+ */
+const FALLBACK_STRINGS = {
+  de: {
+    headline: 'Etwas ist schiefgegangen',
+    body:
+      'Die App ist auf einen Fehler gestoßen und konnte den aktuellen Bildschirm nicht weiter rendern. Du kannst entweder neu laden oder zurück zur Startseite. Deine gespeicherten Daten (Favoriten, Fahrzeug, Einstellungen) bleiben erhalten.',
+    reload: 'Seite neu laden',
+    home: 'Zur Startseite',
+  },
+  en: {
+    headline: 'Something went wrong',
+    body:
+      'The app hit an error and could not finish rendering this screen. You can reload or go back to the home page. Your saved data (favorites, vehicle, settings) is preserved.',
+    reload: 'Reload page',
+    home: 'Go home',
+  },
+  'en-US': {
+    headline: 'Something went wrong',
+    body:
+      'The app hit an error and could not finish rendering this screen. You can reload or go back to the home page. Your saved data (favorites, vehicle, settings) is preserved.',
+    reload: 'Reload page',
+    home: 'Go home',
+  },
+  fr: {
+    headline: 'Une erreur est survenue',
+    body:
+      'L’application a rencontré une erreur et n’a pas pu finir d’afficher cet écran. Vous pouvez recharger ou revenir à l’accueil. Vos données enregistrées (favoris, véhicule, paramètres) sont conservées.',
+    reload: 'Recharger la page',
+    home: 'Retour à l’accueil',
+  },
+} as const;
+
+function pickFallbackLocale(): keyof typeof FALLBACK_STRINGS {
+  if (typeof navigator === 'undefined') return 'en';
+  const lang = (navigator.language ?? '').toLowerCase();
+  if (lang.startsWith('de')) return 'de';
+  if (lang.startsWith('fr')) return 'fr';
+  if (lang === 'en-us' || lang.startsWith('en-us')) return 'en-US';
+  return 'en';
+}
+
 function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const strings = FALLBACK_STRINGS[pickFallbackLocale()];
   // Intentionally locale-independent and dependency-free: this UI
   // must work even when the rest of the app (i18n, theme tokens,
   // Tailwind's CSS variables) isn't reachable. Inline styles only.
@@ -167,13 +222,8 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
   return (
     <div role="alert" aria-live="assertive" style={wrapperStyle}>
       <div style={cardStyle}>
-        <h1 style={headlineStyle}>Etwas ist schiefgegangen</h1>
-        <p style={bodyStyle}>
-          Die App ist auf einen Fehler gestoßen und konnte den aktuellen Bildschirm
-          nicht weiter rendern. Du kannst entweder neu laden oder zurück zur
-          Startseite. Deine gespeicherten Daten (Favoriten, Fahrzeug, Einstellungen)
-          bleiben erhalten.
-        </p>
+        <h1 style={headlineStyle}>{strings.headline}</h1>
+        <p style={bodyStyle}>{strings.body}</p>
         <pre style={detailStyle}>{message}</pre>
         <div style={btnRow}>
           <button
@@ -186,7 +236,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
               }
             }}
           >
-            Seite neu laden
+            {strings.reload}
           </button>
           <button
             type="button"
@@ -198,7 +248,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
               }
             }}
           >
-            Zur Startseite
+            {strings.home}
           </button>
         </div>
       </div>

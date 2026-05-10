@@ -59,12 +59,15 @@ describe('ErrorBoundary — crash path', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toBeInTheDocument();
-    expect(screen.getByText(/Etwas ist schiefgegangen/)).toBeInTheDocument();
+    // jsdom defaults navigator.language to 'en-US', which the
+    // fallback's tiny inline locale picker maps to the en-US
+    // dictionary → "Something went wrong" + English buttons.
+    expect(screen.getByText(/Something went wrong/)).toBeInTheDocument();
     // Error message must be surfaced for triage
     expect(screen.getByText(/render exploded/)).toBeInTheDocument();
     // Recovery buttons must both be present
-    expect(screen.getByRole('button', { name: /Seite neu laden/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Zur Startseite/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reload page/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Go home/i })).toBeInTheDocument();
   });
 
   it('uses the custom fallback render-prop when provided', () => {
