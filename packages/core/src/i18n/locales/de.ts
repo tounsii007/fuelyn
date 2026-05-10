@@ -746,6 +746,14 @@ export const de = {
     summary: '+{range} km · {cost100} €/100 km · ⌀ {avg} kW',
   },
 
+  dashboardCustomizer: {
+    title: 'Dashboard anpassen',
+    desc: 'Reihenfolge & Sichtbarkeit der Sidebar-Karten.',
+    reset: 'Standard',
+    moveUp: 'Nach oben',
+    moveDown: 'Nach unten',
+  },
+
   vehicleManager: {
     title: 'Deine Fahrzeuge',
     subtitle: 'Wähle das aktive Fahrzeug — alle Berechnungen folgen ihm.',

@@ -15,6 +15,7 @@ import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
 import { SpritmonitorImport } from '@/components/settings/SpritmonitorImport';
 import { BankCsvImport } from '@/components/settings/BankCsvImport';
 import { PremiumStatusCard } from '@/components/billing/PremiumStatusCard';
+import { DashboardCustomizer } from '@/components/settings/DashboardCustomizer';
 import { MembershipPicker } from '@/components/settings/MembershipPicker';
 
 // ─── Background variants ────────────────────────────────────
@@ -418,6 +419,10 @@ export function SettingsPage() {
                 PremiumGate components can deep-link here when they
                 surface the upgrade CTA. */}
             <PremiumStatusCard />
+
+            {/* Dashboard customizer (Iter AB) — UI-density mitigation:
+                user can hide / reorder the homepage sidebar cards. */}
+            <DashboardCustomizer />
 
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-gray-400 dark:text-gray-500">

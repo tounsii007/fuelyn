@@ -738,6 +738,14 @@ export const en: TranslationKeys = {
     summary: '+{range} km · {cost100} €/100 km · avg {avg} kW',
   },
 
+  dashboardCustomizer: {
+    title: 'Customize dashboard',
+    desc: 'Order & visibility of the sidebar cards.',
+    reset: 'Default',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+  },
+
   vehicleManager: {
     title: 'Your vehicles',
     subtitle: 'Pick the active vehicle — all calculations follow it.',

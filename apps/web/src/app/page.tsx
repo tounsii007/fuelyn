@@ -132,6 +132,7 @@ export default function HomePage() {
   const isMapView = useAppStore((s) => s.isMapView);
   const filter = useAppStore((s) => s.filter);
   const selectStation = useAppStore((s) => s.selectStation);
+  const dashboardCards = useAppStore((s) => s.dashboardCards);
   const setActiveRoute = useAppStore((s) => s.setActiveRoute);
   const setRouteLoading = useAppStore((s) => s.setRouteLoading);
   const isNavigating = useAppStore((s) => s.isNavigating);
@@ -437,12 +438,33 @@ export default function HomePage() {
                   </div>
                 </div>
                 <SearchHistory />
-                <BestDealCard recommendations={recommendations} />
-                <BorderCrossingCard />
-                <SmartBuyingScoreCard />
-                <SavingTipsCard />
-                <CounterfactualCard />
-                <PricePredictionCard />
+                {/*
+                  Customizable sidebar (Iter AB): order + visibility
+                  driven by the user's preference list in settings.
+                  Each entry maps a stable card id to its component;
+                  hidden cards are dropped from the render tree
+                  (no DOM cost when off).
+                */}
+                {dashboardCards
+                  .filter((c) => c.visible)
+                  .map((c) => {
+                    switch (c.id) {
+                      case 'best-deal':
+                        return <BestDealCard key="best-deal" recommendations={recommendations} />;
+                      case 'border-crossing':
+                        return <BorderCrossingCard key="border-crossing" />;
+                      case 'smart-buying':
+                        return <SmartBuyingScoreCard key="smart-buying" />;
+                      case 'saving-tips':
+                        return <SavingTipsCard key="saving-tips" />;
+                      case 'counterfactual':
+                        return <CounterfactualCard key="counterfactual" />;
+                      case 'price-prediction':
+                        return <PricePredictionCard key="price-prediction" />;
+                      default:
+                        return null;
+                    }
+                  })}
                 <PriceStats recommendations={recommendations} />
 
                 {/*

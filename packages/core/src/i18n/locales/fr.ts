@@ -744,6 +744,14 @@ export const fr: TranslationKeys = {
     summary: '+{range} km · {cost100} €/100 km · moy {avg} kW',
   },
 
+  dashboardCustomizer: {
+    title: 'Personnaliser le tableau de bord',
+    desc: 'Ordre et visibilité des cartes de la barre latérale.',
+    reset: 'Par défaut',
+    moveUp: 'Monter',
+    moveDown: 'Descendre',
+  },
+
   vehicleManager: {
     title: 'Vos véhicules',
     subtitle: 'Choisissez le véhicule actif — tous les calculs le suivent.',

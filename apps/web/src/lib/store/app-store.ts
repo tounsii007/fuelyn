@@ -110,6 +110,17 @@ interface AppState {
   setTheme: (theme: ThemeMode) => void;
   setLocale: (locale: AppLocale) => void;
 
+  // Customizable dashboard (Iter AB).
+  // The sidebar-card preference list. Each entry is a stable card id
+  // matching one of the components in src/components/intelligence/.
+  // Order = display order; visible=false hides the card without losing
+  // its position. Empty array → defaults are used (see DEFAULT_DASHBOARD).
+  dashboardCards: { id: string; visible: boolean }[];
+  setDashboardCards: (cards: { id: string; visible: boolean }[]) => void;
+  toggleDashboardCard: (id: string) => void;
+  moveDashboardCard: (id: string, direction: -1 | 1) => void;
+  resetDashboardCards: () => void;
+
   // Stripe Premium subscription state (Iter T)
   // Persisted to localStorage by useHydrateStore. The Stripe webhook
   // (apps/web/src/app/api/billing/webhook) is the canonical source
@@ -366,6 +377,44 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Settings
   settings: DEFAULT_SETTINGS,
+
+  // Customizable dashboard (Iter AB).
+  dashboardCards: [
+    { id: 'best-deal',          visible: true },
+    { id: 'border-crossing',    visible: true },
+    { id: 'smart-buying',       visible: true },
+    { id: 'saving-tips',        visible: true },
+    { id: 'counterfactual',     visible: true },
+    { id: 'price-prediction',   visible: true },
+  ],
+  setDashboardCards: (cards) => set({ dashboardCards: cards }),
+  toggleDashboardCard: (id) =>
+    set((s) => ({
+      dashboardCards: s.dashboardCards.map((c) =>
+        c.id === id ? { ...c, visible: !c.visible } : c,
+      ),
+    })),
+  moveDashboardCard: (id, dir) =>
+    set((s) => {
+      const cards = [...s.dashboardCards];
+      const idx = cards.findIndex((c) => c.id === id);
+      if (idx < 0) return s;
+      const target = idx + dir;
+      if (target < 0 || target >= cards.length) return s;
+      [cards[idx], cards[target]] = [cards[target]!, cards[idx]!];
+      return { dashboardCards: cards };
+    }),
+  resetDashboardCards: () =>
+    set({
+      dashboardCards: [
+        { id: 'best-deal',        visible: true },
+        { id: 'border-crossing',  visible: true },
+        { id: 'smart-buying',     visible: true },
+        { id: 'saving-tips',      visible: true },
+        { id: 'counterfactual',   visible: true },
+        { id: 'price-prediction', visible: true },
+      ],
+    }),
 
   // Stripe Premium (Iter T) — defaults to free; webhook updates persist.
   subscription: { status: 'free', plan: null },
