@@ -23,6 +23,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export interface StorySlide {
   readonly id: string;
@@ -50,6 +51,7 @@ export function StoryShell({
   onClose,
   onShare,
 }: StoryShellProps) {
+  const { t } = useTranslations();
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -215,7 +217,7 @@ export function StoryShell({
         <button
           type="button"
           onClick={handleShare}
-          aria-label="Teilen"
+          aria-label={t('wrapped.shareLabel')}
           className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md
                      text-white grid place-items-center fy-press"
         >
@@ -227,7 +229,7 @@ export function StoryShell({
         <button
           type="button"
           onClick={close}
-          aria-label="Schließen"
+          aria-label={t('wrapped.closeLabel')}
           className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md
                      text-white grid place-items-center fy-press"
         >
@@ -240,13 +242,13 @@ export function StoryShell({
       {/* Tap zones */}
       <button
         type="button"
-        aria-label="Vorherige Folie"
+        aria-label={t('wrapped.prevSlide')}
         onClick={prev}
         className="absolute left-0 top-0 bottom-0 w-1/3 z-[5]"
       />
       <button
         type="button"
-        aria-label="Nächste Folie"
+        aria-label={t('wrapped.nextSlide')}
         onClick={next}
         className="absolute right-0 top-0 bottom-0 w-2/3 z-[5]"
       />
