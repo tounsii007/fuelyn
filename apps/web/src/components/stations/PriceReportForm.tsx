@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { useToast } from '@/components/ui/Toast';
 import { useAppStore } from '@/lib/store/app-store';
@@ -26,7 +26,9 @@ import {
   MIN_PLAUSIBLE_PRICE,
   MAX_PLAUSIBLE_PRICE,
   type FuelType,
+  type ParsedPumpDisplay,
 } from '@fuelyn/core';
+import { PumpPhotoCapture } from './PumpPhotoCapture';
 
 export interface PriceReportFormProps {
   stationId: string;
@@ -59,11 +61,46 @@ export function PriceReportForm({ stationId, knownPrices = {} }: PriceReportForm
   const [fuelType, setFuelType] = useState<FuelType>(defaultFuel);
   const [priceInput, setPriceInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [photoVerified, setPhotoVerified] = useState(false);
 
   const reset = () => {
     setPriceInput('');
     setSubmitting(false);
+    setPhotoVerified(false);
   };
+
+  /**
+   * Hook the pump-display OCR result into the form. We deliberately
+   * never auto-submit — the user always confirms what the camera read,
+   * even when confidence is high, so a misread can't generate spam.
+   */
+  const onPhotoResult = useCallback(
+    (parsed: ParsedPumpDisplay) => {
+      if (parsed.fuelType) setFuelType(parsed.fuelType);
+      if (parsed.pricePerLiter != null) {
+        setPriceInput(
+          parsed.pricePerLiter.toFixed(3).replace(/0+$/, '').replace(/\.$/, '').replace('.', ','),
+        );
+      }
+      setPhotoVerified(parsed.confidence >= 0.7);
+      if (parsed.pricePerLiter == null) {
+        toast.show({
+          tone: 'warning',
+          title: t('pumpPhoto.unreadableTitle'),
+          description: t('pumpPhoto.unreadableDesc'),
+        });
+      } else {
+        toast.show({
+          tone: 'success',
+          title: t('pumpPhoto.readTitle'),
+          description: t('pumpPhoto.readDesc')
+            .replace('{price}', String(parsed.pricePerLiter))
+            .replace('{percent}', String(Math.round(parsed.confidence * 100))),
+        });
+      }
+    },
+    [t, toast],
+  );
 
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -89,6 +126,7 @@ export function PriceReportForm({ stationId, knownPrices = {} }: PriceReportForm
           fuelType,
           price,
           knownPrice: knownPrices[fuelType] ?? null,
+          photoVerified,
         }),
       });
       const data: ReportResponse = await res.json().catch(() => ({}));
@@ -205,6 +243,20 @@ export function PriceReportForm({ stationId, knownPrices = {} }: PriceReportForm
           <span className="text-xs text-[var(--color-fg-subtle)]">€/L</span>
         </div>
       </label>
+
+      <div className="flex items-center justify-between gap-2">
+        <PumpPhotoCapture onResult={onPhotoResult} />
+        {photoVerified && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-100)]
+                           text-[var(--color-success-700)] dark:bg-[var(--color-success-900)]/40
+                           dark:text-[var(--color-success-300)] px-2 py-0.5 text-[11px] font-medium">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {t('priceReport.verifiedBadge')}
+          </span>
+        )}
+      </div>
 
       <button
         type="submit"

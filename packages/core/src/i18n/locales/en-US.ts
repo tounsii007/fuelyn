@@ -636,6 +636,7 @@ export const enUS: TranslationKeys = {
     formAria: 'Report price',
     closeAria: 'Close',
     priceLabel: 'Actual price',
+    verifiedBadge: 'Photo verified',
     submit: 'Submit',
     submitting: 'Sending …',
     successTitle: 'Thanks for the report',
@@ -660,6 +661,21 @@ export const enUS: TranslationKeys = {
       'fuel-type-invalid': 'Invalid fuel type.',
       'observed-at-invalid': 'Invalid timestamp.',
     },
+  },
+
+  pumpPhoto: {
+    cta: 'Photo of the pump display',
+    busyCta: 'Reading …',
+    pickAria: 'Pick a pump photo',
+    statusLoadingEngine: 'Loading OCR engine …',
+    statusRecognizing: 'Reading display —',
+    statusParsing: 'Parsing …',
+    errorPrefix: 'Error',
+    errorGeneric: 'Photo could not be read.',
+    readTitle: 'Display recognized',
+    readDesc: 'Detected price: ${price}/gal · {percent}% confidence.',
+    unreadableTitle: 'Display unreadable',
+    unreadableDesc: 'Please type the price manually.',
   },
 
   borderCrossing: {

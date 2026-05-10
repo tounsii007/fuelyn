@@ -39,6 +39,12 @@ const RequestSchema = z.object({
     .max(MAX_PLAUSIBLE_PRICE),
   observedAt: z.string().datetime().optional(),
   knownPrice: z.number().positive().nullable().optional(),
+  /**
+   * True when the user attached a pump-display photo that the OCR
+   * pipeline successfully extracted a matching price from. The BFF
+   * uses this to bump the engine's confidence by +0.1 — capped at 1.
+   */
+  photoVerified: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -82,6 +88,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Photo-verified reports get a +0.1 confidence bump (capped at 1.0).
+  // Visual proof is the strongest signal we have for crowd reports.
+  const finalConfidence = parsed.data.photoVerified
+    ? Math.min(1, validation.confidence + 0.1)
+    : validation.confidence;
+
   // -----------------------------------------------------------------
   // Persistence — currently a no-op, since the backend service that
   // owns the canonical price store isn't in scope for this iter.
@@ -92,8 +104,9 @@ export async function POST(request: NextRequest) {
     JSON.stringify({
       ...validation.record,
       classification: validation.classification,
-      confidence: validation.confidence,
+      confidence: finalConfidence,
       deltaEurPerL: validation.deltaEurPerL,
+      photoVerified: parsed.data.photoVerified ?? false,
     }),
   );
 
@@ -101,9 +114,10 @@ export async function POST(request: NextRequest) {
     {
       success: true,
       classification: validation.classification,
-      confidence: validation.confidence,
+      confidence: finalConfidence,
       deltaEurPerL: validation.deltaEurPerL,
       record: validation.record,
+      photoVerified: parsed.data.photoVerified ?? false,
     },
     {
       status: 202, // Accepted (queued for moderation / aggregation)

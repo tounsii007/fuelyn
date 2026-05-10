@@ -638,6 +638,7 @@ export const de = {
     formAria: 'Preis melden',
     closeAria: 'Schließen',
     priceLabel: 'Tatsächlicher Preis',
+    verifiedBadge: 'Foto bestätigt',
     submit: 'Senden',
     submitting: 'Sende …',
     successTitle: 'Danke für die Meldung',
@@ -662,6 +663,21 @@ export const de = {
       'fuel-type-invalid': 'Ungültiger Kraftstofftyp.',
       'observed-at-invalid': 'Zeitstempel ist ungültig.',
     },
+  },
+
+  pumpPhoto: {
+    cta: 'Foto vom Zapfsäulen-Display',
+    busyCta: 'Lese …',
+    pickAria: 'Pump-Foto auswählen',
+    statusLoadingEngine: 'OCR-Engine wird geladen …',
+    statusRecognizing: 'Lese Display —',
+    statusParsing: 'Werte aus …',
+    errorPrefix: 'Fehler',
+    errorGeneric: 'Foto konnte nicht gelesen werden.',
+    readTitle: 'Display erkannt',
+    readDesc: 'Erkannter Preis: {price} €/L · {percent}% Sicherheit.',
+    unreadableTitle: 'Display unleserlich',
+    unreadableDesc: 'Bitte trage den Preis manuell ein.',
   },
 
   borderCrossing: {

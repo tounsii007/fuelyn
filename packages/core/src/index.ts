@@ -388,3 +388,11 @@ export {
   extractPricePerLiter as extractReceiptPricePerLiter,
   extractTotal as extractReceiptTotal,
 } from './receipt/parse-receipt';
+
+// Pump-display OCR parser (consumed by web's price-report photo flow)
+export type { ParsedPumpDisplay } from './receipt/parse-pump-display';
+export {
+  parsePumpDisplay,
+  extractPumpPrice,
+  extractPumpFuelType,
+} from './receipt/parse-pump-display';

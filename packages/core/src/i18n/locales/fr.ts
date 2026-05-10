@@ -636,6 +636,7 @@ export const fr: TranslationKeys = {
     formAria: 'Signaler le prix',
     closeAria: 'Fermer',
     priceLabel: 'Prix réel',
+    verifiedBadge: 'Photo vérifiée',
     submit: 'Envoyer',
     submitting: 'Envoi …',
     successTitle: 'Merci pour le signalement',
@@ -660,6 +661,21 @@ export const fr: TranslationKeys = {
       'fuel-type-invalid': 'Type de carburant invalide.',
       'observed-at-invalid': 'Horodatage invalide.',
     },
+  },
+
+  pumpPhoto: {
+    cta: 'Photo de l\'écran de la pompe',
+    busyCta: 'Lecture …',
+    pickAria: 'Choisir une photo de pompe',
+    statusLoadingEngine: 'Chargement du moteur OCR …',
+    statusRecognizing: 'Lecture de l\'écran —',
+    statusParsing: 'Analyse …',
+    errorPrefix: 'Erreur',
+    errorGeneric: 'Impossible de lire la photo.',
+    readTitle: 'Écran reconnu',
+    readDesc: 'Prix détecté : {price} €/L · {percent}% de confiance.',
+    unreadableTitle: 'Écran illisible',
+    unreadableDesc: 'Veuillez saisir le prix manuellement.',
   },
 
   borderCrossing: {
