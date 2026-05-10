@@ -334,6 +334,14 @@ export { optimizeStops } from './engine/multi-stop';
 export type { DemoOptions } from './demo/demo-fuel-log';
 export { generateDemoFuelLog } from './demo/demo-fuel-log';
 
+// Privacy-respecting telemetry vocabulary
+export type {
+  TelemetryEventName,
+  TelemetryEvent,
+  ABTest,
+} from './telemetry/events';
+export { toDayKey, assignVariant } from './telemetry/events';
+
 // Anonymous price-report aggregation engine
 export type {
   AggregationInput,

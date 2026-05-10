@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useHydrateStore } from '@/lib/hooks/use-vehicle';
 import { useCloudSync } from '@/lib/hooks/use-cloud-sync';
+import { useTelemetry } from '@/lib/hooks/use-telemetry';
 import { useAppStore } from '@/lib/store/app-store';
 import { SplashScreen } from '@/components/splash/SplashScreen';
 import { OfflineBanner } from '@/components/layout/OfflineBanner';
@@ -82,6 +83,9 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
   // server records into the store, then push-mirrors local
   // changes after a 1.5 s debounce. No-ops on the server.
   useCloudSync();
+  // Telemetry: privacy-respecting event batcher. Fires app.first-open
+  // on mount and flushes the buffer every 30 s + on page hide.
+  useTelemetry();
   return <>{children}</>;
 }
 

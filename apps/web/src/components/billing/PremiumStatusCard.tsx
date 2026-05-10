@@ -13,6 +13,7 @@ import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { useToast } from '@/components/ui/Toast';
 import { isPremium, daysUntilExpiry } from '@fuelyn/core';
+import { track } from '@/lib/hooks/use-telemetry';
 
 export function PremiumStatusCard() {
   const { t, locale } = useTranslations();
@@ -48,6 +49,7 @@ export function PremiumStatusCard() {
 
   const startCheckout = useCallback(
     async (priceLookupKey: 'fuelyn-monthly' | 'fuelyn-annual') => {
+      track('premium.checkout-started', priceLookupKey === 'fuelyn-annual' ? 'annual' : 'monthly');
       setBusy(true);
       try {
         const origin = typeof window !== 'undefined' ? window.location.origin : '';
