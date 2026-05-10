@@ -20,6 +20,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 type Tone = 'success' | 'info' | 'warning' | 'danger';
 
@@ -57,6 +58,9 @@ const TONE_ICON: Record<Tone, string> = {
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  // Aliased to `tt` because `t` is already used as the .map() iterator
+  // variable below for individual toasts — collision otherwise.
+  const { t: tt } = useTranslations();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -135,7 +139,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             </div>
             <button
               type="button"
-              aria-label="Benachrichtigung schließen"
+              aria-label={tt('miscAria.notificationClose')}
               onClick={() => dismiss(t.id)}
               className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] -mt-1 -mr-1 px-1 leading-none text-lg"
             >

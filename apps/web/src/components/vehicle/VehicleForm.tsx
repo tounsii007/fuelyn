@@ -11,6 +11,7 @@ import { searchVehicleModels } from '@fuelyn/core/domain/vehicles';
 import type { VehicleModel } from '@fuelyn/core/domain/vehicles';
 import { useAppStore } from '@/lib/store/app-store';
 import { useVehicleActions } from '@/lib/hooks/use-vehicle';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { Autocomplete } from '../ui/Autocomplete';
 
 const DRIVE_TYPES: DriveType[] = ['benzin', 'diesel', 'hybrid', 'elektro', 'gas', 'h2'];
@@ -29,6 +30,7 @@ interface VehicleFormProps {
 }
 
 export function VehicleForm({ onClose }: VehicleFormProps) {
+  const { t } = useTranslations();
   const existingVehicle = useAppStore((s) => s.vehicle);
   const { saveVehicle } = useVehicleActions();
 
@@ -98,7 +100,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
           type="button"
           onClick={onClose}
           className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label="Schließen"
+          aria-label={t('common.close')}
         >
           <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

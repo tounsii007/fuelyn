@@ -9,12 +9,14 @@ import { useMemo } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
 import { formatPrice, FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 interface PriceStatsProps {
   recommendations: StationRecommendation[];
 }
 
 export function PriceStats({ recommendations }: PriceStatsProps) {
+  const { t } = useTranslations();
   const fuelType = useAppStore((s) => s.filter.fuelType);
   // When the user has a station open in the detail panel, surface
   // its position on the spread bar so they can SEE whether the
@@ -45,37 +47,37 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
 
   return (
     <section
-      aria-label={`${FUEL_TYPE_LABELS[fuelType]} Preisübersicht`}
+      aria-label={`${FUEL_TYPE_LABELS[fuelType]} ${t('priceStats.overviewAria')}`}
       className="mx-4 mb-3 bg-white dark:bg-gray-800/90 rounded-2xl shadow-card
                  border border-gray-100 dark:border-gray-700/60 p-4"
     >
       <header className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-          {FUEL_TYPE_LABELS[fuelType]} Preise
+          {FUEL_TYPE_LABELS[fuelType]} {t('priceStats.pricesSuffix')}
         </p>
         <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
-          {stats.count} Stationen mit Preis
+          {stats.count} {t('priceStats.stationsWithPrice')}
         </p>
       </header>
 
       {/* Stats Row */}
       <dl className="flex items-end justify-between gap-2 mb-3">
         <div className="text-center">
-          <dt className="text-[10px] font-medium text-reach-safe">Günstigste</dt>
+          <dt className="text-[10px] font-medium text-reach-safe">{t('priceStats.cheapestColLabel')}</dt>
           <dd className="text-base font-bold text-reach-safe tabular-nums">
             {formatPrice(stats.min)} €
           </dd>
         </div>
         <div className="text-center">
           <dt className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
-            Durchschnitt
+            {t('priceStats.averageColLabel')}
           </dt>
           <dd className="text-sm font-semibold tabular-nums text-gray-700 dark:text-gray-200">
             {formatPrice(stats.avg)} €
           </dd>
         </div>
         <div className="text-center">
-          <dt className="text-[10px] font-medium text-reach-unreachable">Teuerste</dt>
+          <dt className="text-[10px] font-medium text-reach-unreachable">{t('priceStats.mostExpensiveColLabel')}</dt>
           <dd className="text-base font-bold text-reach-unreachable tabular-nums">
             {formatPrice(stats.max)} €
           </dd>

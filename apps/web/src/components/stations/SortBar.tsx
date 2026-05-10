@@ -6,6 +6,7 @@
 
 import type { SortMode } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'recommended', label: 'Empfohlen' },
@@ -27,6 +28,7 @@ export interface SortBarProps {
 }
 
 export function SortBar({ counts }: SortBarProps = {}) {
+  const { t } = useTranslations();
   const sortMode = useAppStore((s) => s.sortMode);
   const setSortMode = useAppStore((s) => s.setSortMode);
   const setFilterOpen = useAppStore((s) => s.setFilterOpen);
@@ -121,7 +123,7 @@ export function SortBar({ counts }: SortBarProps = {}) {
             ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600'
             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
           }`}
-        aria-label="Filter öffnen"
+        aria-label={t('miscAria.filterOpen')}
       >
         <svg className={`w-4 h-4 ${activeFilterCount > 0 ? 'text-brand-600' : 'text-gray-600 dark:text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />

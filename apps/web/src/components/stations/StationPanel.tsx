@@ -267,7 +267,7 @@ export function StationPanel({ recommendations }: StationPanelProps = {}) {
               type="button"
               onClick={clearRoute}
               className="flex-shrink-0 rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-              aria-label="Schließen"
+              aria-label={t('common.close')}
             >
               <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

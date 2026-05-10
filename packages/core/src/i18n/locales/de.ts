@@ -427,6 +427,23 @@ export const de = {
     jumpAbout: 'Über',
   },
 
+  priceStats: {
+    pricesSuffix: 'Preise',
+    stationsWithPrice: 'Stationen mit Preis',
+    overviewAria: 'Preisübersicht',
+    cheapestColLabel: 'Günstigste',
+    averageColLabel: 'Durchschnitt',
+    mostExpensiveColLabel: 'Teuerste',
+  },
+
+  miscAria: {
+    searchRunning: 'Suche läuft',
+    inputClear: 'Eingabe löschen',
+    filterOpen: 'Filter öffnen',
+    notificationClose: 'Benachrichtigung schließen',
+    appearance: 'Erscheinungsbild',
+  },
+
   wrapped: {
     coverEyebrow: 'Fuelyn Wrapped',
     coverHeadline: 'Dein {year}',

@@ -425,6 +425,23 @@ export const fr: TranslationKeys = {
     jumpAbout: 'À propos',
   },
 
+  priceStats: {
+    pricesSuffix: 'prix',
+    stationsWithPrice: 'stations avec prix',
+    overviewAria: 'Aperçu des prix',
+    cheapestColLabel: 'Le moins cher',
+    averageColLabel: 'Moyenne',
+    mostExpensiveColLabel: 'Le plus cher',
+  },
+
+  miscAria: {
+    searchRunning: 'Recherche en cours',
+    inputClear: 'Effacer la saisie',
+    filterOpen: 'Ouvrir le filtre',
+    notificationClose: 'Fermer la notification',
+    appearance: 'Apparence',
+  },
+
   wrapped: {
     coverEyebrow: 'Fuelyn Wrapped',
     coverHeadline: 'Votre {year}',

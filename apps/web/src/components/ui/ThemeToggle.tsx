@@ -7,6 +7,7 @@
 
 import { useId } from 'react';
 import { useTheme, type ThemePreference } from '@/lib/theme/ThemeProvider';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 const OPTIONS: Array<{ value: ThemePreference; label: string; icon: string }> = [
   { value: 'light', label: 'Hell', icon: '☀️' },
@@ -15,6 +16,7 @@ const OPTIONS: Array<{ value: ThemePreference; label: string; icon: string }> = 
 ];
 
 export function ThemeToggle({ className }: { className?: string }) {
+  const { t } = useTranslations();
   const { preference, setPreference } = useTheme();
   const groupId = useId();
 
@@ -27,9 +29,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-label="Erscheinungsbild"
+      aria-label={t('miscAria.appearance')}
     >
-      <legend className="sr-only">Erscheinungsbild</legend>
+      <legend className="sr-only">{t('miscAria.appearance')}</legend>
       {OPTIONS.map((opt) => {
         const isSelected = preference === opt.value;
         const inputId = `${groupId}-${opt.value}`;
