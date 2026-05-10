@@ -37,6 +37,8 @@ export interface StationBase {
   readonly source: string;
   /** ISO 8601 timestamp of last data update. */
   readonly lastUpdated?: string;
+  /** ISO-3166-1 alpha-2 country code, useful for multi-country adapters (Iter Z). */
+  readonly countryCode?: string;
 }
 
 // ─── Fuel Station (Tankerkoenig) ────────────────────────────

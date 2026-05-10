@@ -19,3 +19,18 @@ export { searchH2Stations, getAllH2Stations } from './h2-adapter';
 
 // Gas (LPG / CNG / LNG)
 export { searchGasStations, getAllGasStations } from './gas-adapter';
+
+// Multi-country fuel-station adapters (Iter Z)
+export { SpritpreisrechnerAdapter } from './spritpreisrechner-adapter';
+export type { SpritpreisrechnerAdapterConfig } from './spritpreisrechner-adapter';
+export { PrixCarburantsAdapter } from './prix-carburants-adapter';
+export type { PrixCarburantsAdapterConfig } from './prix-carburants-adapter';
+export {
+  OsservaPrezziAdapter,
+  parseMimitCsv,
+} from './osservaprezzi-adapter';
+export type {
+  OsservaPrezziAdapterConfig,
+  OsservaPrezziDataLoader,
+  ItStationRow,
+} from './osservaprezzi-adapter';
