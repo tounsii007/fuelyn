@@ -192,7 +192,9 @@ describe('BrandQuickFilter — spacing & separator (commit 6137eeb)', () => {
     render(
       <BrandQuickFilter recommendations={[makeRec('s1', 'Aral')]} />,
     );
-    const root = screen.getByRole('group', { name: 'Marken-Schnellfilter' });
+    // aria-label now ties to t('filter.brands') = 'Marken' in the
+    // de locale (which the test runs in by default).
+    const root = screen.getByRole('group', { name: 'Marken' });
     // The whole point of the fix: the negative top margin is gone.
     expect(root.className).not.toMatch(/(?<![\w-])-mt-/);
   });
@@ -201,7 +203,9 @@ describe('BrandQuickFilter — spacing & separator (commit 6137eeb)', () => {
     render(
       <BrandQuickFilter recommendations={[makeRec('s1', 'Aral')]} />,
     );
-    const root = screen.getByRole('group', { name: 'Marken-Schnellfilter' });
+    // aria-label now ties to t('filter.brands') = 'Marken' in the
+    // de locale (which the test runs in by default).
+    const root = screen.getByRole('group', { name: 'Marken' });
     expect(root.className).toMatch(/\bpt-1\.5\b/);
     expect(root.className).toMatch(/\bpb-3\b/);
   });
@@ -210,7 +214,9 @@ describe('BrandQuickFilter — spacing & separator (commit 6137eeb)', () => {
     render(
       <BrandQuickFilter recommendations={[makeRec('s1', 'Aral')]} />,
     );
-    const root = screen.getByRole('group', { name: 'Marken-Schnellfilter' });
+    // aria-label now ties to t('filter.brands') = 'Marken' in the
+    // de locale (which the test runs in by default).
+    const root = screen.getByRole('group', { name: 'Marken' });
     expect(root.className).toMatch(/\bborder-t\b/);
   });
 });

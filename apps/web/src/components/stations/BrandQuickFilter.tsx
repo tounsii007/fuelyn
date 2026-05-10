@@ -18,6 +18,7 @@
 import { useMemo } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export interface BrandQuickFilterProps {
   readonly recommendations: readonly StationRecommendation[];
@@ -28,6 +29,7 @@ export interface BrandQuickFilterProps {
 }
 
 export function BrandQuickFilter({ recommendations, maxBrands = 8 }: BrandQuickFilterProps) {
+  const { t } = useTranslations();
   const filter = useAppStore((s) => s.filter);
   const setFilter = useAppStore((s) => s.setFilter);
 
@@ -68,10 +70,10 @@ export function BrandQuickFilter({ recommendations, maxBrands = 8 }: BrandQuickF
       className="flex items-center gap-1.5 px-4 pt-1.5 pb-3 overflow-x-auto scrollbar-hide
                  border-t border-[var(--color-border-subtle)]/50"
       role="group"
-      aria-label="Marken-Schnellfilter"
+      aria-label={t('filter.brands')}
     >
       <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
-        Marken
+        {t('filter.brands')}
       </span>
       {topBrands.map(([brand, count]) => {
         const active = filter.brands.includes(brand);
