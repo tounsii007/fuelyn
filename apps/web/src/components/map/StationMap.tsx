@@ -14,6 +14,7 @@ import L from 'leaflet';
 import type { StationRecommendation, ChargingStation, UnifiedStation, UnifiedHydrogenStation, UnifiedGasStation } from '@fuelyn/core';
 import { formatPrice, FUEL_TYPE_LABELS, isHydrogenStation, isGasStation } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { getBrandConfig } from '@/lib/brand-config';
 import { getCachedIcon, priceMarkerKey, chargingMarkerKey, h2MarkerKey, gasMarkerKey, clusterMarkerKey } from '@/lib/utils/marker-cache';
 import { RouteLayer } from './RouteLayer';
@@ -56,11 +57,14 @@ const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyrigh
 const TILE_SATELLITE_ATTRIBUTION = '&copy; Esri, Maxar, Earthstar Geographics';
 const TILE_TERRAIN_ATTRIBUTION = '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>';
 
+// Map style descriptors. Visible label is resolved at render time
+// from the active locale via the matching `settings.map*` key, so
+// the array carries only the stable id + icon abbreviation.
 const MAP_STYLES = [
-  { id: 'standard', label: 'Standard', icon: 'S' },
-  { id: 'dark', label: 'Dark', icon: 'D' },
-  { id: 'satellite', label: 'Satellit', icon: 'Sat' },
-  { id: 'terrain', label: 'Gelände', icon: 'Ter' },
+  { id: 'standard',  labelKey: 'settings.mapStandard',  icon: 'S' },
+  { id: 'dark',      labelKey: 'settings.mapDark',      icon: 'D' },
+  { id: 'satellite', labelKey: 'settings.mapSatellite', icon: 'Sat' },
+  { id: 'terrain',   labelKey: 'settings.mapTerrain',   icon: 'Ter' },
 ] as const;
 
 function isFiniteCoordinate(value: number): boolean {
@@ -669,6 +673,7 @@ export function StationMap({
   onReload,
   onRequestLocation,
 }: StationMapProps) {
+  const { t } = useTranslations();
   const fuelType = useAppStore((s) => s.filter.fuelType);
   const userLocation = useAppStore((s) => s.userLocation);
   const userLocationAccuracy = useAppStore((s) => s.userLocationAccuracy);
@@ -682,9 +687,14 @@ export function StationMap({
       setUserLocation(coords);
       setMapCenter(null);
       setMapRadiusKm(5);
-      setPinToast(`Suchzentrum gesetzt (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`);
+      // Concatenated rather than templated so the key only carries
+      // the translatable lead-in; the coordinates stay locale-neutral
+      // (no need for separate fr/en/etc. number formatters here).
+      setPinToast(
+        `${t('map.pinDropToastPrefix')} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`,
+      );
     },
-    [setUserLocation],
+    [setUserLocation, t],
   );
   // Auto-fade the toast after 2.5 s — short enough to not be
   // intrusive, long enough to read.
@@ -972,7 +982,7 @@ export function StationMap({
                     }}>&#9889;</span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>
-                        {cs.operator || 'Ladestation'}
+                        {cs.operator || t('map.chargingFallbackName')}
                       </div>
                       <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {cs.address}, {cs.city}
@@ -1003,7 +1013,7 @@ export function StationMap({
                     marginTop: 6, fontSize: 10, color: cs.isOperational ? '#3b82f6' : '#EF4444',
                     fontWeight: 600, textAlign: 'center',
                   }}>
-                    {cs.isOperational ? 'In Betrieb' : 'Außer Betrieb'}
+                    {cs.isOperational ? t('map.chargingOperational') : t('map.chargingOutOfService')}
                   </div>
                 </div>
               </Popup>
@@ -1051,7 +1061,7 @@ export function StationMap({
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: '#94A3B8' }}>Wasserstoff</span>
+                    <span style={{ fontSize: 11, color: '#94A3B8' }}>{t('map.hydrogenLabel')}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
                       {h2.h2PricePerKg != null ? `${h2.h2PricePerKg.toFixed(2)} €/kg` : 'n/a'}
                     </span>
@@ -1066,7 +1076,7 @@ export function StationMap({
                     color: h2.h2Available ? '#06b6d4' : '#EF4444',
                     fontWeight: 600, textAlign: 'center',
                   }}>
-                    {h2.h2Available ? 'Verfügbar' : 'Nicht verfügbar'}
+                    {h2.h2Available ? t('map.h2Available') : t('map.h2Unavailable')}
                   </div>
                 </div>
               </Popup>
@@ -1109,7 +1119,7 @@ export function StationMap({
                     }}>&#128293;</span>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>
-                        {gs.operator || gs.name || 'Gastankstelle'}
+                        {gs.operator || gs.name || t('map.gasFallbackName')}
                       </div>
                       <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {gs.address.street} {gs.address.houseNumber}, {gs.address.city}
@@ -1132,7 +1142,7 @@ export function StationMap({
                     color: gs.isOpen ? '#f97316' : '#EF4444',
                     fontWeight: 600, textAlign: 'center',
                   }}>
-                    {gs.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                    {gs.isOpen ? t('station.open') : t('station.closed')}
                   </div>
                 </div>
               </Popup>
@@ -1146,8 +1156,8 @@ export function StationMap({
           type="button"
           onClick={() => mapRef.current?.zoomIn()}
           className={btnClass}
-          aria-label="Vergrößern"
-          title="Vergrößern"
+          aria-label={t('map.zoomIn')}
+          title={t('map.zoomIn')}
         >
           <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" d="M12 6v12M6 12h12" />
@@ -1158,8 +1168,8 @@ export function StationMap({
           type="button"
           onClick={() => mapRef.current?.zoomOut()}
           className={btnClass}
-          aria-label="Verkleinern"
-          title="Verkleinern"
+          aria-label={t('map.zoomOut')}
+          title={t('map.zoomOut')}
         >
           <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" d="M6 12h12" />
@@ -1172,8 +1182,8 @@ export function StationMap({
           type="button"
           onClick={handleLocate}
           className={btnClass}
-          aria-label={userLocation ? 'Zu meinem Standort' : 'Standort ermitteln'}
-          title={userLocation ? 'Zu meinem Standort' : 'Standort ermitteln'}
+          aria-label={userLocation ? t('map.centerOnLocation') : t('location.useCurrentLocation')}
+          title={userLocation ? t('map.centerOnLocation') : t('location.useCurrentLocation')}
         >
           {userLocation ? (
             <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1193,8 +1203,8 @@ export function StationMap({
             type="button"
             onClick={onReload}
             className={btnClass}
-            aria-label="Preise aktualisieren"
-            title="Preise aktualisieren"
+            aria-label={t('map.refreshPrices')}
+            title={t('map.refreshPrices')}
           >
             <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M20.016 4.356v4.992" />
@@ -1207,8 +1217,8 @@ export function StationMap({
             type="button"
             onClick={() => setStyleOpen((open) => !open)}
             className={btnClass}
-            aria-label="Kartenstil"
-            title="Kartenstil"
+            aria-label={t('map.styleAria')}
+            title={t('map.styleAria')}
           >
             <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
@@ -1239,7 +1249,7 @@ export function StationMap({
                   <span className="inline-flex min-w-7 justify-center text-xs font-semibold text-gray-500 dark:text-gray-400">
                     {style.icon}
                   </span>
-                  <span>{style.label}</span>
+                  <span>{t(style.labelKey)}</span>
                   {mapStyle === style.id && (
                     <svg className="w-4 h-4 ml-auto text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -1261,31 +1271,31 @@ export function StationMap({
       >
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-reach-safe" />
-          Tankstellen
+          {t('map.stations')}
         </span>
         <span className="flex items-center gap-1">
           <span
             className="w-3.5 h-3.5 rounded bg-brand-600 text-white flex items-center justify-center"
             dangerouslySetInnerHTML={{ __html: getStarSvg(8) }}
           />
-          Beste
+          {t('map.legendBest')}
         </span>
         {chargingStations.length > 0 && (
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#3b82f6' }}>&#9889;</span>
-            Ladesäulen
+            {t('map.legendCharging')}
           </span>
         )}
         {h2Stations.length > 0 && (
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#06b6d4' }}>&#128167;</span>
-            Wasserstoff
+            {t('map.legendHydrogen')}
           </span>
         )}
         {gasStations.length > 0 && (
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#f97316' }}>&#128293;</span>
-            Gas (LPG/CNG)
+            {t('map.legendGas')}
           </span>
         )}
       </div>
