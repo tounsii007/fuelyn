@@ -257,6 +257,17 @@ export {
   AVERAGE_SPEED_KMH,
 } from './config/constants';
 
+// Bank CSV importer (German retail banks → fuel-log candidates)
+export type {
+  BankImportRow,
+  BankImportResult,
+  BankImportOptions,
+} from './banking/import-bank-csv';
+export {
+  parseBankCsv,
+  splitCsvRow as splitBankCsvRow,
+} from './banking/import-bank-csv';
+
 // Spritmonitor.de CSV importer (consumed by web's settings page)
 export type {
   SpritmonitorImportResult,

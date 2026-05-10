@@ -657,6 +657,23 @@ export const en: TranslationKeys = {
     },
   },
 
+  bankImport: {
+    title: 'Import bank statement',
+    desc: 'CSV from your German bank (DKB / Sparkasse / ING / N26) → fuel log',
+    cta: 'Pick CSV',
+    busyCta: 'Reading …',
+    pickAria: 'Pick bank CSV',
+    statBank: 'Bank',
+    statFound: 'Found',
+    statDuplicates: 'Duplicates',
+    bankUnknown: 'Unknown',
+    andMore: '… and {n} more',
+    confirmCta: 'Import {n} entries',
+    successTitle: 'Bank import done',
+    successDesc: '{imported} imported · {duplicates} duplicates · {scanned} rows scanned.',
+    errorTitle: 'Could not read CSV',
+  },
+
   walletPass: {
     cta: 'Add to Wallet',
     loading: 'Building …',

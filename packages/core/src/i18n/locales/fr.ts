@@ -663,6 +663,23 @@ export const fr: TranslationKeys = {
     },
   },
 
+  bankImport: {
+    title: 'Importer un relevé bancaire',
+    desc: 'CSV de votre banque (DKB / Sparkasse / ING / N26) → journal de plein',
+    cta: 'Choisir CSV',
+    busyCta: 'Lecture …',
+    pickAria: 'Choisir le CSV bancaire',
+    statBank: 'Banque',
+    statFound: 'Trouvés',
+    statDuplicates: 'Doublons',
+    bankUnknown: 'Inconnue',
+    andMore: '… et {n} autres',
+    confirmCta: 'Importer {n} entrées',
+    successTitle: 'Import bancaire terminé',
+    successDesc: '{imported} importés · {duplicates} doublons · {scanned} lignes analysées.',
+    errorTitle: 'Impossible de lire le CSV',
+  },
+
   walletPass: {
     cta: 'Ajouter à Wallet',
     loading: 'Construction …',

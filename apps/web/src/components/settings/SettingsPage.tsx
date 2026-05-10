@@ -13,6 +13,7 @@ import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from '@fuelyn/core';
 import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
 import { SpritmonitorImport } from '@/components/settings/SpritmonitorImport';
+import { BankCsvImport } from '@/components/settings/BankCsvImport';
 import { MembershipPicker } from '@/components/settings/MembershipPicker';
 
 // ─── Background variants ────────────────────────────────────
@@ -407,6 +408,11 @@ export function SettingsPage() {
                 place. */}
             <SpritmonitorImport />
 
+            {/* Open-Banking CSV importer (Iter S) — uses the same
+                Daten-card slot so all "import history from elsewhere"
+                affordances are stacked together. */}
+            <BankCsvImport />
+
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-gray-400 dark:text-gray-500">
                 {t('settings.lastUpdate')}
@@ -499,7 +505,7 @@ function ImportExportRow() {
       URL.revokeObjectURL(url);
       setStatus({ kind: 'ok', message: t('settingsExtra.exportStarted') });
       setTimeout(() => setStatus({ kind: 'idle', message: '' }), 3000);
-    } catch (e) {
+    } catch {
       setStatus({ kind: 'err', message: t('settingsExtra.exportFailed') });
     }
   }, [t]);

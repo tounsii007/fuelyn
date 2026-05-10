@@ -665,6 +665,23 @@ export const de = {
     },
   },
 
+  bankImport: {
+    title: 'Bankauszug importieren',
+    desc: 'CSV von DKB / Sparkasse / ING / N26 → Tank-Logbuch',
+    cta: 'CSV wählen',
+    busyCta: 'Lese …',
+    pickAria: 'Bank-CSV auswählen',
+    statBank: 'Bank',
+    statFound: 'Gefunden',
+    statDuplicates: 'Duplikate',
+    bankUnknown: 'Unbekannt',
+    andMore: '… und {n} weitere',
+    confirmCta: '{n} Einträge übernehmen',
+    successTitle: 'Bank-Import abgeschlossen',
+    successDesc: '{imported} importiert · {duplicates} Duplikate · {scanned} Zeilen geprüft.',
+    errorTitle: 'CSV konnte nicht gelesen werden',
+  },
+
   walletPass: {
     cta: 'Zur Wallet hinzufügen',
     loading: 'Erstelle …',

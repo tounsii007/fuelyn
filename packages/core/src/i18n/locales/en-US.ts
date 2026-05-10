@@ -663,6 +663,23 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  bankImport: {
+    title: 'Import bank statement',
+    desc: 'CSV from your bank → fuel log',
+    cta: 'Pick CSV',
+    busyCta: 'Reading …',
+    pickAria: 'Pick bank CSV',
+    statBank: 'Bank',
+    statFound: 'Found',
+    statDuplicates: 'Duplicates',
+    bankUnknown: 'Unknown',
+    andMore: '… and {n} more',
+    confirmCta: 'Import {n} entries',
+    successTitle: 'Bank import done',
+    successDesc: '{imported} imported · {duplicates} duplicates · {scanned} rows scanned.',
+    errorTitle: 'Could not read CSV',
+  },
+
   walletPass: {
     cta: 'Add to Wallet',
     loading: 'Building …',
