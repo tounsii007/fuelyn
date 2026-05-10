@@ -663,6 +663,16 @@ export const fr: TranslationKeys = {
     },
   },
 
+  vehicleManager: {
+    title: 'Vos véhicules',
+    subtitle: 'Choisissez le véhicule actif — tous les calculs le suivent.',
+    add: 'Ajouter un véhicule',
+    delete: 'Retirer',
+    confirmDelete: 'Sûr ?',
+    unnamed: 'Véhicule sans nom',
+    newVehicleName: 'Nouveau véhicule',
+  },
+
   pumpPhoto: {
     cta: 'Photo de l\'écran de la pompe',
     busyCta: 'Lecture …',

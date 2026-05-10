@@ -44,6 +44,9 @@ vi.mock('@/components/ui/ThemeToggle', () => ({
 vi.mock('@/components/stations/CompareTray', () => ({
   CompareTray: () => null,
 }));
+vi.mock('@/components/voice/VoiceCommandButton', () => ({
+  VoiceCommandButton: () => null,
+}));
 
 // Configurable theme mock — each test sets what useTheme should report.
 const themeMock = vi.hoisted(() => ({

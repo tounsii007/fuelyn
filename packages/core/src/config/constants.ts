@@ -107,6 +107,12 @@ export const STORAGE_KEYS = {
   PRICE_HISTORY: 'fuelyn:priceHistory',
   SAVED_LOCATIONS: 'fuelyn:savedLocations',
   ACTIVE_MEMBERSHIPS: 'fuelyn:activeMemberships',
+  /**
+   * Multi-vehicle list. The legacy single-vehicle entry under
+   * VEHICLE_PROFILES still loads as a fallback when this key is empty.
+   */
+  VEHICLES_LIST: 'fuelyn:vehiclesList',
+  ACTIVE_VEHICLE_ID: 'fuelyn:activeVehicleId',
 } as const;
 
 // ─── Brands (common German fuel station brands) ──────────────

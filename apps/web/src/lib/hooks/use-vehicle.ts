@@ -107,6 +107,23 @@ const activeMembershipsStorage = createTypedStorage<string[]>(
   [],
 );
 
+// Multi-vehicle storage (Iter P) — list of profiles + active id.
+// Reads gracefully fall back to the legacy single-vehicle key when the
+// new keys are empty, so existing users transparently upgrade.
+const vehiclesListStorage = createTypedStorage<VehicleProfile[]>(
+  adapter,
+  STORAGE_KEYS.VEHICLES_LIST,
+  z.array(vehicleProfileSchema),
+  [],
+);
+
+const activeVehicleIdStorage = createTypedStorage<string | null>(
+  adapter,
+  STORAGE_KEYS.ACTIVE_VEHICLE_ID,
+  z.string().nullable(),
+  null,
+);
+
 const savedLocationsStorage = createTypedStorage<SavedLocation[]>(
   adapter,
   STORAGE_KEYS.SAVED_LOCATIONS,
@@ -128,7 +145,11 @@ export function useHydrateStore() {
   const hydrated = useRef(false);
 
   const setVehicle = useAppStore((s) => s.setVehicle);
+  const setVehicles = useAppStore((s) => s.setVehicles);
+  const setActiveVehicleId = useAppStore((s) => s.setActiveVehicleId);
   const vehicle = useAppStore((s) => s.vehicle);
+  const vehicles = useAppStore((s) => s.vehicles);
+  const activeVehicleId = useAppStore((s) => s.activeVehicleId);
   const favorites = useAppStore((s) => s.favorites);
   const settings = useAppStore((s) => s.settings);
   const onboardingDone = useAppStore((s) => s.onboardingDone);
@@ -144,7 +165,7 @@ export function useHydrateStore() {
     hydrated.current = true;
 
     void (async () => {
-      const [v, f, s, ob, pa, fl, sl, gf, am] = await Promise.all([
+      const [v, f, s, ob, pa, fl, sl, gf, am, vl, av] = await Promise.all([
         vehicleStorage.get(),
         favoritesStorage.get(),
         settingsStorage.get(),
@@ -154,9 +175,20 @@ export function useHydrateStore() {
         savedLocationsStorage.get(),
         geoFencesStorage.get(),
         activeMembershipsStorage.get(),
+        vehiclesListStorage.get(),
+        activeVehicleIdStorage.get(),
       ]);
 
-      if (v) setVehicle(v);
+      // ----- Multi-vehicle hydration with legacy fallback -----
+      if (vl.length > 0) {
+        // New-style storage wins. Restore the list AND the active id;
+        // setVehicles already snaps `vehicle` to the right entry.
+        setVehicles(vl);
+        if (av) setActiveVehicleId(av);
+      } else if (v) {
+        // Legacy single-vehicle profile — promote to a one-element list.
+        setVehicle(v);
+      }
       if (f.length > 0) {
         const store = useAppStore.getState();
         for (const fav of f) store.addFavorite(fav);
@@ -172,13 +204,25 @@ export function useHydrateStore() {
       }
       if (am.length > 0) useAppStore.getState().setActiveMemberships(am);
     })();
-  }, [setVehicle]);
+  }, [setVehicle, setVehicles, setActiveVehicleId]);
 
-  // Persist on changes
+  // Persist on changes — both the legacy single-vehicle slot (kept in
+  // sync so older app builds can still load the active profile) and
+  // the new multi-vehicle list + active-id slots.
   useEffect(() => {
     if (!hydrated.current) return;
     void vehicleStorage.set(vehicle);
   }, [vehicle]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    void vehiclesListStorage.set(vehicles);
+  }, [vehicles]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    void activeVehicleIdStorage.set(activeVehicleId);
+  }, [activeVehicleId]);
 
   useEffect(() => {
     if (!hydrated.current) return;

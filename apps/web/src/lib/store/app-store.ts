@@ -81,9 +81,21 @@ interface AppState {
   setFuelType: (type: FuelType) => void;
   resetFilter: () => void;
 
-  // Vehicle
-  vehicle: VehicleProfile | null;
+  // Vehicle (multi-vehicle aware — see Iter P)
+  // ----------------------------------------------------------------
+  // The collection lives in `vehicles[]`; `activeVehicleId` selects
+  // which one is current. `vehicle` is a *derived* convenience getter
+  // (kept around so existing call-sites don't have to change). Legacy
+  // setVehicle continues to work and is mapped to upsert + setActive.
+  vehicles: VehicleProfile[];
+  activeVehicleId: string | null;
+  vehicle: VehicleProfile | null; // derived view, kept as plain field for selector simplicity
   setVehicle: (vehicle: VehicleProfile | null) => void;
+  addVehicle: (vehicle: VehicleProfile) => void;
+  removeVehicle: (id: string) => void;
+  updateVehicle: (id: string, patch: Partial<VehicleProfile>) => void;
+  setActiveVehicleId: (id: string | null) => void;
+  setVehicles: (list: VehicleProfile[]) => void;
 
   // Favorites
   favorites: FavoriteStation[];
@@ -267,9 +279,67 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ filter: { ...s.filter, fuelType: type } })),
   resetFilter: () => set({ filter: DEFAULT_FILTER }),
 
-  // Vehicle
+  // Vehicle (multi-vehicle, see Iter P)
+  vehicles: [],
+  activeVehicleId: null,
   vehicle: null,
-  setVehicle: (vehicle) => set({ vehicle }),
+  setVehicle: (v) =>
+    set((s) => {
+      if (!v) {
+        // null: clear active pointer but keep the list intact
+        return { vehicle: null, activeVehicleId: null };
+      }
+      // Upsert by id and make this one active.
+      const list = [...s.vehicles];
+      const idx = list.findIndex((x) => x.id === v.id);
+      if (idx >= 0) list[idx] = v;
+      else list.push(v);
+      return { vehicles: list, activeVehicleId: v.id, vehicle: v };
+    }),
+  addVehicle: (v) =>
+    set((s) => {
+      // Auto-pick a unique id when the caller hasn't supplied one.
+      const id = v.id && v.id.trim() ? v.id : `veh-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const next: VehicleProfile = { ...v, id };
+      const list = [...s.vehicles, next];
+      // First vehicle becomes active automatically.
+      const becomesActive = s.activeVehicleId == null;
+      return {
+        vehicles: list,
+        activeVehicleId: becomesActive ? id : s.activeVehicleId,
+        vehicle: becomesActive ? next : s.vehicle,
+      };
+    }),
+  removeVehicle: (id) =>
+    set((s) => {
+      const list = s.vehicles.filter((v) => v.id !== id);
+      // If the active vehicle was just removed, fall back to the
+      // first remaining one (or null when nothing's left).
+      const stillActive = list.find((v) => v.id === s.activeVehicleId);
+      const nextActiveId = stillActive ? stillActive.id : list[0]?.id ?? null;
+      const nextActive = list.find((v) => v.id === nextActiveId) ?? null;
+      return { vehicles: list, activeVehicleId: nextActiveId, vehicle: nextActive };
+    }),
+  updateVehicle: (id, patch) =>
+    set((s) => {
+      const list = s.vehicles.map((v) => (v.id === id ? { ...v, ...patch } : v));
+      const active = list.find((v) => v.id === s.activeVehicleId) ?? null;
+      return { vehicles: list, vehicle: active };
+    }),
+  setActiveVehicleId: (id) =>
+    set((s) => ({
+      activeVehicleId: id,
+      vehicle: id ? s.vehicles.find((v) => v.id === id) ?? null : null,
+    })),
+  setVehicles: (list) =>
+    set((s) => {
+      const active = list.find((v) => v.id === s.activeVehicleId) ?? list[0] ?? null;
+      return {
+        vehicles: list,
+        activeVehicleId: active?.id ?? null,
+        vehicle: active,
+      };
+    }),
 
   // Favorites
   favorites: [],

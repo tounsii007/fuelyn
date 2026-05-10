@@ -8,6 +8,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { VehicleForm } from '@/components/vehicle/VehicleForm';
+import { VehicleManager } from '@/components/vehicle/VehicleManager';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@fuelyn/core';
 import { computeRemainingRange } from '@fuelyn/core';
@@ -34,6 +35,14 @@ export default function VehiclePage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
         Fahrzeug
       </h1>
+
+      {/*
+        Multi-vehicle picker (Iter P). Renders nothing when the user
+        only has zero or one vehicle stored, so the existing single-
+        vehicle UX stays unchanged for the typical case. For families
+        / fleets this becomes a switchable list above the detail form.
+      */}
+      <VehicleManager />
 
       {isFormOpen || !vehicle ? (
         <VehicleForm onClose={() => setVehicleFormOpen(false)} />

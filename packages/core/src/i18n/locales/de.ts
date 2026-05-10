@@ -665,6 +665,16 @@ export const de = {
     },
   },
 
+  vehicleManager: {
+    title: 'Deine Fahrzeuge',
+    subtitle: 'Wähle das aktive Fahrzeug — alle Berechnungen folgen ihm.',
+    add: 'Fahrzeug hinzufügen',
+    delete: 'Entfernen',
+    confirmDelete: 'Wirklich?',
+    unnamed: 'Unbenanntes Fahrzeug',
+    newVehicleName: 'Neues Fahrzeug',
+  },
+
   pumpPhoto: {
     cta: 'Foto vom Zapfsäulen-Display',
     busyCta: 'Lese …',

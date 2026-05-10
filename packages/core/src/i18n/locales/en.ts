@@ -657,6 +657,16 @@ export const en: TranslationKeys = {
     },
   },
 
+  vehicleManager: {
+    title: 'Your vehicles',
+    subtitle: 'Pick the active vehicle — all calculations follow it.',
+    add: 'Add vehicle',
+    delete: 'Remove',
+    confirmDelete: 'Sure?',
+    unnamed: 'Unnamed vehicle',
+    newVehicleName: 'New vehicle',
+  },
+
   pumpPhoto: {
     cta: 'Photo of the pump display',
     busyCta: 'Reading …',

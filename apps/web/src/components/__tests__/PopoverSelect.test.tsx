@@ -40,6 +40,14 @@ vi.mock('@/components/ui/ThemeToggle', () => ({
   ThemeToggle: () => <button>theme</button>,
 }));
 
+vi.mock('@/components/stations/CompareTray', () => ({
+  CompareTray: () => null,
+}));
+
+vi.mock('@/components/voice/VoiceCommandButton', () => ({
+  VoiceCommandButton: () => null,
+}));
+
 import { AppShell } from '../layout/AppShell';
 
 describe('PopoverSelect — fuel-type & radius', () => {
