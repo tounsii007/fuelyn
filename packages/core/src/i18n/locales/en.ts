@@ -419,6 +419,22 @@ export const en: TranslationKeys = {
     jumpAbout: 'About',
   },
 
+  aiChat: {
+    title: 'Fuelyn Assistant',
+    subtitle: 'Ask about prices, routes, savings',
+    emptyTitle: 'Hi! How can I help?',
+    emptyBody: 'Ask about the cheapest stations, the best time to fuel up, or get a strategy for a long route.',
+    suggestionCheap: 'Where is the cheapest diesel today?',
+    suggestionTime: 'When should I fuel up?',
+    suggestionRoute: 'Help me plan fuel stops for a long route',
+    suggestionEv: 'How do fast EV chargers work?',
+    placeholder: 'Type a message…',
+    sendAria: 'Send message',
+    clearChat: 'Clear chat',
+    errorReply: 'Something went wrong. Please try again in a moment.',
+    fallbackHint: 'AI model offline — simplified reply',
+  },
+
   priceStats: {
     pricesSuffix: 'prices',
     stationsWithPrice: 'stations with price',

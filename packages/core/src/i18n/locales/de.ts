@@ -427,6 +427,22 @@ export const de = {
     jumpAbout: 'Über',
   },
 
+  aiChat: {
+    title: 'Fuelyn Assistent',
+    subtitle: 'Frage zu Preisen, Routen, Sparen',
+    emptyTitle: 'Hi! Wie kann ich dir helfen?',
+    emptyBody: 'Frage nach den günstigsten Tankstellen, dem besten Tank-Zeitpunkt, oder lass dir eine Tank-Strategie für deine Strecke empfehlen.',
+    suggestionCheap: 'Wo gibt es heute den günstigsten Diesel?',
+    suggestionTime: 'Wann sollte ich am besten tanken?',
+    suggestionRoute: 'Hilf mir bei der Tank-Planung für eine lange Strecke',
+    suggestionEv: 'Wie funktionieren Schnellladestationen?',
+    placeholder: 'Schreibe eine Nachricht…',
+    sendAria: 'Nachricht senden',
+    clearChat: 'Verlauf leeren',
+    errorReply: 'Etwas ist schiefgelaufen. Versuche es bitte gleich nochmal.',
+    fallbackHint: 'KI-Modell offline — vereinfachte Antwort',
+  },
+
   priceStats: {
     pricesSuffix: 'Preise',
     stationsWithPrice: 'Stationen mit Preis',

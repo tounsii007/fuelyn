@@ -425,6 +425,22 @@ export const fr: TranslationKeys = {
     jumpAbout: 'À propos',
   },
 
+  aiChat: {
+    title: 'Assistant Fuelyn',
+    subtitle: 'Posez vos questions sur les prix, trajets, économies',
+    emptyTitle: 'Bonjour ! Comment puis-je aider ?',
+    emptyBody: 'Demandez les stations les moins chères, le meilleur moment pour faire le plein, ou une stratégie pour un long trajet.',
+    suggestionCheap: 'Où trouver le diesel le moins cher aujourd’hui ?',
+    suggestionTime: 'Quand devrais-je faire le plein ?',
+    suggestionRoute: 'Aide-moi à planifier les arrêts carburant pour un long trajet',
+    suggestionEv: 'Comment fonctionnent les bornes de recharge rapide ?',
+    placeholder: 'Tapez un message…',
+    sendAria: 'Envoyer le message',
+    clearChat: 'Effacer la conversation',
+    errorReply: 'Une erreur est survenue. Veuillez réessayer dans un instant.',
+    fallbackHint: 'Modèle IA hors ligne — réponse simplifiée',
+  },
+
   priceStats: {
     pricesSuffix: 'prix',
     stationsWithPrice: 'stations avec prix',

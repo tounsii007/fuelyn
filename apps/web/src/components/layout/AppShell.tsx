@@ -556,6 +556,7 @@ function MoreMenu() {
         { kind: 'link', href: '/compare',       label: t('nav.compare'),               desc: t('moreMenu.compareDesc'),       icon: <ScalesIcon /> },
         { kind: 'link', href: '/stats',         label: t('moreMenu.statsLabel'),       desc: t('moreMenu.statsDesc'),         icon: <ChartIcon /> },
         { kind: 'link', href: '/route-planner', label: t('moreMenu.routePlannerLabel'), desc: t('moreMenu.routePlannerDesc'), icon: <RouteIcon /> },
+        { kind: 'link', href: '/ai-chat',       label: t('aiChat.title'),               desc: t('aiChat.subtitle'),            icon: <SparkleIcon /> },
       ],
     },
     {
@@ -881,6 +882,16 @@ function RouteIcon() {
       <circle cx="6" cy="6" r="2" />
       <circle cx="18" cy="18" r="2" />
       <path {...stroke} d="M6 8v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4" />
+    </svg>
+  );
+}
+function SparkleIcon() {
+  // Sparkle glyph — used for the AI chat menu entry. Same
+  // visual language as the BestDealCard's "Top Deal" mark so
+  // both AI surfaces feel related.
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+      <path d="M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6L12 2zm6 12l.9 2.4L21 17l-2.1.6L18 20l-.9-2.4L15 17l2.1-.6.9-2.4z" />
     </svg>
   );
 }
