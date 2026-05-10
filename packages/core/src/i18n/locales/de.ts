@@ -445,6 +445,17 @@ export const de = {
     },
   },
 
+  co2Dashboard: {
+    title: 'CO₂-Bilanz',
+    subtitle: 'Deine Emissionen aus dem Tank-Logbuch',
+    unitLast30d: 'kg / 30T',
+    kpiLifetime: 'Insgesamt',
+    kpiTreeYears: 'Bäume × Jahre',
+    kpiLiters: 'Liter',
+    monthlyChart: 'Monatlich (12M)',
+    perFuelTitle: 'Nach Kraftstoff',
+  },
+
   spritmonitor: {
     title: 'Spritmonitor.de Import',
     desc: 'CSV-Export von Spritmonitor in dein Tank-Logbuch übernehmen',

@@ -269,6 +269,14 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// CO₂ tracking
+export type { Co2Summary, MonthlyCo2Bucket } from './engine/co2-tracking';
+export {
+  summarizeCo2,
+  entryCo2Kg,
+  CO2_FACTOR_KG_PER_LITER,
+} from './engine/co2-tracking';
+
 // Lightweight 24h price prediction
 export type {
   PricePrediction,

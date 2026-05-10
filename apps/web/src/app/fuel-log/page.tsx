@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { ReceiptScanner } from '@/components/fuelLog/ReceiptScanner';
+import { Co2Dashboard } from '@/components/fuelLog/Co2Dashboard';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { IconButton } from '@/components/ui/IconButton';
@@ -186,6 +187,10 @@ export default function FuelLogPage() {
 
       {/* KI Verbrauchstracker */}
       <ConsumptionTracker className="mb-4" />
+
+      {/* CO₂ tracking dashboard — auto-suppresses when the log
+          is empty so it never crowds the empty state. */}
+      <Co2Dashboard className="mb-4" />
 
       {/* Stats Summary — lifetime totals */}
       {stats && (

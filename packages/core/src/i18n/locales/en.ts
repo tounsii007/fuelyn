@@ -437,6 +437,17 @@ export const en: TranslationKeys = {
     },
   },
 
+  co2Dashboard: {
+    title: 'CO₂ footprint',
+    subtitle: 'Your emissions from the fuel log',
+    unitLast30d: 'kg / 30d',
+    kpiLifetime: 'Lifetime',
+    kpiTreeYears: 'Tree-years',
+    kpiLiters: 'Litres',
+    monthlyChart: 'Monthly (12M)',
+    perFuelTitle: 'By fuel type',
+  },
+
   spritmonitor: {
     title: 'Spritmonitor.de import',
     desc: 'Import a CSV exported from Spritmonitor into your fuel log',

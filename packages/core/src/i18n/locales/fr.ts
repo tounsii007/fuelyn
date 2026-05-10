@@ -443,6 +443,17 @@ export const fr: TranslationKeys = {
     },
   },
 
+  co2Dashboard: {
+    title: 'Empreinte CO₂',
+    subtitle: 'Vos émissions issues du journal carburant',
+    unitLast30d: 'kg / 30 j',
+    kpiLifetime: 'Total',
+    kpiTreeYears: 'Arbres × années',
+    kpiLiters: 'Litres',
+    monthlyChart: 'Mensuel (12 mois)',
+    perFuelTitle: 'Par carburant',
+  },
+
   spritmonitor: {
     title: 'Import Spritmonitor.de',
     desc: 'Importez un CSV exporté depuis Spritmonitor dans votre journal',
