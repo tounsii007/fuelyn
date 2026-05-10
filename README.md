@@ -1,9 +1,22 @@
 # Fuelyn
 
+[![CI](https://github.com/fuelyn/fuelyn/actions/workflows/ci.yml/badge.svg)](https://github.com/fuelyn/fuelyn/actions/workflows/ci.yml)
+
 Kraftstoff- und Ladesäulen-Navigator für Deutschland. Vergleicht Preise,
 erkennt Muster und liefert KI-gestützte Tank-Empfehlungen. Monorepo aus
 Next.js-Web, Expo-Mobile, Java-Spring-Boot-Microservices und einem
 shared TypeScript-Core.
+
+## Pre-commit hooks
+
+Husky + lint-staged sind via `npm install` automatisch aktiv. Bei jedem
+Commit läuft ESLint mit `--fix` über die geänderten TS/TSX-Files (sub-
+Sekunden-Feedback). `git push` triggert zusätzlich den vollen Typecheck-
+und Test-Sweep für `@fuelyn/core` und `@fuelyn/web` — das fängt
+Cross-File-Regressionen ab, die lint-staged nicht sieht.
+
+Zu umgehen mit `git commit --no-verify` / `git push --no-verify` — nur
+sparsam und bewusst nutzen.
 
 ## Projektstruktur
 

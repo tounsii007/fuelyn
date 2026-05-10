@@ -1,0 +1,16 @@
+# ============================================================
+# pre-commit — fast feedback before the commit lands
+#
+# Runs in this order, exiting on the first failure:
+#   1. lint-staged: ESLint --fix on staged TS/TSX files only
+#      (auto-fixes formatting / import order issues so the
+#      commit goes in clean). --max-warnings=0 means warnings
+#      are treated as failures — keeps the codebase warning-
+#      clean over time.
+#
+# Speed: only touches files in the staged set, so commits to a
+# single file finish in under a second. The full test + type-check
+# suite runs server-side in GitHub Actions (.github/workflows/ci.yml)
+# rather than blocking every local commit.
+# ============================================================
+npx lint-staged

@@ -1,0 +1,23 @@
+# ============================================================
+# pre-push — last-line-of-defense before the commit reaches the
+# remote.
+#
+# Runs the typecheck + test suites on the entire workspace.
+# Slower than pre-commit (10-30s typical) but catches the kind
+# of regression that lint-staged can't see — a hook-order bug
+# in StationList, a missing translation key, a broken test in
+# a file the commit didn't touch but transitively breaks.
+#
+# This is intentionally NOT in pre-commit because per-commit
+# typechecking creates friction that pushes devs toward
+# --no-verify. Pre-push is the right boundary: rebases / WIP
+# commits stay fast, but `git push` is checked.
+#
+# Skip with `git push --no-verify` only when you know what
+# you're doing (e.g. pushing a WIP branch you're about to
+# rebase before opening a PR).
+# ============================================================
+npm run -w @fuelyn/core type-check
+npm run -w @fuelyn/web type-check
+npm run -w @fuelyn/core test
+npm run -w @fuelyn/web test
