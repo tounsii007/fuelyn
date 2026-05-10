@@ -443,6 +443,25 @@ export const enUS: TranslationKeys = {
     },
   },
 
+  smartBuying: {
+    title: 'Smart-Buying score',
+    fillsLabel: 'fills',
+    savedTotal: 'You saved {amount} below market.',
+    overpaidTotal: '{amount} more than market — room to improve.',
+    compPriceVsMarket: 'Price vs. market',
+    compConsistency: 'Consistency',
+    compSpreadCapture: 'Spread capture',
+    lowConfidenceHint: 'Limited data — the score gets more reliable with each fill.',
+    band: {
+      excellent: 'Fuel pro',
+      great: 'Very smart',
+      good: 'Solid',
+      average: 'Average',
+      'below-average': 'Could be better',
+      poor: 'Wrong days',
+    },
+  },
+
   bestTimeHeatmap: {
     title: 'Best time to fill up',
     subtitle: 'Weekday × hour · {count} snapshots',

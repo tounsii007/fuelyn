@@ -445,6 +445,25 @@ export const de = {
     },
   },
 
+  smartBuying: {
+    title: 'Smart-Buying-Score',
+    fillsLabel: 'Tankfüllungen',
+    savedTotal: 'Du hast {amount} unter dem Markt gespart.',
+    overpaidTotal: '{amount} mehr als der Markt — verbesserbar.',
+    compPriceVsMarket: 'Preis vs. Markt',
+    compConsistency: 'Konsistenz',
+    compSpreadCapture: 'Spread-Capture',
+    lowConfidenceHint: 'Wenig Daten — der Score wird mit jedem Tankvorgang verlässlicher.',
+    band: {
+      excellent: 'Tank-Profi',
+      great: 'Sehr smart',
+      good: 'Solide',
+      average: 'Durchschnittlich',
+      'below-average': 'Verbesserbar',
+      poor: 'Falsche Tage',
+    },
+  },
+
   bestTimeHeatmap: {
     title: 'Bester Tank-Zeitpunkt',
     subtitle: 'Wochentag × Uhrzeit · {count} Snapshots',

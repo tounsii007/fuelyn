@@ -269,6 +269,14 @@ export {
   splitCsvRow as splitSpritmonitorCsvRow,
 } from './spritmonitor/import';
 
+// Smart-Buying Score
+export type {
+  SmartBuyingScore,
+  SmartBuyingComponents,
+  SmartBuyingInputs,
+} from './engine/smart-buying-score';
+export { computeSmartBuyingScore } from './engine/smart-buying-score';
+
 // Best-time heatmap
 export type { BestTimeHeatmap, HeatmapCell } from './engine/best-time-heatmap';
 export { buildBestTimeHeatmap } from './engine/best-time-heatmap';

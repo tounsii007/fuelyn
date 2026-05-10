@@ -443,6 +443,25 @@ export const fr: TranslationKeys = {
     },
   },
 
+  smartBuying: {
+    title: 'Score d’achat malin',
+    fillsLabel: 'pleins',
+    savedTotal: 'Vous avez économisé {amount} sous le marché.',
+    overpaidTotal: '{amount} de plus que le marché — à améliorer.',
+    compPriceVsMarket: 'Prix vs marché',
+    compConsistency: 'Régularité',
+    compSpreadCapture: 'Capture du spread',
+    lowConfidenceHint: 'Peu de données — le score se précise à chaque plein.',
+    band: {
+      excellent: 'Pro du carburant',
+      great: 'Très malin',
+      good: 'Solide',
+      average: 'Moyen',
+      'below-average': 'À améliorer',
+      poor: 'Mauvais jours',
+    },
+  },
+
   bestTimeHeatmap: {
     title: 'Meilleur moment pour faire le plein',
     subtitle: 'Jour × heure · {count} relevés',
