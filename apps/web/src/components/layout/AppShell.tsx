@@ -13,6 +13,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CompareTray } from '@/components/stations/CompareTray';
+import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { useAppStore } from '@/lib/store/app-store';
 import { FUEL_TYPE_LABELS, RADIUS_OPTIONS_KM } from '@fuelyn/core';
 import type { FuelType } from '@fuelyn/core';
@@ -142,6 +143,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         nothing in the common case.
       */}
       <CompareTray />
+
+      {/*
+        Floating voice-command FAB. Mounts globally so a single tap
+        always opens the same listening overlay regardless of which
+        page the user is currently on. The button itself returns
+        null on browsers that don't expose SpeechRecognition.
+      */}
+      <VoiceCommandButton />
     </div>
   );
 }

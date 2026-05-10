@@ -337,6 +337,15 @@ export type {
 } from './engine/price-prediction';
 export { predictNext24h } from './engine/price-prediction';
 
+// Voice command intent parser (consumed by useVoiceCommand hook)
+export type {
+  VoiceIntent,
+  VoiceIntentName,
+  VoiceIntentSlots,
+  ParseIntentOptions,
+} from './voice/parse-intent';
+export { parseVoiceIntent } from './voice/parse-intent';
+
 // Receipt OCR parser (consumed by web's fuel-log scanner)
 export type { ParsedReceipt } from './receipt/parse-receipt';
 export {
