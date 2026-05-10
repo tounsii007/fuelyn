@@ -330,6 +330,15 @@ export type {
 } from './engine/multi-stop';
 export { optimizeStops } from './engine/multi-stop';
 
+// Anonymous price-report aggregation engine
+export type {
+  AggregationInput,
+  AggregationOptions,
+  AggregationResult,
+  AggregationDecision,
+} from './engine/price-report-aggregation';
+export { aggregateReports } from './engine/price-report-aggregation';
+
 // Anonymous price-report validator
 export type {
   PriceReportInput,
