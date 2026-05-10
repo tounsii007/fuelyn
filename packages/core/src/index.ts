@@ -273,6 +273,13 @@ export {
 export type { TripCostEstimate, TripCostInputs } from './engine/trip-cost';
 export { estimateTripCost, haversineDistanceKm } from './engine/trip-cost';
 
+// Multi-stop route optimisation (TSP)
+export type {
+  OptimizeStopsInputs,
+  OptimizeStopsResult,
+} from './engine/multi-stop';
+export { optimizeStops } from './engine/multi-stop';
+
 // Brand membership / loyalty cards
 export type { MembershipDiscount, MembershipId } from './engine/membership-tiers';
 export {

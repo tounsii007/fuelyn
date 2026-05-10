@@ -28,6 +28,7 @@ import {
   formatDistance,
   formatDriveTime,
   formatPrice,
+  optimizeStops,
 } from '@fuelyn/core';
 
 interface RouteStop {
@@ -120,6 +121,36 @@ export default function RoutePlannerPage() {
       const next = [...prev];
       [next[idx], next[target]] = [next[target]!, next[idx]!];
       return next;
+    });
+  }, []);
+
+  /**
+   * Resequence the stops to minimise total air-distance. The starting
+   * point stays pinned at position 0 (so we always begin at the user's
+   * location); everything after the start is permuted by the optimiser.
+   * If the trip has 0–1 movable stops there's nothing to do.
+   *
+   * Stores the savings on the result so the UI can surface "you saved
+   * X km" in the next render.
+   */
+  const [lastSavedKm, setLastSavedKm] = useState<number | null>(null);
+
+  const optimizeOrder = useCallback(() => {
+    setStops((prev) => {
+      if (prev.length < 3) return prev; // start + at least 2 stops needed
+      const start = prev[0]!;
+      const movable = prev.slice(1);
+      const result = optimizeStops({
+        start: { lat: start.lat, lng: start.lng },
+        stops: movable.map((s) => ({ lat: s.lat, lng: s.lng })),
+      });
+      if (result.savedKm <= 0.01) {
+        setLastSavedKm(0);
+        return prev;
+      }
+      const reordered = result.order.map((idx) => movable[idx]!);
+      setLastSavedKm(result.savedKm);
+      return [start, ...reordered];
     });
   }, []);
 
@@ -260,7 +291,42 @@ export default function RoutePlannerPage() {
 
           {/* Route Stops timeline */}
           <div className="bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-card p-5">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Deine Route</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Deine Route</h2>
+              {/*
+                Optimize-order button. Only enabled once we have at least
+                two movable stops to permute. Surfaces the km saved as a
+                small badge so the user can confirm the new order is
+                actually better than what they had before.
+              */}
+              {stops.length >= 3 && (
+                <button
+                  type="button"
+                  onClick={optimizeOrder}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700
+                             bg-white dark:bg-gray-900 px-2.5 py-1.5 text-xs font-medium
+                             text-gray-700 dark:text-gray-200
+                             hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  title="Reihenfolge optimieren (kürzeste Strecke)"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h13M3 12h9m-9 5h13M17 7l3 3-3 3M21 12l-3 3 3 3" />
+                  </svg>
+                  Optimieren
+                </button>
+              )}
+            </div>
+            {/* Saved-km badge — appears for ~6s after a successful optimize. */}
+            {lastSavedKm != null && (
+              <p
+                className={`mb-3 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium
+                            ${lastSavedKm > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}
+              >
+                {lastSavedKm > 0
+                  ? `Gespart: ${formatDistance(lastSavedKm)} (${(lastSavedKm * 1).toFixed(1)} km)`
+                  : 'Reihenfolge war bereits optimal.'}
+              </p>
+            )}
 
             {stops.length === 0 ? (
               <p className="text-sm text-gray-400">Keine Stopps geplant.</p>
