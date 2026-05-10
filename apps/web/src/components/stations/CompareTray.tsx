@@ -17,13 +17,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
+import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
 
 export function CompareTray() {
   const { t } = useTranslations();
+  const hydrated = useIsHydrated();
   const ids = useAppStore((s) => s.compareStationIds);
   const clearCompare = useAppStore((s) => s.clearCompare);
   const pathname = usePathname();
 
+  // Mount-gate: compareStationIds lives in Zustand-persist, so the
+  // SSR render always sees the default empty array (and ships
+  // nothing). A returning user with items in their saved compare
+  // set would then see the tray POP into existence post-hydration —
+  // SSR HTML for the tray was empty, client first render is empty
+  // too (matches), then Zustand restores → tray appears via a
+  // normal state update. Strictly speaking that's NOT a hydration
+  // mismatch, but gating on `hydrated` makes the intent explicit
+  // and survives anyone moving compareStationIds out of persist
+  // into the SSR-defaults later.
+  if (!hydrated) return null;
   // No items → invisible. Also hide on /compare itself, where the
   // tray would just duplicate the page's own controls.
   if (ids.length === 0) return null;

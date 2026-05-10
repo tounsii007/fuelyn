@@ -7,6 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { FuelType } from '@fuelyn/core';
 
@@ -17,6 +18,7 @@ const STEPS = [
 ] as const;
 
 export function OnboardingModal() {
+  const hydrated = useIsHydrated();
   const onboardingDone = useAppStore((s) => s.onboardingDone);
   const setOnboardingDone = useAppStore((s) => s.setOnboardingDone);
   const setFuelType = useAppStore((s) => s.setFuelType);
@@ -37,6 +39,16 @@ export function OnboardingModal() {
     }
   }, [step, selectedFuel, setFuelType, updateSettings, setOnboardingDone]);
 
+  // Mount-gate: SSR can't see Zustand-persist'ed state, so the
+  // server always renders with the default `onboardingDone=false`
+  // and ships the modal HTML. Returning users (who have done
+  // onboarding) would then see the modal disappear during client
+  // hydration as Zustand restores the persisted true value —
+  // exactly the SSR/CSR mismatch React 19 #418 punishes us for.
+  // Skipping render until mounted means SSR ships nothing for
+  // this modal and the client appears it after hydration via a
+  // normal state update, not a hydration mismatch.
+  if (!hydrated) return null;
   if (onboardingDone) return null;
 
   return (
