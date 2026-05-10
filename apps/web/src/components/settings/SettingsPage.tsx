@@ -14,6 +14,7 @@ import type { ThemeMode, FuelType, MapStyle, BackgroundVariant, AppLocale } from
 import { CountryFlag, type FlagCode } from '@/components/ui/CountryFlag';
 import { SpritmonitorImport } from '@/components/settings/SpritmonitorImport';
 import { BankCsvImport } from '@/components/settings/BankCsvImport';
+import { PremiumStatusCard } from '@/components/billing/PremiumStatusCard';
 import { MembershipPicker } from '@/components/settings/MembershipPicker';
 
 // ─── Background variants ────────────────────────────────────
@@ -412,6 +413,11 @@ export function SettingsPage() {
                 Daten-card slot so all "import history from elsewhere"
                 affordances are stacked together. */}
             <BankCsvImport />
+
+            {/* Stripe Premium status (Iter T) — anchored at #premium so
+                PremiumGate components can deep-link here when they
+                surface the upgrade CTA. */}
+            <PremiumStatusCard />
 
             <div className="flex items-center justify-between px-4 py-2">
               <span className="text-xs text-gray-400 dark:text-gray-500">

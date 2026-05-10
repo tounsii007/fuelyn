@@ -257,6 +257,25 @@ export {
   AVERAGE_SPEED_KMH,
 } from './config/constants';
 
+// Subscription / Premium entitlement engine
+export type {
+  Subscription,
+  SubscriptionStatus,
+  PremiumFeature,
+  CheckoutSessionRequest,
+  CheckoutSessionPayload,
+  StripeSubscriptionEventLike,
+} from './billing/subscription';
+export {
+  isFeatureUnlocked,
+  isPremium,
+  daysUntilExpiry,
+  buildCheckoutSessionPayload,
+  reconcileFromStripe,
+  FREE_SUBSCRIPTION,
+  FEATURE_TIER,
+} from './billing/subscription';
+
 // Bank CSV importer (German retail banks → fuel-log candidates)
 export type {
   BankImportRow,

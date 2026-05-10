@@ -13,6 +13,7 @@ import type {
   SortMode,
   StationFilter,
   VehicleProfile,
+  Subscription,
   FavoriteStation,
   AppSettings,
   ThemeMode,
@@ -108,6 +109,14 @@ interface AppState {
   updateSettings: (partial: Partial<AppSettings>) => void;
   setTheme: (theme: ThemeMode) => void;
   setLocale: (locale: AppLocale) => void;
+
+  // Stripe Premium subscription state (Iter T)
+  // Persisted to localStorage by useHydrateStore. The Stripe webhook
+  // (apps/web/src/app/api/billing/webhook) is the canonical source
+  // when a real backend is wired in; the local copy lets the UI gate
+  // optimistically + offline.
+  subscription: Subscription;
+  setSubscription: (sub: Subscription) => void;
 
   // Brand membership / loyalty cards.
   // Stored as a string-array of `MembershipId` values from
@@ -357,6 +366,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Settings
   settings: DEFAULT_SETTINGS,
+
+  // Stripe Premium (Iter T) — defaults to free; webhook updates persist.
+  subscription: { status: 'free', plan: null },
+  setSubscription: (sub) => set({ subscription: sub }),
+
   activeMemberships: [],
   toggleMembership: (id) =>
     set((s) => ({

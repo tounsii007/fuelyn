@@ -5,7 +5,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import type { VehicleProfile, FavoriteStation, AppSettings, PriceAlert, FuelLogEntry, SavedLocation } from '@fuelyn/core';
+import type { VehicleProfile, FavoriteStation, AppSettings, PriceAlert, FuelLogEntry, SavedLocation, Subscription } from '@fuelyn/core';
 import {
   WebStorageAdapter,
   createTypedStorage,
@@ -124,6 +124,21 @@ const activeVehicleIdStorage = createTypedStorage<string | null>(
   null,
 );
 
+// Stripe subscription state (Iter T). Default = free tier.
+const subscriptionSchema = z.object({
+  status: z.enum(['free', 'trial', 'active', 'past_due', 'cancelled']),
+  currentPeriodEnd: z.string().optional(),
+  plan: z.enum(['monthly', 'annual', 'lifetime']).nullable().optional(),
+  stripeSubscriptionId: z.string().optional(),
+  stripeCustomerId: z.string().optional(),
+});
+const subscriptionStorage = createTypedStorage<Subscription>(
+  adapter,
+  'fuelyn:subscription',
+  subscriptionSchema,
+  { status: 'free', plan: null },
+);
+
 const savedLocationsStorage = createTypedStorage<SavedLocation[]>(
   adapter,
   STORAGE_KEYS.SAVED_LOCATIONS,
@@ -147,9 +162,11 @@ export function useHydrateStore() {
   const setVehicle = useAppStore((s) => s.setVehicle);
   const setVehicles = useAppStore((s) => s.setVehicles);
   const setActiveVehicleId = useAppStore((s) => s.setActiveVehicleId);
+  const setSubscription = useAppStore((s) => s.setSubscription);
   const vehicle = useAppStore((s) => s.vehicle);
   const vehicles = useAppStore((s) => s.vehicles);
   const activeVehicleId = useAppStore((s) => s.activeVehicleId);
+  const subscription = useAppStore((s) => s.subscription);
   const favorites = useAppStore((s) => s.favorites);
   const settings = useAppStore((s) => s.settings);
   const onboardingDone = useAppStore((s) => s.onboardingDone);
@@ -165,7 +182,7 @@ export function useHydrateStore() {
     hydrated.current = true;
 
     void (async () => {
-      const [v, f, s, ob, pa, fl, sl, gf, am, vl, av] = await Promise.all([
+      const [v, f, s, ob, pa, fl, sl, gf, am, vl, av, subs] = await Promise.all([
         vehicleStorage.get(),
         favoritesStorage.get(),
         settingsStorage.get(),
@@ -177,6 +194,7 @@ export function useHydrateStore() {
         activeMembershipsStorage.get(),
         vehiclesListStorage.get(),
         activeVehicleIdStorage.get(),
+        subscriptionStorage.get(),
       ]);
 
       // ----- Multi-vehicle hydration with legacy fallback -----
@@ -203,8 +221,9 @@ export function useHydrateStore() {
         for (const fence of gf) store.addGeoFence(fence);
       }
       if (am.length > 0) useAppStore.getState().setActiveMemberships(am);
+      if (subs && subs.status !== 'free') setSubscription(subs);
     })();
-  }, [setVehicle, setVehicles, setActiveVehicleId]);
+  }, [setVehicle, setVehicles, setActiveVehicleId, setSubscription]);
 
   // Persist on changes — both the legacy single-vehicle slot (kept in
   // sync so older app builds can still load the active profile) and
@@ -223,6 +242,11 @@ export function useHydrateStore() {
     if (!hydrated.current) return;
     void activeVehicleIdStorage.set(activeVehicleId);
   }, [activeVehicleId]);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    void subscriptionStorage.set(subscription);
+  }, [subscription]);
 
   useEffect(() => {
     if (!hydrated.current) return;
