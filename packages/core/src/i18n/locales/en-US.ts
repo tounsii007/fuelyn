@@ -425,6 +425,24 @@ export const enUS: TranslationKeys = {
     jumpAbout: 'About',
   },
 
+  pricePrediction: {
+    title: '24h forecast',
+    bestHourLabel: 'Best time',
+    savingsLabel: 'Savings',
+    vsWorstHour: 'vs. {hour}',
+    confidence: {
+      high: 'high confidence',
+      medium: 'medium confidence',
+      low: 'low confidence',
+    },
+    rationale: {
+      'down-trending': 'Prices dropping — wait if you can.',
+      'up-trending': 'Prices climbing — fill up today.',
+      'stable-with-pattern': 'Stable — follow the daily pattern.',
+      'insufficient-data': 'Not enough data to forecast yet.',
+    },
+  },
+
   receiptScanner: {
     cta: 'Scan receipt',
     busyCta: 'Reading receipt…',

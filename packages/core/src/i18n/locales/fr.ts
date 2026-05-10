@@ -425,6 +425,24 @@ export const fr: TranslationKeys = {
     jumpAbout: 'À propos',
   },
 
+  pricePrediction: {
+    title: 'Prévision 24h',
+    bestHourLabel: 'Meilleur moment',
+    savingsLabel: 'Économies',
+    vsWorstHour: 'vs {hour}',
+    confidence: {
+      high: 'forte confiance',
+      medium: 'confiance moyenne',
+      low: 'faible confiance',
+    },
+    rationale: {
+      'down-trending': 'Les prix baissent — attendez si possible.',
+      'up-trending': 'Les prix montent — faites le plein aujourd’hui.',
+      'stable-with-pattern': 'Stable — suivez le motif journalier.',
+      'insufficient-data': 'Pas encore assez de données pour prévoir.',
+    },
+  },
+
   receiptScanner: {
     cta: 'Scanner le ticket',
     busyCta: 'Lecture du ticket…',

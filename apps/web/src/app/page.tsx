@@ -26,6 +26,7 @@ import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
+import { PricePredictionCard } from '@/components/intelligence/PricePredictionCard';
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {
@@ -433,6 +434,7 @@ export default function HomePage() {
                 </div>
                 <SearchHistory />
                 <BestDealCard recommendations={recommendations} />
+                <PricePredictionCard />
                 <PriceStats recommendations={recommendations} />
 
                 {/*

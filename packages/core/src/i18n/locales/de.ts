@@ -427,6 +427,24 @@ export const de = {
     jumpAbout: 'Über',
   },
 
+  pricePrediction: {
+    title: 'Vorhersage 24h',
+    bestHourLabel: 'Bester Zeitpunkt',
+    savingsLabel: 'Ersparnis',
+    vsWorstHour: 'vs. {hour}',
+    confidence: {
+      high: 'hohe Konfidenz',
+      medium: 'mittlere Konfidenz',
+      low: 'geringe Konfidenz',
+    },
+    rationale: {
+      'down-trending': 'Preise fallen — bald lohnt sich Tanken besonders.',
+      'up-trending': 'Preise steigen — lieber heute tanken.',
+      'stable-with-pattern': 'Stabil — folge dem Wochen-/Tages-Muster.',
+      'insufficient-data': 'Noch zu wenig Daten für eine Prognose.',
+    },
+  },
+
   receiptScanner: {
     cta: 'Beleg scannen',
     busyCta: 'Lese Beleg…',

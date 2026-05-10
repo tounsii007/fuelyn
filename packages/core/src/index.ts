@@ -257,6 +257,15 @@ export {
   AVERAGE_SPEED_KMH,
 } from './config/constants';
 
+// Lightweight 24h price prediction
+export type {
+  PricePrediction,
+  PredictedHour,
+  PriceSnapshot as PredictionPriceSnapshot,
+  PredictPricesOptions,
+} from './engine/price-prediction';
+export { predictNext24h } from './engine/price-prediction';
+
 // Receipt OCR parser (consumed by web's fuel-log scanner)
 export type { ParsedReceipt } from './receipt/parse-receipt';
 export {
