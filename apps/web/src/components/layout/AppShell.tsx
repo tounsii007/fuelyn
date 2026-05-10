@@ -535,40 +535,40 @@ function MoreMenu() {
   // for low-frequency shortcuts/about lookups.
   const groups: { title: string; items: MoreMenuItem[] }[] = [
     {
-      title: 'Schnell',
+      title: t('moreMenu.groupQuick'),
       items: [
-        { kind: 'action', onClick: shareCurrentView, label: 'Ansicht teilen', desc: 'Aktuellen Link kopieren', icon: <ShareIcon /> },
-        { kind: 'action', onClick: toggleFullscreen, label: 'Vollbild', desc: 'Karte ohne Ablenkung', icon: <FullscreenIcon /> },
-        { kind: 'action', onClick: reloadApp, label: 'App neu laden', desc: 'Wenn etwas hängt', icon: <RefreshIcon /> },
+        { kind: 'action', onClick: shareCurrentView, label: t('moreMenu.shareLabel'),     desc: t('moreMenu.shareDesc'),     icon: <ShareIcon /> },
+        { kind: 'action', onClick: toggleFullscreen, label: t('moreMenu.fullscreenLabel'), desc: t('moreMenu.fullscreenDesc'), icon: <FullscreenIcon /> },
+        { kind: 'action', onClick: reloadApp,        label: t('moreMenu.reloadLabel'),     desc: t('moreMenu.reloadDesc'),     icon: <RefreshIcon /> },
       ],
     },
     {
-      title: 'Verwalten',
+      title: t('moreMenu.groupManage'),
       items: [
-        { kind: 'link', href: '/alerts', label: 'Preisalarme', desc: 'Benachrichtigungen bei Preissprüngen', icon: <BellIcon /> },
-        { kind: 'link', href: '/fuel-log', label: 'Tank-Logbuch', desc: 'Dein Verbrauch im Überblick', icon: <BookIcon /> },
-        { kind: 'link', href: '/locations', label: 'Meine Orte', desc: 'Gespeicherte Standorte', icon: <PinIcon /> },
+        { kind: 'link', href: '/alerts',    label: t('alerts.pageTitle'),       desc: t('moreMenu.alertsDesc'),    icon: <BellIcon /> },
+        { kind: 'link', href: '/fuel-log',  label: t('moreMenu.fuelLogLabel'),  desc: t('moreMenu.fuelLogDesc'),   icon: <BookIcon /> },
+        { kind: 'link', href: '/locations', label: t('moreMenu.locationsLabel'), desc: t('moreMenu.locationsDesc'), icon: <PinIcon /> },
       ],
     },
     {
-      title: 'Analysieren',
+      title: t('moreMenu.groupAnalyze'),
       items: [
-        { kind: 'link', href: '/compare', label: 'Vergleich', desc: 'Stationen direkt nebeneinander', icon: <ScalesIcon /> },
-        { kind: 'link', href: '/stats', label: 'Statistiken', desc: 'Preisverläufe analysieren', icon: <ChartIcon /> },
-        { kind: 'link', href: '/route-planner', label: 'Routenplaner', desc: 'Tank-Stopp auf der Strecke', icon: <RouteIcon /> },
+        { kind: 'link', href: '/compare',       label: t('nav.compare'),               desc: t('moreMenu.compareDesc'),       icon: <ScalesIcon /> },
+        { kind: 'link', href: '/stats',         label: t('moreMenu.statsLabel'),       desc: t('moreMenu.statsDesc'),         icon: <ChartIcon /> },
+        { kind: 'link', href: '/route-planner', label: t('moreMenu.routePlannerLabel'), desc: t('moreMenu.routePlannerDesc'), icon: <RouteIcon /> },
       ],
     },
     {
-      title: 'Mehr',
+      title: t('moreMenu.groupMore'),
       items: [
-        { kind: 'link', href: '/partners', label: 'Tank- & Ladekarten', desc: 'Unsere Partner', icon: <CardIcon /> },
+        { kind: 'link', href: '/partners', label: t('moreMenu.partnersLabel'), desc: t('moreMenu.partnersDesc'), icon: <CardIcon /> },
       ],
     },
     {
-      title: 'Hilfe',
+      title: t('moreMenu.groupHelp'),
       items: [
-        { kind: 'action', onClick: () => setShortcutsOpen((v) => !v), label: t('shortcuts.title'), desc: 'Befehle und Shortcuts', icon: <KeyboardIcon /> },
-        { kind: 'link', href: '/settings', label: 'Einstellungen & Über', desc: 'Theme, Sprache, Privatsphäre', icon: <CogIcon /> },
+        { kind: 'action', onClick: () => setShortcutsOpen((v) => !v), label: t('shortcuts.title'),       desc: t('moreMenu.shortcutsDesc'), icon: <KeyboardIcon /> },
+        { kind: 'link',   href: '/settings',                          label: t('moreMenu.settingsLabel'), desc: t('moreMenu.settingsDesc'), icon: <CogIcon /> },
       ],
     },
   ];
