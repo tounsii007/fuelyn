@@ -404,6 +404,30 @@ export const de = {
     settingsDesc: 'Theme, Sprache, Privatsphäre',
   },
 
+  openingHours: {
+    allDayHeading: 'Durchgehend geöffnet (24/7)',
+    allDayDesc: 'Diese Tankstelle ist rund um die Uhr geöffnet.',
+    holidays: 'Sonderöffnungszeiten',
+  },
+
+  filterPanel: {
+    title: 'Filter',
+    energyType: 'Energie- / Kraftstoffart',
+    stationType: 'Stationstyp',
+    stationTypeHint: 'Keine Auswahl = alle Stationstypen',
+    onlyOpen: 'Nur geöffnete',
+    onlyOpenDesc: 'Geschlossene Stationen ausblenden',
+    priceRange: 'Preisbereich',
+    priceMin: 'Min',
+    priceMax: 'Max',
+    evFilters: 'E-Ladestation Filter',
+    brandsLabel: 'Marken / Betreiber',
+    deselectAll: 'Alle abwählen',
+    brandsHint: 'Keine Auswahl = alle Marken',
+    reset: 'Zurücksetzen',
+    apply: 'Anwenden',
+  },
+
   stationCard: {
     cheapestTooltip: 'Günstigster Preis in der aktuellen Liste',
     deltaTooltipBelow: '{n} ct unter dem Schnitt der angezeigten Tankstellen',

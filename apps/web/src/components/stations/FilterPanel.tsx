@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 import { KNOWN_BRANDS, KNOWN_CHARGING_OPERATORS } from '@fuelyn/core';
 import type { EnergyType, ConnectorType, ChargingSpeed, StationType } from '@fuelyn/core';
 import { STATION_TYPE_LABELS, STATION_TYPE_ICONS, isElectricType } from '@fuelyn/core';
@@ -20,6 +21,7 @@ const PRICE_STEP = 0.05;
 const ALL_BRANDS = [...KNOWN_BRANDS, ...KNOWN_CHARGING_OPERATORS];
 
 export function FilterPanel() {
+  const { t } = useTranslations();
   const isOpen = useAppStore((s) => s.isFilterOpen);
   const setFilterOpen = useAppStore((s) => s.setFilterOpen);
   const filter = useAppStore((s) => s.filter);
@@ -137,7 +139,7 @@ export function FilterPanel() {
         <div className="px-5 pt-3 pb-4 border-b border-gray-100 dark:border-gray-700">
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Filter</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('filterPanel.title')}</h2>
             <button
               type="button"
               onClick={() => setFilterOpen(false)}
@@ -156,7 +158,7 @@ export function FilterPanel() {
           {/* Energy Types */}
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-              Energie- / Kraftstoffart
+              {t('filterPanel.energyType')}
             </p>
             <EnergyTypeChips
               selected={energyTypes}
@@ -169,7 +171,7 @@ export function FilterPanel() {
           {/* Station Type Filter */}
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-              Stationstyp
+              {t('filterPanel.stationType')}
             </p>
             <div className="flex flex-wrap gap-2">
               {(['fuel', 'charging', 'hydrogen', 'gas'] as StationType[]).map((type) => {
@@ -193,7 +195,7 @@ export function FilterPanel() {
             </div>
             {stationTypes.length === 0 && (
               <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                Keine Auswahl = alle Stationstypen
+                {t('filterPanel.stationTypeHint')}
               </p>
             )}
           </div>
@@ -201,8 +203,8 @@ export function FilterPanel() {
           {/* Only Open Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Nur ge&ouml;ffnete</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Geschlossene Stationen ausblenden</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('filterPanel.onlyOpen')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('filterPanel.onlyOpenDesc')}</p>
             </div>
             <button
               type="button"
@@ -222,10 +224,10 @@ export function FilterPanel() {
           {/* Price Range (fuel/gas/H2 only) */}
           {showPriceFilter && (
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Preisbereich</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">{t('filterPanel.priceRange')}</p>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">Min</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400">{t('filterPanel.priceMin')}</label>
                   <div className="flex items-center gap-1 mt-1">
                     <input
                       type="number"
@@ -243,7 +245,7 @@ export function FilterPanel() {
                 </div>
                 <span className="text-gray-300 dark:text-gray-600 mt-5">&mdash;</span>
                 <div className="flex-1">
-                  <label className="text-xs text-gray-500 dark:text-gray-400">Max</label>
+                  <label className="text-xs text-gray-500 dark:text-gray-400">{t('filterPanel.priceMax')}</label>
                   <div className="flex items-center gap-1 mt-1">
                     <input
                       type="number"
@@ -268,7 +270,7 @@ export function FilterPanel() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">⚡</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">E-Ladestation Filter</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('filterPanel.evFilters')}</p>
               </div>
               <ConnectorFilter
                 selectedConnectors={connectorTypes}
@@ -284,14 +286,14 @@ export function FilterPanel() {
           {/* Brand / Operator Filter */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Marken / Betreiber</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('filterPanel.brandsLabel')}</p>
               {selectedBrands.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectedBrands([])}
                   className="text-xs text-brand-600 hover:text-brand-700"
                 >
-                  Alle abw&auml;hlen
+                  {t('filterPanel.deselectAll')}
                 </button>
               )}
             </div>
@@ -317,7 +319,7 @@ export function FilterPanel() {
             </div>
             {selectedBrands.length === 0 && (
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                Keine Auswahl = alle Marken
+                {t('filterPanel.brandsHint')}
               </p>
             )}
           </div>
@@ -332,7 +334,7 @@ export function FilterPanel() {
                        bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300
                        hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            Zur&uuml;cksetzen
+            {t('filterPanel.reset')}
           </button>
           <button
             type="button"
@@ -341,7 +343,7 @@ export function FilterPanel() {
                        bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800
                        transition-colors shadow-sm"
           >
-            Anwenden
+            {t('filterPanel.apply')}
             {activeFilterCount > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5
                                bg-white/20 rounded-full text-[10px]">

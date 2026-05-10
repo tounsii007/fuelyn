@@ -402,6 +402,30 @@ export const fr: TranslationKeys = {
     settingsDesc: 'Thème, langue, confidentialité',
   },
 
+  openingHours: {
+    allDayHeading: 'Ouverte 24h/24',
+    allDayDesc: 'Cette station est ouverte 24 heures sur 24.',
+    holidays: 'Horaires spéciaux',
+  },
+
+  filterPanel: {
+    title: 'Filtre',
+    energyType: 'Type d’énergie / carburant',
+    stationType: 'Type de station',
+    stationTypeHint: 'Aucune sélection = tous les types',
+    onlyOpen: 'Ouvertes uniquement',
+    onlyOpenDesc: 'Masquer les stations fermées',
+    priceRange: 'Fourchette de prix',
+    priceMin: 'Min',
+    priceMax: 'Max',
+    evFilters: 'Filtres bornes électriques',
+    brandsLabel: 'Marques / opérateurs',
+    deselectAll: 'Tout désélectionner',
+    brandsHint: 'Aucune sélection = toutes les marques',
+    reset: 'Réinitialiser',
+    apply: 'Appliquer',
+  },
+
   stationCard: {
     cheapestTooltip: 'Prix le plus bas de la liste actuelle',
     deltaTooltipBelow: '{n} ct sous la moyenne des stations affichées',

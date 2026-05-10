@@ -396,6 +396,30 @@ export const en: TranslationKeys = {
     settingsDesc: 'Theme, language, privacy',
   },
 
+  openingHours: {
+    allDayHeading: 'Open 24/7',
+    allDayDesc: 'This station is open round the clock.',
+    holidays: 'Holiday hours',
+  },
+
+  filterPanel: {
+    title: 'Filter',
+    energyType: 'Energy / fuel type',
+    stationType: 'Station type',
+    stationTypeHint: 'No selection = all station types',
+    onlyOpen: 'Open only',
+    onlyOpenDesc: 'Hide closed stations',
+    priceRange: 'Price range',
+    priceMin: 'Min',
+    priceMax: 'Max',
+    evFilters: 'EV charger filters',
+    brandsLabel: 'Brands / operators',
+    deselectAll: 'Deselect all',
+    brandsHint: 'No selection = all brands',
+    reset: 'Reset',
+    apply: 'Apply',
+  },
+
   stationCard: {
     cheapestTooltip: 'Cheapest price in the current list',
     deltaTooltipBelow: '{n} ct below the average of the listed stations',
