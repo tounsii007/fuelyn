@@ -10,6 +10,7 @@ import { PriceTag } from '../ui/PriceTag';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
 import { BrandBadge } from '../ui/BrandBadge';
 import { useAppStore } from '@/lib/store/app-store';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 interface StationCardProps {
   readonly recommendation: StationRecommendation;
@@ -32,6 +33,7 @@ export function StationCard({
   marketMinForFuel,
   marketCount,
 }: StationCardProps) {
+  const { t } = useTranslations();
   const { station, reachabilityStatus, estimatedDriveTime, isBestOption, reasons } =
     recommendation;
   const fuelType = useAppStore((s) => s.filter.fuelType);
@@ -108,7 +110,7 @@ export function StationCard({
                 className={`flex-shrink-0 w-2 h-2 rounded-full ${
                   station.isOpen ? 'bg-reach-safe' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
-                title={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
+                title={station.isOpen ? t('station.open') : t('station.closed')}
               />
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
@@ -136,9 +138,9 @@ export function StationCard({
                          text-[9px] font-semibold leading-tight
                          bg-emerald-100 text-emerald-700
                          dark:bg-emerald-900/40 dark:text-emerald-300"
-              title="Günstigster Preis in der aktuellen Liste"
+              title={t('stationCard.cheapestTooltip')}
             >
-              ★ günstigster
+              ★ {t('panel.cheapestChip')}
             </span>
           ) : deltaCt !== null && Math.abs(deltaCt) >= 1 ? (
             <span
@@ -148,7 +150,12 @@ export function StationCard({
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                               : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
                           }`}
-              title={`${Math.abs(deltaCt)} ct ${deltaCt < 0 ? 'unter' : 'über'} dem Schnitt der angezeigten Tankstellen`}
+              // The {n} placeholder in the locale template is filled
+              // via simple .replace — same pattern as fuelLog.lastNMonths.
+              title={(deltaCt < 0
+                ? t('stationCard.deltaTooltipBelow')
+                : t('stationCard.deltaTooltipAbove')
+              ).replace('{n}', String(Math.abs(deltaCt)))}
             >
               {deltaCt > 0 ? '+' : ''}
               {deltaCt} ct
@@ -178,7 +185,7 @@ export function StationCard({
           className={`ml-auto p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
             isCompared ? 'text-brand-600' : 'text-gray-300 dark:text-gray-600 group-hover:text-gray-400'
           }`}
-          aria-label={isCompared ? 'Aus Vergleich entfernen' : 'Zum Vergleich hinzufügen'}
+          aria-label={isCompared ? t('compare.removeHint') : t('compare.addedHint')}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -190,7 +197,7 @@ export function StationCard({
           type="button"
           onClick={handleFavoriteToggle}
           className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label={isFavorite ? 'Favorit entfernen' : 'Als Favorit speichern'}
+          aria-label={isFavorite ? t('station.removeFavorite') : t('station.addFavorite')}
         >
           <svg
             className={`w-5 h-5 transition-colors ${

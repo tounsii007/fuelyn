@@ -396,6 +396,12 @@ export const en: TranslationKeys = {
     settingsDesc: 'Theme, language, privacy',
   },
 
+  stationCard: {
+    cheapestTooltip: 'Cheapest price in the current list',
+    deltaTooltipBelow: '{n} ct below the average of the listed stations',
+    deltaTooltipAbove: '{n} ct above the average of the listed stations',
+  },
+
   searchHistory: {
     title: 'Recent searches',
     clearLabel: 'Clear',

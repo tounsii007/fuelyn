@@ -402,6 +402,12 @@ export const fr: TranslationKeys = {
     settingsDesc: 'Thème, langue, confidentialité',
   },
 
+  stationCard: {
+    cheapestTooltip: 'Prix le plus bas de la liste actuelle',
+    deltaTooltipBelow: '{n} ct sous la moyenne des stations affichées',
+    deltaTooltipAbove: '{n} ct au-dessus de la moyenne des stations affichées',
+  },
+
   searchHistory: {
     title: 'Recherches récentes',
     clearLabel: 'Effacer',

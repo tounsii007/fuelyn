@@ -404,6 +404,12 @@ export const de = {
     settingsDesc: 'Theme, Sprache, Privatsphäre',
   },
 
+  stationCard: {
+    cheapestTooltip: 'Günstigster Preis in der aktuellen Liste',
+    deltaTooltipBelow: '{n} ct unter dem Schnitt der angezeigten Tankstellen',
+    deltaTooltipAbove: '{n} ct über dem Schnitt der angezeigten Tankstellen',
+  },
+
   searchHistory: {
     title: 'Letzte Suchen',
     clearLabel: 'Löschen',
