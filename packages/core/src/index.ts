@@ -422,6 +422,10 @@ export { computeSmartBuyingScore } from './engine/smart-buying-score';
 export type { BestTimeHeatmap, HeatmapCell } from './engine/best-time-heatmap';
 export { buildBestTimeHeatmap } from './engine/best-time-heatmap';
 
+// Affiliate-link injection (used by carbon-offset CTAs etc.)
+export type { AffiliateConfig } from './engine/affiliate';
+export { withAffiliate, parseAffiliateEnv } from './engine/affiliate';
+
 // Carbon-offset marketplace
 export type {
   OffsetProvider,

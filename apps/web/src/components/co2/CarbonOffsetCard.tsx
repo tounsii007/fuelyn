@@ -14,7 +14,23 @@ import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { useIsHydrated } from '@/lib/hooks/use-is-hydrated';
-import { recommendOffsets, summarizeCo2, isFeatureUnlocked } from '@fuelyn/core';
+import {
+  recommendOffsets,
+  summarizeCo2,
+  isFeatureUnlocked,
+  withAffiliate,
+  parseAffiliateEnv,
+} from '@fuelyn/core';
+
+// Read at module scope so the affiliate config is computed once.
+// In production, env vars come pre-baked at build time (Next.js
+// inlines NEXT_PUBLIC_* / serves the rest server-side via the BFF).
+// For now we fall back to no codes — production deploy sets them.
+const AFFILIATE_CONFIG = parseAffiliateEnv(
+  typeof process !== 'undefined' && process.env
+    ? (process.env as Record<string, string | undefined>)
+    : {},
+);
 
 const PROJECT_LABELS: Record<string, string> = {
   'reforestation':       'Aufforstung',
@@ -84,7 +100,7 @@ export function CarbonOffsetCard() {
           totalEur={offsetResult.cheapest.totalEur}
           ratePerTon={offsetResult.cheapest.provider.eurPerTon}
           canBuy={canBuy}
-          url={offsetResult.cheapest.provider.url}
+          url={withAffiliate(offsetResult.cheapest.provider.url, offsetResult.cheapest.provider.id, AFFILIATE_CONFIG)}
           desc={PROJECT_LABELS[offsetResult.cheapest.provider.projectType] ?? ''}
         />
         <Pick
@@ -93,7 +109,7 @@ export function CarbonOffsetCard() {
           totalEur={offsetResult.highestPermanence.totalEur}
           ratePerTon={offsetResult.highestPermanence.provider.eurPerTon}
           canBuy={canBuy}
-          url={offsetResult.highestPermanence.provider.url}
+          url={withAffiliate(offsetResult.highestPermanence.provider.url, offsetResult.highestPermanence.provider.id, AFFILIATE_CONFIG)}
           desc={PROJECT_LABELS[offsetResult.highestPermanence.provider.projectType] ?? ''}
           highlight
         />
