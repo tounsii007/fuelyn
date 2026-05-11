@@ -74,14 +74,31 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Permissions-Policy — explicit allow-list per directive:
+  //   geolocation: required for the user-location pulse + nearby search
+  //   microphone:  required for VoiceCommandButton (Web Speech API)
+  //   camera:      NOT required — the OCR flow uses <input capture>
+  //                which doesn't gate on this directive. Keep closed.
+  //   payment/usb/interest-cohort: nothing in the app uses these.
   response.headers.set(
     'Permissions-Policy',
-    'geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()',
+    'geolocation=(self), microphone=(self), camera=(), payment=(), usb=(), interest-cohort=()',
   );
   response.headers.set(
     'Strict-Transport-Security',
     'max-age=63072000; includeSubDomains; preload',
   );
+  // Cross-origin isolation: nothing same-site embeds Fuelyn and no
+  // window.open() popup workflow exists, so locking COOP/CORP to
+  // same-origin protects against Spectre-style cross-window reads
+  // without breaking any current feature. Do NOT set
+  // Cross-Origin-Embedder-Policy: require-corp here — map tiles
+  // come from third-party CDNs without the CORP header and would
+  // be blocked.
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  // Block legacy Flash/Adobe cross-domain policy probes.
+  response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
   response.headers.set('X-Request-Id', requestId);
 
   return response;
