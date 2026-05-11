@@ -13,14 +13,25 @@
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 
+// Karten die per Default sichtbar sind = polierte Hero-Surface.
+// "Experimental"-Karten sind per Default aus; im Customizer mit
+// Hinweis-Badge gekennzeichnet, damit klar ist warum sie nicht
+// schon auf der Startseite erscheinen.
 const CARD_LABELS: Record<string, string> = {
   'best-deal':        'Top Deal',
+  'price-prediction': 'Preis-Prognose',
   'border-crossing':  'Grenz-Tipp',
   'smart-buying':     'Smart-Buying-Score',
   'saving-tips':      'Spar-Tipps',
   'counterfactual':   'Was wäre wenn …',
-  'price-prediction': 'Preis-Prognose',
 };
+
+const EXPERIMENTAL_CARDS = new Set([
+  'border-crossing',
+  'smart-buying',
+  'saving-tips',
+  'counterfactual',
+]);
 
 export function DashboardCustomizer() {
   const { t } = useTranslations();
@@ -81,6 +92,16 @@ export function DashboardCustomizer() {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                 {CARD_LABELS[card.id] ?? card.id}
               </span>
+              {EXPERIMENTAL_CARDS.has(card.id) && (
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wide
+                             px-1.5 py-0.5 rounded
+                             bg-[var(--color-violet-500)]/15
+                             text-[var(--color-violet-500)]"
+                >
+                  Beta
+                </span>
+              )}
             </div>
             <label className="inline-flex items-center cursor-pointer">
               <input

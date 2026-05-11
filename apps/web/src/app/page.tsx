@@ -23,14 +23,31 @@ import { PriceStats } from '@/components/stations/PriceStats';
 import { SearchHistory } from '@/components/stations/SearchHistory';
 import { AddressSearch } from '@/components/stations/AddressSearch';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+// Hero-Karten: bleiben eager-imported (visible: true per default).
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { PricePredictionCard } from '@/components/intelligence/PricePredictionCard';
-import { SmartBuyingScoreCard } from '@/components/intelligence/SmartBuyingScoreCard';
-import { SavingTipsCard } from '@/components/intelligence/SavingTipsCard';
-import { CounterfactualCard } from '@/components/intelligence/CounterfactualCard';
-import { BorderCrossingCard } from '@/components/intelligence/BorderCrossingCard';
+
+// Sekundäre Karten: default visible: false → lazy via next/dynamic,
+// damit sie nicht im Initial-Bundle landen. Werden erst geladen,
+// wenn der User sie in /settings → Dashboard aktiviert hat.
+const SmartBuyingScoreCard = dynamic(
+  () => import('@/components/intelligence/SmartBuyingScoreCard').then((m) => ({ default: m.SmartBuyingScoreCard })),
+  { ssr: false },
+);
+const SavingTipsCard = dynamic(
+  () => import('@/components/intelligence/SavingTipsCard').then((m) => ({ default: m.SavingTipsCard })),
+  { ssr: false },
+);
+const CounterfactualCard = dynamic(
+  () => import('@/components/intelligence/CounterfactualCard').then((m) => ({ default: m.CounterfactualCard })),
+  { ssr: false },
+);
+const BorderCrossingCard = dynamic(
+  () => import('@/components/intelligence/BorderCrossingCard').then((m) => ({ default: m.BorderCrossingCard })),
+  { ssr: false },
+);
 import { fetchJson } from '@/lib/http/fetch-json';
 import { fetchRoute, isFuelStation, isChargingStation } from '@fuelyn/core';
 import type {

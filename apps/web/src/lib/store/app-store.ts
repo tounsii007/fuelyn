@@ -379,13 +379,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   settings: DEFAULT_SETTINGS,
 
   // Customizable dashboard (Iter AB).
+  //
+  // Defaults: Only the two hero cards visible. Border-crossing,
+  // smart-buying, saving-tips, counterfactual sind als experimentell
+  // markiert — user kann sie über /settings → Dashboard zuschalten.
+  // Begründung: 6 Karten gleichzeitig waren ein Bauchladen, der die
+  // Home-Hierarchie verwässert und die LCP belastet (Iter AK-Review).
   dashboardCards: [
-    { id: 'best-deal',          visible: true },
-    { id: 'border-crossing',    visible: true },
-    { id: 'smart-buying',       visible: true },
-    { id: 'saving-tips',        visible: true },
-    { id: 'counterfactual',     visible: true },
-    { id: 'price-prediction',   visible: true },
+    { id: 'best-deal',          visible: true  },
+    { id: 'price-prediction',   visible: true  },
+    { id: 'border-crossing',    visible: false },
+    { id: 'smart-buying',       visible: false },
+    { id: 'saving-tips',        visible: false },
+    { id: 'counterfactual',     visible: false },
   ],
   setDashboardCards: (cards) => set({ dashboardCards: cards }),
   toggleDashboardCard: (id) =>
@@ -407,12 +413,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   resetDashboardCards: () =>
     set({
       dashboardCards: [
-        { id: 'best-deal',        visible: true },
-        { id: 'border-crossing',  visible: true },
-        { id: 'smart-buying',     visible: true },
-        { id: 'saving-tips',      visible: true },
-        { id: 'counterfactual',   visible: true },
-        { id: 'price-prediction', visible: true },
+        { id: 'best-deal',        visible: true  },
+        { id: 'price-prediction', visible: true  },
+        { id: 'border-crossing',  visible: false },
+        { id: 'smart-buying',     visible: false },
+        { id: 'saving-tips',      visible: false },
+        { id: 'counterfactual',   visible: false },
       ],
     }),
 
