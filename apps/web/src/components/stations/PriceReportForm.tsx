@@ -28,7 +28,15 @@ import {
   type FuelType,
   type ParsedPumpDisplay,
 } from '@fuelyn/core';
-import { PumpPhotoCapture } from './PumpPhotoCapture';
+import dynamic from 'next/dynamic';
+
+// Lazy: the pump-photo flow + its tesseract.js dep should never
+// enter the initial bundle. The form mounts; the capture button
+// is the trigger that finally requests this chunk.
+const PumpPhotoCapture = dynamic(
+  () => import('./PumpPhotoCapture').then((m) => ({ default: m.PumpPhotoCapture })),
+  { ssr: false },
+);
 
 export interface PriceReportFormProps {
   stationId: string;

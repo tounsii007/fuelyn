@@ -562,19 +562,15 @@ function MoreMenu() {
     {
       title: t('moreMenu.groupAnalyze'),
       items: [
-        { kind: 'link', href: '/compare',       label: t('nav.compare'),               desc: t('moreMenu.compareDesc'),       icon: <ScalesIcon /> },
-        { kind: 'link', href: '/stats',         label: t('moreMenu.statsLabel'),       desc: t('moreMenu.statsDesc'),         icon: <ChartIcon /> },
+        { kind: 'link', href: '/compare',       label: t('nav.compare'),                desc: t('moreMenu.compareDesc'),       icon: <ScalesIcon /> },
+        { kind: 'link', href: '/stats',         label: t('moreMenu.statsLabel'),        desc: t('moreMenu.statsDesc'),         icon: <ChartIcon /> },
         { kind: 'link', href: '/route-planner', label: t('moreMenu.routePlannerLabel'), desc: t('moreMenu.routePlannerDesc'), icon: <RouteIcon /> },
-        { kind: 'link', href: '/ai-chat',       label: t('aiChat.title'),               desc: t('aiChat.subtitle'),            icon: <SparkleIcon /> },
-        { kind: 'link', href: '/achievements',  label: t('achievements.title'),         desc: t('achievements.menuDesc'),      icon: <TrophyIcon /> },
       ],
     },
-    {
-      title: t('moreMenu.groupMore'),
-      items: [
-        { kind: 'link', href: '/partners', label: t('moreMenu.partnersLabel'), desc: t('moreMenu.partnersDesc'), icon: <CardIcon /> },
-      ],
-    },
+    // /ai-chat, /achievements, /partners, /wrapped sind absichtlich
+    // nicht im Haupt-Menü: noch halbfertig oder Gimmick. Routen
+    // bleiben URL-erreichbar + per CommandPalette / Voice discoverable,
+    // sind aber nicht primary-nav-würdig bis sie poliert sind.
     {
       title: t('moreMenu.groupHelp'),
       items: [
@@ -892,32 +888,6 @@ function RouteIcon() {
       <circle cx="6" cy="6" r="2" />
       <circle cx="18" cy="18" r="2" />
       <path {...stroke} d="M6 8v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4" />
-    </svg>
-  );
-}
-function TrophyIcon() {
-  return (
-    <svg {...menuIconProps}>
-      <path {...stroke} d="M8 21h8M12 17v4M6 4h12v3a6 6 0 1 1-12 0V4Z" />
-      <path {...stroke} d="M6 6H4v2a3 3 0 0 0 3 3M18 6h2v2a3 3 0 0 1-3 3" />
-    </svg>
-  );
-}
-function SparkleIcon() {
-  // Sparkle glyph — used for the AI chat menu entry. Same
-  // visual language as the BestDealCard's "Top Deal" mark so
-  // both AI surfaces feel related.
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
-      <path d="M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6L12 2zm6 12l.9 2.4L21 17l-2.1.6L18 20l-.9-2.4L15 17l2.1-.6.9-2.4z" />
-    </svg>
-  );
-}
-function CardIcon() {
-  return (
-    <svg {...menuIconProps}>
-      <rect x="2" y="6" width="20" height="13" rx="2" />
-      <path {...stroke} d="M2 11h20M6 16h4" />
     </svg>
   );
 }

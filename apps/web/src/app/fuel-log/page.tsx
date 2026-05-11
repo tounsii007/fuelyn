@@ -14,7 +14,17 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
-import { ReceiptScanner } from '@/components/fuelLog/ReceiptScanner';
+import dynamic from 'next/dynamic';
+// Lazy: ReceiptScanner pulls in the tesseract.js OCR pipeline.
+// Page loads instantly; the chunk only ships if the user opens
+// the new-entry form.
+const ReceiptScanner = dynamic(
+  () =>
+    import('@/components/fuelLog/ReceiptScanner').then((m) => ({
+      default: m.ReceiptScanner,
+    })),
+  { ssr: false },
+);
 import { Co2Dashboard } from '@/components/fuelLog/Co2Dashboard';
 import { CarbonOffsetCard } from '@/components/co2/CarbonOffsetCard';
 import { useToast } from '@/components/ui/Toast';
