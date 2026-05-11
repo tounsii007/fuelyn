@@ -10,15 +10,12 @@ generator client {
 
 // Iter AH: SQLite is fine for `pnpm dev` but ephemeral on
 // Vercel serverless and contention-bound under concurrent writes.
-// For production:
-//   1) duplicate this schema as prisma/schema.prod.prisma with
-//      `provider = "postgresql"` and `url = env("DATABASE_URL")`,
-//   2) generate the prod client with --schema=prisma/schema.prod.prisma,
-//   3) point DATABASE_URL at a real Postgres instance.
-// The dev path stays on file-based SQLite via DATABASE_URL fallback.
+// For production, switch this provider to "postgresql" + supply
+// DATABASE_URL via prisma.config.ts (Prisma 7 no longer accepts
+// `url = env(...)` inside the schema itself — see prisma.config.ts
+// in this folder).
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model PriceSnapshot {

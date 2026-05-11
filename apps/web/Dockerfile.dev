@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1.7
+# ============================================================
+# Fuelyn — dev-mode container.
+#
+# Builds Linux-native node_modules once at image-build time
+# (cached unless lockfile changes). Then at runtime the source
+# tree is bind-mounted over, but node_modules from inside the
+# image is preserved — so `npm ci` doesn't re-run on every
+# `docker compose up`, and hot reload works.
+#
+# Used by docker-compose.dev.yml.
+# ============================================================
+FROM node:20-alpine
+
+WORKDIR /workspace
+
+# Alpine extras Prisma/Tesseract need at runtime.
+RUN apk add --no-cache libc6-compat git python3 make g++ openssl
+
+# Layer 1 — install deps. Only invalidated when manifests change.
+# Need full install (incl. devDependencies like `prisma` CLI) so the
+# prisma db push works at container start. Without devDeps the
+# `import { defineConfig } from 'prisma/config'` in prisma.config.ts
+# would fail.
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/core/package.json ./packages/core/
+COPY apps/mobile/package.json ./apps/mobile/
+RUN npm ci --no-audit --no-fund --ignore-scripts || \
+    npm ci --workspace=@fuelyn/web --workspace=@fuelyn/core --include-workspace-root --no-audit --no-fund --ignore-scripts
+
+# Layer 2 — copy source (overridden by bind-mount at runtime).
+COPY . .
+
+# Generate Prisma client into the image so the first runtime
+# request doesn't pay the codegen cost.
+RUN cd apps/web && npx prisma generate
+
+EXPOSE 3000
+
+# At container start: push the schema (idempotent), then run
+# next dev. The container's node_modules sit at /workspace/node_modules
+# and survive the source-tree bind-mount because compose declares
+# /workspace/node_modules as an anonymous volume above the host mount.
+CMD ["sh", "-c", "cd apps/web && /workspace/node_modules/.bin/prisma db push --accept-data-loss && cd /workspace && npm run --workspace=@fuelyn/web dev"]

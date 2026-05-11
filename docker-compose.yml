@@ -324,7 +324,14 @@ services:
       gateway:
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      # Iter AH note: kept at "development" inside the container because
+      # the Prisma schema is still on SQLite (provider="sqlite") and our
+      # production guard rejects file:// URLs. To run NODE_ENV=production
+      # in Docker, switch the schema to postgresql + run prisma migrate
+      # against the postgres service in this compose. The Next.js build
+      # artefact itself is already production-mode (next build was run
+      # in the builder stage); this var only gates the runtime checks.
+      NODE_ENV: ${WEB_NODE_ENV:-development}
       PORT: "23700"
       HOSTNAME: "0.0.0.0"
       JAVA_BACKEND_URL: http://gateway:28800
@@ -336,6 +343,21 @@ services:
       CRON_SECRET: ${CRON_SECRET}
       TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY}
       RATE_LIMIT_TRUST_PROXY: "1"
+      # ─── Iter AH security-hardening env ────────────────────
+      # Without these the web container would crash at import-
+      # time in production mode (see lib/auth/jwt.ts +
+      # lib/config/runtime.ts). Read from the root .env.
+      FUELYN_JWT_SECRET: ${FUELYN_JWT_SECRET:?FUELYN_JWT_SECRET required}
+      FUELYN_PUBLIC_ORIGIN: ${FUELYN_PUBLIC_ORIGIN:-https://localhost:49443}
+      FUELYN_ADMIN_TOKEN: ${FUELYN_ADMIN_TOKEN}
+      # ─── Iter W cloud-sync (Prisma SQLite) ─────────────────
+      # The web container owns its own SQLite under /app/data so
+      # User / SyncRecord / Subscription state survives restarts.
+      # In a real prod deploy, swap to postgresql:// pointing at
+      # the postgres service.
+      DATABASE_URL: file:/app/data/web.db
+    volumes:
+      - web_data:/app/data
     expose:
       - "23700"
     healthcheck:
@@ -350,3 +372,4 @@ volumes:
   caddy_data:
   caddy_config:
   ollama_data:
+  web_data:

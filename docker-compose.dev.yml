@@ -1,0 +1,58 @@
+# ============================================================
+# Fuelyn — Lightweight dev-in-docker (web only).
+#
+# Use this when you want a containerised dev loop WITHOUT the
+# full backend stack (Postgres, Caddy, Java services, Redpanda,
+# Ollama).
+#
+# How it works:
+#   * Image build → installs Linux-native node_modules ONCE in
+#     a cached layer (apps/web/Dockerfile.dev).
+#   * Container start → bind-mounts the host source tree, but
+#     keeps the image's node_modules + .next behind anonymous
+#     volumes (so a Windows host with Windows-native modules
+#     doesn't shadow the Linux ones).
+#   * `next dev` hot-reloads on every save.
+#
+# Quick start:
+#   docker compose -f docker-compose.dev.yml up
+#   → http://localhost:3000
+#
+# Rebuild after dependency changes:
+#   docker compose -f docker-compose.dev.yml build --no-cache web
+#
+# Stop:
+#   docker compose -f docker-compose.dev.yml down
+# ============================================================
+name: fuelyn-dev
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: file:./prisma/dev.db
+      # Iter AH — provided via root .env.
+      FUELYN_JWT_SECRET: ${FUELYN_JWT_SECRET}
+      FUELYN_PUBLIC_ORIGIN: http://localhost:3000
+      FUELYN_ADMIN_TOKEN: ${FUELYN_ADMIN_TOKEN:-local-dev-admin-token}
+      # Existing dev envs.
+      TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY:-00000000-0000-0000-0000-000000000002}
+      CRON_SECRET: ${CRON_SECRET:-dev-cron-secret}
+      # Disable PWA service worker in dev — it caches aggressively
+      # and confuses hot-reload.
+      NEXT_PUBLIC_DISABLE_SW: "1"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Host source mount for hot reload …
+      - ./:/workspace
+      # … but keep the image's Linux-native node_modules + .next
+      # so the Windows host mount doesn't overwrite them.
+      - /workspace/node_modules
+      - /workspace/apps/web/node_modules
+      - /workspace/packages/core/node_modules
+      - /workspace/apps/web/.next
