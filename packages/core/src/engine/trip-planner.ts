@@ -107,8 +107,6 @@ export function planTrip(input: TripPlannerInput): TripPlanResult {
   }
 
   const totalKm = route[route.length - 1]!.cumKm;
-  const usableLitres = vehicle.tankCapacity * (1 - reserveFraction);
-  const maxRangeKm = (usableLitres / vehicle.consumption) * 100;
 
   const stops: PlannedStop[] = [];
   let currentKm = 0;

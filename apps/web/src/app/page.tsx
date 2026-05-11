@@ -28,6 +28,13 @@ import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import { SavingsCalculator } from '@/components/intelligence/SavingsCalculator';
 import { BestDealCard } from '@/components/intelligence/BestDealCard';
 import { PricePredictionCard } from '@/components/intelligence/PricePredictionCard';
+import { AIInsightsHero } from '@/components/intelligence/AIInsightsHero';
+import { AIAssistant } from '@/components/intelligence/AIAssistant';
+import {
+  SmartFilterChips,
+  applySmartChips,
+  type SmartFilterId,
+} from '@/components/stations/SmartFilterChips';
 
 // Sekundäre Karten: default visible: false → lazy via next/dynamic,
 // damit sie nicht im Initial-Bundle landen. Werden erst geladen,
@@ -156,22 +163,6 @@ export default function HomePage() {
   const mapCenter = useAppStore((s) => s.mapCenter);
   const mapRadiusKm = useAppStore((s) => s.mapRadiusKm);
   const setMapView = useAppStore((s) => s.setMapView);
-
-  /**
-   * Phase 6 — Mobile bottom-sheet state.
-   *
-   * On screens < lg the side-panel is repositioned as a floating
-   * bottom drawer over the map with two snap-points:
-   *   • peek (default) — ~16 vh, just enough to show the AI verdict
-   *     headline + price-stats summary
-   *   • full — ~88 vh, full station list + intelligence cards
-   *
-   * `bottomSheetFull` toggles between them. Drag-to-resize is left
-   * for a future iteration; the tap-handle keeps this MVP simple.
-   * On desktop (lg+) this state is ignored — the aside renders as
-   * the existing fixed-width side rail.
-   */
-  const [bottomSheetFull, setBottomSheetFull] = useState(false);
 
   /**
    * Phase 7 — Smart-filter chip state.
@@ -532,7 +523,7 @@ export default function HomePage() {
                   below the advisor card and the user had to scroll
                   one screen-height to reach the first station entry.
                 */}
-                <StationList
+                <SmartFilterChips
                   recommendations={recommendations}
                   active={smartFilters}
                   onToggle={toggleSmartFilter}

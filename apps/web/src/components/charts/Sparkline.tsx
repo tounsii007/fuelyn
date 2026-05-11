@@ -17,7 +17,7 @@
 
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useId, useMemo } from 'react';
 
 interface SparklineProps {
   /** Chronological points (oldest → newest). Empty array → flat baseline. */
@@ -80,7 +80,9 @@ function SparklineImpl({
     forceDirection,
   ]);
 
-  const gradId = useMemo(() => `spark-grad-${Math.random().toString(36).slice(2, 9)}`, []);
+  // useId gives a stable, render-pure unique string — safe inside
+  // SSR + StrictMode double-invocation. (Was Math.random() — impure.)
+  const gradId = `spark-grad-${useId()}`;
 
   if (computed == null) {
     // No data → render a discrete dashed baseline so the slot doesn't

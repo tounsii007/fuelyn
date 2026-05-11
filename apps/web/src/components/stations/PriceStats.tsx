@@ -145,7 +145,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
           Sparpotenzial: bis zu {formatPrice(stats.spread)} €/L
           {stats.spread > 0.05 && ' — Vergleichen lohnt sich!'}
         </p>
-      ) : null}
+      )}
     </section>
   );
 }

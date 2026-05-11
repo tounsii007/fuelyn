@@ -8,7 +8,6 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
-import { useAppStore } from '@/lib/store/app-store';
 import { StationCard } from './StationCard';
 import { StationCardSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
@@ -68,34 +67,26 @@ export function StationList({
     });
   }, []);
 
-  // ─── ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN ──────────
-  // The market-context selectors below USED to live below the
-  // isLoading/isError/empty early-returns, which violated React's
-  // Rules of Hooks: a render that hit an early return called only
-  // 5 hooks; a render that didn't called 7. React 19's stricter
-  // hydration-mismatch detection bubbled this up as a hard #310
-  // ("Rendered more hooks than during the previous render") plus
-  // a #418 hydration crash on every page load — the Homepage
-  // mounts <StationList isLoading={true} /> first, then re-renders
-  // with isLoading=false once React Query resolves, growing the
-  // hook count between the two passes.
-  //
-  // Fix: hoist the store selector and memo to the top so the hook
-  // count is constant regardless of which branch returns.
+  // Auto-extend the visible window whenever the sentinel scrolls
+  // into the pre-fetch zone. We don't smooth-scroll here — the user
+  // is already moving downward, hijacking their scroll would feel
+  // wrong.
+  useEffect(() => {
+    if (sentinelInView && visibleCount < recommendations.length) {
+      setVisibleCount((v) => v + PAGE_SIZE);
+    }
+  }, [sentinelInView, visibleCount, recommendations.length]);
+
+  // Cohort average for the currently filtered fuel type — used by
+  // StationCard to render its delta-vs-⌀ badge. Recomputed once per
+  // recommendations / fuel-type change; cheap (≤ 200 stations).
   const fuelType = useAppStore((s) => s.filter.fuelType);
-  const market = useMemo(() => {
-    const prices: number[] = [];
-    for (const r of recommendations) {
-      const p = r.station.prices?.[fuelType];
-      if (typeof p === 'number' && p > 0) prices.push(p);
-    }
-    if (prices.length === 0) {
-      return { min: null as number | null, max: null as number | null, avg: null as number | null, count: 0 };
-    }
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
-    return { min, max, avg, count: prices.length };
+  const marketAvg = useMemo<number | null>(() => {
+    const prices = recommendations
+      .map((r) => r.station.prices?.[fuelType])
+      .filter((p): p is number => typeof p === 'number' && p > 0);
+    if (prices.length < 2) return null;
+    return prices.reduce((s, p) => s + p, 0) / prices.length;
   }, [recommendations, fuelType]);
 
   if (isLoading) {
@@ -120,26 +111,10 @@ export function StationList({
   }
 
   if (recommendations.length === 0) {
-    // Tip-style empty state — three concrete things the user can
-    // try, ranked by likelihood of helping. Cheaper than embedding
-    // diagnostics ("which filter is biting?") and good enough to
-    // unblock most users.
     return (
       <EmptyState
-        icon="🔍"
         title="Keine Tankstellen gefunden"
-        message={
-          <span className="block">
-            <span className="block mb-2">
-              In der aktuellen Auswahl ist nichts dabei. Versuche eines davon:
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400 inline-block text-left">
-              • Suchradius vergrößern<br />
-              • Andere Kraftstoffart wählen<br />
-              • Filter zurücksetzen
-            </span>
-          </span>
-        }
+        message="Versuche einen größeren Suchradius oder ändere deine Filter."
       />
     );
   }
@@ -149,31 +124,13 @@ export function StationList({
   const hasMore = shown < total;
 
   return (
-    <div className="flex flex-col gap-3 p-4">
-      {/*
-        Result count + price-range subtitle. The count is the
-        primary signal ("X von Y Tankstellen"); the subtitle hangs
-        a sparkline-style range hint underneath ("1,89 € – 2,05 €
-        · Spanne 16 ct") so the user sees the spread before
-        scrolling. Subtitle suppressed when fewer than 2 priced
-        stations — a single price has no range to talk about.
-      */}
-      <div className="px-1 space-y-0.5">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {hasMore
-            ? `${shown} von ${total} Tankstelle${total !== 1 ? 'n' : ''}`
-            : `${total} Tankstelle${total !== 1 ? 'n' : ''} gefunden`}
-        </p>
-        {market.count >= 2 && market.min != null && market.max != null && (
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">
-            {market.min.toFixed(3).replace('.', ',')} €
-            {' – '}
-            {market.max.toFixed(3).replace('.', ',')} €
-            {' · Spanne '}
-            {Math.round((market.max - market.min) * 100)} ct
-          </p>
-        )}
-      </div>
+    <div className="flex flex-col gap-2 px-3 py-2">
+      {/* Result count */}
+      <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 px-0.5">
+        {hasMore
+          ? `${shown} von ${total} Tankstelle${total !== 1 ? 'n' : ''}`
+          : `${total} Tankstelle${total !== 1 ? 'n' : ''} gefunden`}
+      </p>
 
       {recommendations.slice(0, shown).map((rec, idx) => (
         <div
@@ -183,10 +140,8 @@ export function StationList({
         >
           <StationCard
             recommendation={rec}
-            marketAvgForFuel={market.avg}
-            marketMinForFuel={market.min}
-            marketCount={market.count}
-            onClick={() => onStationClick(rec.station.id)}
+            marketAvg={marketAvg}
+            onStationClick={onStationClick}
           />
         </div>
       ))}

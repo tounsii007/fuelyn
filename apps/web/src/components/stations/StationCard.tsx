@@ -13,30 +13,30 @@ import { BrandBadge } from '../ui/BrandBadge';
 import { Sparkline } from '../charts/Sparkline';
 import { ReportPriceDialog } from './ReportPriceDialog';
 import { useAppStore } from '@/lib/store/app-store';
-import { useTranslations } from '@/lib/hooks/use-translations';
+import { useStationHistory } from '@/lib/hooks/use-station-history';
+import { useInView } from '@/lib/hooks/use-in-view';
 
 interface StationCardProps {
-  readonly recommendation: StationRecommendation;
-  readonly onClick?: () => void;
+  recommendation: StationRecommendation;
   /**
-   * Optional market context — when supplied, a small chip is
-   * appended to the price showing how this station compares to
-   * the rest of the list (★ günstigster / −5 ct / +8 ct).
-   * Calls without it (legacy) just hide the chip.
+   * Average price across the same-fuel cohort this card belongs to.
+   * Optional — when present we render a coloured delta-vs-⌀ badge so
+   * the user can scan a long list and pick out genuine deals at a
+   * glance instead of mentally subtracting cents.
    */
-  readonly marketAvgForFuel?: number | null;
-  readonly marketMinForFuel?: number | null;
-  readonly marketCount?: number;
+  marketAvg?: number | null;
+  /**
+   * Stable click handler from the parent. Phase 10: by passing the
+   * id-aware callback (instead of `() => onStationClick(id)`) the
+   * prop reference stays referentially stable across renders, which
+   * lets React.memo actually skip work when nothing else changed.
+   */
+  onStationClick?: (id: string) => void;
+  /** Legacy zero-arg click (kept for backwards compat). */
+  onClick?: () => void;
 }
 
-export function StationCard({
-  recommendation,
-  onClick,
-  marketAvgForFuel,
-  marketMinForFuel,
-  marketCount,
-}: StationCardProps) {
-  const { t } = useTranslations();
+function StationCardImpl({ recommendation, marketAvg, onStationClick, onClick }: StationCardProps) {
   const { station, reachabilityStatus, estimatedDriveTime, isBestOption, reasons } =
     recommendation;
   const fuelType = useAppStore((s) => s.filter.fuelType);
@@ -55,20 +55,61 @@ export function StationCard({
   const address = formatAddress(station.street, station.houseNumber, station.postCode, station.place);
   const price = station.prices?.[fuelType] ?? null;
 
-  // Same delta-vs-average logic as StationPanel — kept simple
-  // (≥1 ct rounded delta + count threshold) so chip presence is
-  // an honest signal, not noise.
-  let deltaCt: number | null = null;
-  let isCheapest = false;
-  if (
-    price != null &&
-    typeof marketAvgForFuel === 'number' &&
-    typeof marketMinForFuel === 'number' &&
-    (marketCount ?? 0) >= 3
-  ) {
-    deltaCt = Math.round((price - marketAvgForFuel) * 100);
-    isCheapest = price <= marketMinForFuel + 0.0005;
-  }
+  // Cents-difference vs market average — null if avg unavailable or
+  // station has no price for the selected fuel. Rendered as a small
+  // tonal badge below the price tag.
+  const deltaCt = price != null && marketAvg != null
+    ? Math.round((price - marketAvg) * 1000) / 10
+    : null;
+
+  // ─── Phase 4 — Detour-savings badge ─────────────────────────
+  // When the user has an active route, compute whether stopping at
+  // THIS station genuinely saves money once the extra detour fuel
+  // cost is taken into account. Cohort-cheapest's price drives the
+  // baseline saving; vehicle profile (if any) sharpens the drive
+  // cost; otherwise we fall back to a 0.18 €/km flat estimate.
+  //
+  // Returns either a positive Δ-€ (you actually save once the detour
+  // is paid for), a negative Δ (the detour eats your savings), or
+  // null (no active route). Badge only renders when |Δ| ≥ 0.10 €.
+  const activeRoute = useAppStore((s) => s.activeRoute);
+  const vehicle = useAppStore((s) => s.vehicle);
+  const detourSavings = (() => {
+    if (!activeRoute || marketAvg == null || price == null) return null;
+    if (typeof station.dist !== 'number' || station.dist < 0) return null;
+    // Round-trip detour kilometres relative to the user's current point.
+    // Coarse estimate — when we have full route geometry (Phase 4 next
+    // milestone) we'll swap this for the actual orthogonal-distance to
+    // the route polyline.
+    const detourKm = station.dist * 2;
+    const driveCostPerKm = vehicle?.consumption
+      ? (vehicle.consumption / 100) * price
+      : 0.18;
+    const fillUpLitres = vehicle?.tankCapacity ?? 50;
+    const priceSavings = (marketAvg - price) * fillUpLitres;
+    const detourCost = detourKm * driveCostPerKm;
+    const net = priceSavings - detourCost;
+    return Math.round(net * 100) / 100;
+  })();
+
+  // ─── 24h sparkline + trend arrow ────────────────────────────
+  // Lazy-loaded: useStationHistory only fires when this card has
+  // scrolled within ~120 px of the viewport. A 14-card list would
+  // otherwise spike LCP with 14 simultaneous network requests.
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(cardRef);
+  const { data: histResponse } = useStationHistory({
+    stationId: station.id,
+    fuelType,
+    range: '24h',
+    enabled: inView,
+  });
+  const history = histResponse?.history ?? [];
+
+  // Trend direction derived from the history series. Strict thresholds
+  // keep "stable" the default — a tiny noise blip shouldn't tilt the
+  // arrow. Values are in €/L.
+  const trendDirection = computeTrendDirection(history);
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -140,7 +181,7 @@ export function StationCard({
                 className={`flex-shrink-0 w-2 h-2 rounded-full ${
                   station.isOpen ? 'bg-reach-safe' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
-                title={station.isOpen ? t('station.open') : t('station.closed')}
+                title={station.isOpen ? 'Geöffnet' : 'Geschlossen'}
               />
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
@@ -149,48 +190,60 @@ export function StationCard({
           </div>
         </div>
 
-        {/* Price + market-delta chip */}
-        <div className="flex flex-col items-end gap-0.5">
-          <PriceTag price={price} fuelType={fuelType} size="md" />
-          {/*
-            Mirror of the StationPanel chip so users get the same
-            "is this a good deal?" signal in the list before they
-            even click. Suppressed when:
-              - we don't have market context yet (initial render),
-              - candidate set is too small (< 3) to be informative,
-              - the delta is < 1 ct (noise threshold).
-            The "günstigster" badge wins over the delta — strongest
-            signal beats the most precise one.
-          */}
-          {isCheapest ? (
+        {/* Price + sparkline + delta-vs-market badge */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1.5">
+            {/* 24h trend arrow — colour-coded so glance-scan tells
+                you "this station is on the way down (good)" without
+                reading the sparkline numerically. */}
+            <TrendArrow direction={trendDirection} />
+            <PriceTag price={price} fuelType={fuelType} size="md" />
+          </div>
+          {/* 24h Sparkline. Empty/loading → dashed baseline placeholder. */}
+          <Sparkline
+            data={history}
+            width={56}
+            height={14}
+            className="opacity-90 group-hover:opacity-100 transition-opacity"
+            ariaLabel={`24h Preisverlauf für ${station.brand || station.name}`}
+          />
+          {deltaCt != null && Math.abs(deltaCt) >= 0.1 && (
             <span
-              className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5
-                         text-[9px] font-semibold leading-tight
-                         bg-emerald-100 text-emerald-700
-                         dark:bg-emerald-900/40 dark:text-emerald-300"
-              title={t('stationCard.cheapestTooltip')}
+              className={[
+                'inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full',
+                'text-[9px] font-semibold tabular-nums leading-tight',
+                'border',
+                deltaCt < 0
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/40'
+                  : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700/40',
+              ].join(' ')}
+              title={deltaCt < 0 ? 'Günstiger als der Markt-Durchschnitt' : 'Teurer als der Markt-Durchschnitt'}
             >
-              ★ {t('panel.cheapestChip')}
+              {deltaCt < 0 ? '−' : '+'}{Math.abs(deltaCt).toFixed(1)} ct ⌀
             </span>
-          ) : deltaCt !== null && Math.abs(deltaCt) >= 1 ? (
+          )}
+          {/* Phase 4 — Detour-savings badge. Only when an active route
+              is set AND the net of (price-saving × tank) − (detour-cost)
+              is meaningful enough to surface (≥ 0.10 €). */}
+          {detourSavings != null && Math.abs(detourSavings) >= 0.10 && (
             <span
-              className={`inline-flex items-center rounded-full px-1.5 py-0.5
-                          text-[9px] font-semibold leading-tight ${
-                            deltaCt < 0
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
-                          }`}
-              // The {n} placeholder in the locale template is filled
-              // via simple .replace — same pattern as fuelLog.lastNMonths.
-              title={(deltaCt < 0
-                ? t('stationCard.deltaTooltipBelow')
-                : t('stationCard.deltaTooltipAbove')
-              ).replace('{n}', String(Math.abs(deltaCt)))}
+              className={[
+                'inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full',
+                'text-[9px] font-semibold tabular-nums leading-tight',
+                'border',
+                detourSavings > 0
+                  ? 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-700/40'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700/40',
+              ].join(' ')}
+              title={
+                detourSavings > 0
+                  ? `Auf Route lohnt sich der Stop (Spart €${detourSavings.toFixed(2)} netto)`
+                  : `Umweg frisst die Ersparnis (Mehrkosten €${Math.abs(detourSavings).toFixed(2)})`
+              }
             >
-              {deltaCt > 0 ? '+' : ''}
-              {deltaCt} ct
+              {detourSavings > 0 ? '🛣 +' : '🛣 −'}{Math.abs(detourSavings).toFixed(2)} €
             </span>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -215,7 +268,7 @@ export function StationCard({
           className={`ml-auto p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
             isCompared ? 'text-brand-600' : 'text-gray-300 dark:text-gray-600 group-hover:text-gray-400'
           }`}
-          aria-label={isCompared ? t('compare.removeHint') : t('compare.addedHint')}
+          aria-label={isCompared ? 'Aus Vergleich entfernen' : 'Zum Vergleich hinzufügen'}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -227,7 +280,7 @@ export function StationCard({
           type="button"
           onClick={handleFavoriteToggle}
           className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label={isFavorite ? t('station.removeFavorite') : t('station.addFavorite')}
+          aria-label={isFavorite ? 'Favorit entfernen' : 'Als Favorit speichern'}
         >
           <svg
             className={`w-5 h-5 transition-colors ${

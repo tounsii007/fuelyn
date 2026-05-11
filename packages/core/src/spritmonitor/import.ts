@@ -87,7 +87,7 @@ function normHeader(s: string): string {
     .toLowerCase()
     .trim()
     // Strip BOM that some exports leave on the first cell
-    .replace(/^﻿/, '')
+    .replace(/^\uFEFF/, '')
     .replace(/[äöüß]/g, (m) => ({ ä: 'a', ö: 'o', ü: 'u', ß: 'ss' })[m] ?? m);
 }
 
@@ -215,7 +215,7 @@ export function parseSpritmonitorCsv(
 ): SpritmonitorImportResult {
   const newId = options.newId ?? defaultIdGen;
 
-  const text = raw.replace(/^﻿/, ''); // strip BOM
+  const text = raw.replace(/^\uFEFF/, ''); // strip BOM
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
   if (lines.length < 2) {

@@ -28,7 +28,7 @@ interface Command {
   label: string;
   hint?: string;
   shortcut?: string;
-  group: 'Navigation' | 'Aktionen' | 'Erscheinungsbild';
+  group: 'Navigation' | 'Aktionen' | 'Erscheinungsbild' | 'Experimental';
   icon: ReactNode;
   perform: () => void;
 }

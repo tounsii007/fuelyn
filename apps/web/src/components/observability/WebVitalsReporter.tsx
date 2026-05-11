@@ -18,17 +18,21 @@
 'use client';
 
 import { useReportWebVitals } from 'next/web-vitals';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function WebVitalsReporter() {
-  const sessionIdRef = useRef<string>(
-    // Random opaque per-page-load id — lets us aggregate metrics
-    // belonging to the same session without storing anything that
-    // could identify the user.
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2),
-  );
+  // Random opaque per-page-load id — lets us aggregate metrics
+  // belonging to the same session without storing anything that
+  // could identify the user. Assigned inside an effect so the
+  // initial-value call doesn't run an impure function during render.
+  const sessionIdRef = useRef<string>('');
+  useEffect(() => {
+    if (sessionIdRef.current) return;
+    sessionIdRef.current =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+  }, []);
 
   useReportWebVitals((metric) => {
     const payload = JSON.stringify({
