@@ -122,18 +122,6 @@ export default function VehiclePage() {
             </div>
           </div>
 
-          {!vehicle && (
-            <EmptyState
-              icon="🚗"
-              title="Kein Fahrzeug hinterlegt"
-              message="Trage dein Fahrzeug ein, um intelligente Tankempfehlungen zu erhalten."
-              action={{
-                label: 'Fahrzeug hinzufügen',
-                onClick: () => setVehicleFormOpen(true),
-              }}
-            />
-          )}
-
           {/* Fuel Cost Calculator */}
           {vehicle && <FuelCostCalculator consumption={vehicle.consumption} />}
 

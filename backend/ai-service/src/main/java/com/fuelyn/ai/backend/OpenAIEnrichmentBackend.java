@@ -3,6 +3,7 @@ package com.fuelyn.ai.backend;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fuelyn.ai.model.AIAdvisorRequest;
 import com.fuelyn.ai.model.AIAdvisorResponse;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -91,6 +92,9 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
         return !apiKey.isEmpty() && !apiKey.startsWith("sk-...");
     }
 
+    /** Phase A2 — Bulkhead caps concurrent OpenAI calls to bound token spend
+     *  on bot storms. Falls through to baseline when over capacity. */
+    @Bulkhead(name = "openai-enrich", fallbackMethod = "bulkheadRejected")
     @Override
     public AIAdvisorResponse enrich(AIAdvisorRequest request, AIAdvisorResponse baseline) {
         if (!hasUsableKey()) {
@@ -162,5 +166,12 @@ public class OpenAIEnrichmentBackend implements EnrichmentBackend {
             throw new IllegalStateException(
                     "Failed to parse OpenAI JSON content: " + parseError.getMessage(), parseError);
         }
+    }
+
+    /** Bulkhead-rejection fallback for the @Bulkhead annotation. */
+    @SuppressWarnings("unused")
+    private AIAdvisorResponse bulkheadRejected(AIAdvisorRequest request, AIAdvisorResponse baseline, Throwable t) {
+        log.warn("[OpenAI bulkhead] over capacity — falling through ({})", t.getMessage());
+        throw new IllegalStateException("openai bulkhead rejected", t);
     }
 }

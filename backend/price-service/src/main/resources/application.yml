@@ -9,6 +9,18 @@ spring:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+    # ─── HikariCP tuning (Phase B2) ──────────────────────────
+    # Default pool size is 10. With 4 collection workers + Kafka
+    # consumer + the public read traffic, 10 connections gets
+    # contended quickly. 20 is a sane upper bound for a single
+    # Postgres instance running on commodity hardware.
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:5}
+      connection-timeout: ${HIKARI_CONN_TIMEOUT_MS:10000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:1800000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:30000}
   jpa:
     hibernate:
       # Flyway owns the schema. Hibernate only validates the mapping.
@@ -126,10 +138,17 @@ resilience4j:
           - org.springframework.web.client.ResourceAccessException
   ratelimiter:
     instances:
+      # ─── Tankerkönig + OpenChargeMap rate limit ───────────────────
+      # Tankerkönig docs cap requests at ≤ 5 req/s globally. We size
+      # the bucket to 240/min (= 4 req/s steady state) to leave 20 %
+      # headroom for retries and bursts. With 4 500 polling points
+      # this gives ~19 min wall time per cycle, comfortably under
+      # the 30-min cron tick. The defaults can be overridden via
+      # env vars without rebuilding the image.
       external-api:
-        limit-for-period: 30
-        limit-refresh-period: 1m
-        timeout-duration: 5s
+        limit-for-period: ${RATELIMIT_EXTERNAL_API_PERIOD:240}
+        limit-refresh-period: ${RATELIMIT_EXTERNAL_API_REFRESH:1m}
+        timeout-duration: ${RATELIMIT_EXTERNAL_API_TIMEOUT:30s}
 
 # Management endpoints on SEPARATE port so nothing is accessible externally
 # unless explicitly exposed at the ingress.

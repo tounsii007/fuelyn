@@ -12,6 +12,8 @@ import { useAppStore } from '@/lib/store/app-store';
 import { StationCard } from './StationCard';
 import { StationCardSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
+import { useAppStore } from '@/lib/store/app-store';
+import { useInView } from '@/lib/hooks/use-in-view';
 
 const PAGE_SIZE = 20;
 
@@ -32,6 +34,21 @@ export function StationList({
 }: StationListProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const loadMoreRef = useRef<HTMLButtonElement>(null);
+  /**
+   * Phase 10 — Auto-load-more sentinel.
+   *
+   * Sentinel `<div>` rendered at the end of the visible list. When
+   * the user scrolls and the sentinel intersects the viewport, we
+   * extend `visibleCount` by another page. Falls back to the manual
+   * "Mehr laden" button for keyboard users + reduced-motion sessions.
+   *
+   * This is "poor man's virtualisation" — DOM grows linearly but
+   * each card stays cheap (no heavy charts, just SVG). For >200
+   * results we'd switch to react-window proper; until then this is
+   * sufficient and zero-dependency.
+   */
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const sentinelInView = useInView(sentinelRef, { once: false, rootMargin: '300px' });
 
   // Reset visible count when the data set changes
   // (e.g. new search, filter change)
@@ -174,19 +191,26 @@ export function StationList({
         </div>
       ))}
 
-      {/* Load more button */}
+      {/* Auto-load sentinel + manual fallback button */}
       {hasMore && (
-        <button
-          ref={loadMoreRef}
-          type="button"
-          onClick={handleLoadMore}
-          className="mt-2 w-full py-3 text-sm font-semibold text-brand-600 dark:text-brand-400
-                     bg-brand-50 dark:bg-brand-900/20 rounded-2xl
-                     hover:bg-brand-100 dark:hover:bg-brand-900/30
-                     active:scale-[0.98] transition-all duration-150"
-        >
-          Mehr laden ({total - shown} weitere)
-        </button>
+        <>
+          <div
+            ref={sentinelRef}
+            aria-hidden="true"
+            className="h-1 w-full"
+          />
+          <button
+            ref={loadMoreRef}
+            type="button"
+            onClick={handleLoadMore}
+            className="mt-1 w-full py-2.5 text-xs font-semibold text-brand-600 dark:text-brand-400
+                       bg-brand-50 dark:bg-brand-900/20 rounded-xl
+                       hover:bg-brand-100 dark:hover:bg-brand-900/30
+                       active:scale-[0.98] transition-all duration-150"
+          >
+            Mehr laden ({total - shown} weitere)
+          </button>
+        </>
       )}
     </div>
   );

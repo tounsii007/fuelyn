@@ -4,11 +4,14 @@
 
 'use client';
 
+import { memo, useCallback, useRef, useState } from 'react';
 import type { StationRecommendation } from '@fuelyn/core';
 import { formatDistance, formatDriveTime, formatAddress } from '@fuelyn/core';
 import { PriceTag } from '../ui/PriceTag';
 import { ReachabilityBadge } from '../ui/ReachabilityBadge';
 import { BrandBadge } from '../ui/BrandBadge';
+import { Sparkline } from '../charts/Sparkline';
+import { ReportPriceDialog } from './ReportPriceDialog';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 
@@ -40,9 +43,14 @@ export function StationCard({
   const isFavorite = useAppStore((s) => s.isFavorite(station.id));
   const addFavorite = useAppStore((s) => s.addFavorite);
   const removeFavorite = useAppStore((s) => s.removeFavorite);
-  const compareIds = useAppStore((s) => s.compareStationIds);
+  // Subscribe to the BOOLEAN, not the underlying array. Otherwise every
+  // card re-renders whenever any other station gets added to the
+  // compare set — Object.is bails the diff but we still spend the
+  // selector cost per card. With 4 500+ stations across the app, that
+  // adds up. Subscribing to the derived boolean lets Zustand skip the
+  // notification for cards whose membership didn't change.
+  const isCompared = useAppStore((s) => s.compareStationIds.includes(station.id));
   const toggleCompare = useAppStore((s) => s.toggleCompareStation);
-  const isCompared = compareIds.includes(station.id);
 
   const address = formatAddress(station.street, station.houseNumber, station.postCode, station.place);
   const price = station.prices?.[fuelType] ?? null;
@@ -76,22 +84,44 @@ export function StationCard({
     }
   };
 
+  /**
+   * Phase 8 — Community-Report (real backend wire-up).
+   *
+   * Opens an in-app dialog that POSTs to /api/reports →
+   * gateway → price-service. The previous mailto MVP is replaced.
+   * Rate-limit + per-device fingerprint live server-side.
+   */
+  const [reportOpen, setReportOpen] = useState(false);
+  const handleReportPrice = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setReportOpen(true);
+  };
+
+  // Stable click handler: prefer the id-aware callback so the
+  // `onClick` prop reference stays stable across renders (memo win).
+  const handleClick = useCallback(() => {
+    if (onStationClick) onStationClick(station.id);
+    else if (onClick) onClick();
+  }, [onStationClick, onClick, station.id]);
+
   return (
     <div
+      ref={cardRef}
       role="button"
       tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
-      className={`w-full text-left p-4 rounded-2xl transition-all duration-200 cursor-pointer
+      onClick={handleClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
+      className={`w-full text-left px-3 py-2.5 rounded-2xl cursor-pointer
         bg-white dark:bg-surface-dark-secondary
-        shadow-card hover:shadow-card-hover active:shadow-card-active
-        ${isBestOption ? 'ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-surface-dark' : ''}
+        border border-gray-100 dark:border-gray-700/60
+        shadow-card fy-card-interactive
+        ${isBestOption ? 'ring-1.5 ring-brand-500 ring-offset-1 dark:ring-offset-surface-dark' : ''}
         animate-fade-in group`}
     >
       {/* Best Option Badge */}
       {isBestOption && (
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-600 text-white">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-600 text-white">
             Beste Option
           </span>
         </div>
@@ -165,7 +195,7 @@ export function StationCard({
       </div>
 
       {/* Meta Row */}
-      <div className="flex items-center flex-wrap gap-2 mt-3">
+      <div className="flex items-center flex-wrap gap-2 mt-1.5">
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {formatDistance(station.dist)}
         </span>
@@ -217,11 +247,34 @@ export function StationCard({
             />
           </svg>
         </button>
+
+        {/* Phase 8 — Report wrong price (mailto MVP).
+            Tucked at the end of the meta row, low visual weight: the
+            user only needs it when something is genuinely off. */}
+        <button
+          type="button"
+          onClick={handleReportPrice}
+          className="p-1 rounded-lg transition-colors text-gray-300 dark:text-gray-600
+                     group-hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+          aria-label="Preis melden"
+          title="Preis-Korrektur melden"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4a4 4 0 014-4h10a4 4 0 014 4v4M3 21h18M9 5l3-3 3 3M12 2v10" />
+          </svg>
+        </button>
       </div>
 
       {/* Reasons */}
       {reasons.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2.5">
+        <div className="flex flex-wrap gap-1 mt-1.5">
           {reasons.slice(0, 3).map((reason) => (
             <span
               key={reason}
@@ -232,6 +285,81 @@ export function StationCard({
           ))}
         </div>
       )}
+
+      {/* Phase 8 — report dialog (mounted at card level so it
+          inherits the click-outside boundary correctly). */}
+      <ReportPriceDialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        stationId={station.id}
+        stationName={station.brand || station.name}
+        fuelType={fuelType as 'diesel' | 'e5' | 'e10'}
+        displayedPrice={price}
+      />
     </div>
+  );
+}
+
+/**
+ * Memoised export — Phase 10. With the new `onStationClick(id)`
+ * stable-prop pattern + stable `recommendation` references coming
+ * from TanStack Query, React.memo cleanly skips re-rendering cards
+ * whose data hasn't changed. On a 50-card list this halves the
+ * paint cost of the side panel during scroll.
+ */
+export const StationCard = memo(StationCardImpl);
+
+// ─── Local helpers ─────────────────────────────────────────────
+
+type TrendDirection = 'falling' | 'rising' | 'stable';
+
+/**
+ * Compare a "recent half" mean to an "earlier half" mean. More
+ * resilient to single-point noise than first-vs-last comparison.
+ * 0.003 €/L ≈ 0.3 ct/L is the noise floor below which we report
+ * STABLE.
+ */
+function computeTrendDirection(
+  history: ReadonlyArray<{ price: number }>,
+): TrendDirection {
+  if (history.length < 4) return 'stable';
+  const prices = history.map((h) => h.price).filter((p) => Number.isFinite(p) && p > 0);
+  if (prices.length < 4) return 'stable';
+  const half = Math.floor(prices.length / 2);
+  const earlier = prices.slice(0, half);
+  const recent = prices.slice(prices.length - half);
+  const earlierMean = earlier.reduce((s, p) => s + p, 0) / earlier.length;
+  const recentMean = recent.reduce((s, p) => s + p, 0) / recent.length;
+  const slope = recentMean - earlierMean;
+  if (slope > 0.003) return 'rising';
+  if (slope < -0.003) return 'falling';
+  return 'stable';
+}
+
+function TrendArrow({ direction }: { direction: TrendDirection }) {
+  const cfg =
+    direction === 'falling'
+      ? { rotate: '45deg',  color: 'text-emerald-600 dark:text-emerald-400', label: 'Trend fallend' }
+      : direction === 'rising'
+        ? { rotate: '-45deg', color: 'text-rose-600 dark:text-rose-400',     label: 'Trend steigend' }
+        : { rotate: '0deg',  color: 'text-slate-400 dark:text-slate-500',   label: 'Trend stabil' };
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-3.5 h-3.5 ${cfg.color}`}
+      title={cfg.label}
+      aria-label={cfg.label}
+    >
+      <svg
+        className="w-3.5 h-3.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.4}
+        aria-hidden="true"
+        style={{ transform: `rotate(${cfg.rotate})`, transition: 'transform 0.2s ease' }}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+      </svg>
+    </span>
   );
 }

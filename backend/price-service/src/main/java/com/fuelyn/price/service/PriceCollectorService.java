@@ -12,6 +12,10 @@ import com.fuelyn.price.repository.CollectionRunRepository;
 import com.fuelyn.price.repository.PriceSnapshotRepository;
 import com.fuelyn.price.repository.StationMetaRepository;
 import com.fuelyn.price.stream.PriceEventPublisher;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -76,6 +85,58 @@ public class PriceCollectorService {
     private final PriceEventPublisher priceEventPublisher;
     private final double radiusKm;
     private final int maxHistoryDays;
+    /**
+     * Worker count for parallel polling. The Resilience4j {@code @RateLimiter}
+     * on {@link TankerkoenigClient#searchStations} is the actual throttle —
+     * threads beyond the permit budget block waiting for tokens. Parallelism
+     * therefore does NOT amplify upstream load; it only smooths wall time
+     * around slow HTTP responses (one stuck request no longer pauses the
+     * whole queue). Default 4 covers I/O latency without thread thrash.
+     */
+    private final int parallelism;
+
+    /**
+     * Phase B1 — empty-city skip filter.
+     *
+     * <p>Of the ~4 600 polling points, a non-trivial number return zero
+     * stations cycle after cycle: tiny Mecklenburg villages with no
+     * fuel station, North-Sea islands with one closed bunker, etc.
+     * Polling them is a sunk cost — every empty call eats a Resilience4j
+     * permit and burns ~150 ms of wall time without producing data.</p>
+     *
+     * <p>This map records per-city consecutive-empty counts. When the
+     * count crosses {@link #SKIP_THRESHOLD} we tag the city as "cold"
+     * and skip it for the next {@link #COLD_CYCLES} cycles. Every
+     * {@link #DISCOVERY_INTERVAL_CYCLES} cycles we force a re-poll of
+     * every cold city in case a station opened (rare but possible).</p>
+     *
+     * <p>The map is in-memory per JVM. A restart re-discovers cold
+     * cities organically — by design, no DB round trip needed.</p>
+     */
+    private final Map<String, AtomicInteger> consecutiveEmpty = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> coldSkipsRemaining = new ConcurrentHashMap<>();
+    private final AtomicLong cycleCount = new AtomicLong();
+    private static final int SKIP_THRESHOLD = 5;
+    private static final int COLD_CYCLES = 48;
+    private static final int DISCOVERY_INTERVAL_CYCLES = 48;
+
+    /**
+     * Phase A1 — observability. Optional so tests + early bootstrap don't
+     * need a registry; in production the Micrometer auto-config wires it
+     * automatically. Counters/timers created on first use are cached on
+     * the registry, so we don't pay name-resolution cost per cycle.
+     */
+    private final MeterRegistry meterRegistry;
+    /** Counter for entire-cycle outcomes — `result=success|degraded`. */
+    private Counter cycleCounter;
+    private Counter cycleDegradedCounter;
+    /** Per-city outcome — `outcome=ok|empty|failed`. Tag pruned to keep
+     *  cardinality bounded (city name is ~5 000 unique values, never tag). */
+    private Counter cityOkCounter;
+    private Counter cityEmptyCounter;
+    private Counter cityFailedCounter;
+    /** Wall-clock time for one entire cycle. */
+    private Timer cycleTimer;
 
     /**
      * Self-reference so {@link #collectAll()} can call {@link #collectForArea}
@@ -165,8 +226,6 @@ public class PriceCollectorService {
      */
     public CollectionResult collectAll() {
         long start = System.currentTimeMillis();
-        int totalStations = 0;
-        int totalPrices = 0;
 
         CollectionRun run = new CollectionRun();
         run.setStartedAt(LocalDateTime.now());
@@ -187,11 +246,13 @@ public class PriceCollectorService {
         }
 
         long duration = System.currentTimeMillis() - start;
+        int failedCount = failedCities.get();
+        int total = CITIES.size();
 
         run.setCompletedAt(LocalDateTime.now());
-        run.setStationsCount(totalStations);
-        run.setPricesCount(totalPrices);
-        run.setStatus("completed");
+        run.setStationsCount(totalStations.get());
+        run.setPricesCount(totalPrices.get());
+        run.setStatus(failedCount > total / 4 ? "completed-with-errors" : "completed");
         runRepo.save(run);
 
         // Invalidate price-derived caches now that fresh data has landed.
@@ -492,4 +553,63 @@ public class PriceCollectorService {
 
     /** City coordinate record. */
     public record CityCoord(String name, double lat, double lng) {}
+
+    /**
+     * Loads the polling grid from {@code cities.csv} on the classpath.
+     *
+     * <p>Format: one row per city — {@code name,lat,lng}. Blank lines and
+     * lines starting with {@code #} are skipped. Malformed rows log a
+     * WARN and are skipped; we never abort startup over a single bad
+     * row because the rest of the grid is still useful.</p>
+     *
+     * <p>Called once from the {@code static} initialiser; the resulting
+     * list is wrapped in {@link Collections#unmodifiableList(List)} so
+     * accidental mutation downstream surfaces as an exception.</p>
+     */
+    private static List<CityCoord> loadCitiesFromClasspath() {
+        List<CityCoord> out = new ArrayList<>(5_000);
+        ClassLoader cl = PriceCollectorService.class.getClassLoader();
+        try (InputStream is = cl.getResourceAsStream("cities.csv")) {
+            if (is == null) {
+                LoggerFactory.getLogger(PriceCollectorService.class)
+                        .error("cities.csv missing from classpath — collection will be a no-op");
+                return List.of();
+            }
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String line;
+                int lineNo = 0;
+                while ((line = br.readLine()) != null) {
+                    lineNo++;
+                    String trimmed = line.trim();
+                    if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                    String[] parts = trimmed.split(",", 4);
+                    if (parts.length < 3) {
+                        LoggerFactory.getLogger(PriceCollectorService.class)
+                                .warn("cities.csv:{} malformed — expected 'name,lat,lng', got '{}'",
+                                        lineNo, trimmed);
+                        continue;
+                    }
+                    try {
+                        out.add(new CityCoord(
+                                parts[0].trim(),
+                                Double.parseDouble(parts[1].trim()),
+                                Double.parseDouble(parts[2].trim())
+                        ));
+                    } catch (NumberFormatException nfe) {
+                        LoggerFactory.getLogger(PriceCollectorService.class)
+                                .warn("cities.csv:{} bad number — '{}'", lineNo, trimmed);
+                    }
+                }
+            }
+        } catch (IOException ioe) {
+            // Reading from a classpath resource shouldn't fail in a
+            // healthy container — this branch is mostly for tests.
+            LoggerFactory.getLogger(PriceCollectorService.class)
+                    .error("Failed to read cities.csv: {}", ioe.getMessage());
+        }
+        LoggerFactory.getLogger(PriceCollectorService.class)
+                .info("Loaded {} polling points from cities.csv", out.size());
+        return Collections.unmodifiableList(out);
+    }
 }

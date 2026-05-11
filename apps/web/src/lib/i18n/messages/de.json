@@ -1,0 +1,84 @@
+{
+  "$meta": {
+    "locale": "de-DE",
+    "name": "Deutsch",
+    "owner": "Fuelyn"
+  },
+  "common": {
+    "loading": "Wird geladen…",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "more": "Mehr",
+    "less": "Weniger",
+    "yes": "Ja",
+    "no": "Nein",
+    "off": "Aus",
+    "on": "An",
+    "ok": "OK",
+    "close": "Schließen"
+  },
+  "filter": {
+    "diesel": "Diesel",
+    "e5": "Super E5",
+    "e10": "Super E10",
+    "open": "Geöffnet",
+    "top3": "Top 3",
+    "underAvg": "≤ Markt-⌀",
+    "safe": "Sicher",
+    "reset": "Zurücksetzen",
+    "fuelType": "Kraftstoff",
+    "radius": "Suchradius",
+    "sortBy": "Sortieren nach",
+    "sortPrice": "Preis",
+    "sortDistance": "Entfernung",
+    "sortValue": "Bestes Preis-Leistungs-Verhältnis"
+  },
+  "stationCard": {
+    "navigateAria": "Navigation zu {name} starten",
+    "details": "Details",
+    "compare": "Vergleichen",
+    "removeCompare": "Aus Vergleich entfernen",
+    "favorite": "Favorit",
+    "removeFavorite": "Favorit entfernen",
+    "report": "Preis melden",
+    "delta": "{delta} ggü. ⌀",
+    "savings": "Bis zu {amount} sparen",
+    "open": "geöffnet",
+    "closed": "geschlossen"
+  },
+  "advisor": {
+    "title": "AI-Empfehlung",
+    "verdictBuy": "Jetzt tanken",
+    "verdictWait": "Lieber warten",
+    "verdictNeutral": "Keine starke Empfehlung",
+    "confidenceLow": "Geringe Konfidenz",
+    "confidenceMedium": "Mittlere Konfidenz",
+    "confidenceHigh": "Hohe Konfidenz",
+    "explanation": "Erklärung",
+    "tip": "Tipp",
+    "outlook": "Ausblick"
+  },
+  "empty": {
+    "noStations": "Keine Tankstellen gefunden",
+    "tryWiderRadius": "Versuche einen größeren Suchradius oder ändere deine Filter.",
+    "noLocation": "Standort wird benötigt",
+    "noLocationHelp": "Aktiviere die Standortfreigabe oder gib eine Demo-Adresse ein."
+  },
+  "errors": {
+    "generic": "Hier ist etwas schiefgelaufen",
+    "genericHelp": "Diese Seite konnte nicht geladen werden. Häufig ist es nur ein kurzer Aussetzer — versuch es noch einmal.",
+    "offline": "Offline",
+    "offlineHelp": "Wir haben deine letzten Daten gecached — sobald du wieder online bist, lädt sich Fuelyn neu.",
+    "rateLimit": "Zu viele Anfragen — bitte später erneut versuchen.",
+    "unauthenticated": "Bitte melde dich an, um diese Funktion zu nutzen."
+  },
+  "install": {
+    "title": "Fuelyn als App installieren",
+    "subtitle": "Schneller Start, Offline-Karte, Push-Alerts bei Preis-Drops.",
+    "accept": "Installieren",
+    "later": "Später"
+  }
+}

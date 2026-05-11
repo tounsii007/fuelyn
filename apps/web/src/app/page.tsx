@@ -39,7 +39,7 @@ import type {
   UnifiedFuelStation,
   ChargingStation as CoreChargingStation,
 } from '@fuelyn/core';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // Leaflet requires browser APIs — load dynamically with no SSR
 const StationMap = dynamic(
@@ -139,6 +139,38 @@ export default function HomePage() {
   const mapCenter = useAppStore((s) => s.mapCenter);
   const mapRadiusKm = useAppStore((s) => s.mapRadiusKm);
   const setMapView = useAppStore((s) => s.setMapView);
+
+  /**
+   * Phase 6 — Mobile bottom-sheet state.
+   *
+   * On screens < lg the side-panel is repositioned as a floating
+   * bottom drawer over the map with two snap-points:
+   *   • peek (default) — ~16 vh, just enough to show the AI verdict
+   *     headline + price-stats summary
+   *   • full — ~88 vh, full station list + intelligence cards
+   *
+   * `bottomSheetFull` toggles between them. Drag-to-resize is left
+   * for a future iteration; the tap-handle keeps this MVP simple.
+   * On desktop (lg+) this state is ignored — the aside renders as
+   * the existing fixed-width side rail.
+   */
+  const [bottomSheetFull, setBottomSheetFull] = useState(false);
+
+  /**
+   * Phase 7 — Smart-filter chip state.
+   * Multi-select, persisted only for this session; toggling a chip
+   * narrows the visible recommendations list without a backend
+   * round-trip.
+   */
+  const [smartFilters, setSmartFilters] = useState<Set<SmartFilterId>>(() => new Set());
+  const toggleSmartFilter = useCallback((id: SmartFilterId) => {
+    setSmartFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSmartFilters = useCallback(() => setSmartFilters(new Set()), []);
 
   const searchLat = mapCenter?.lat ?? userLocation?.lat ?? null;
   const searchLng = mapCenter?.lng ?? userLocation?.lng ?? null;
@@ -394,9 +426,9 @@ export default function HomePage() {
           <>
             {insecureContext && <InsecureContextBanner />}
 
-            <div className="flex h-full">
+            <div className="flex h-full min-h-0">
               {/* Map Panel */}
-              <div className={`${isMapView ? 'flex-1' : 'hidden lg:flex lg:flex-1'} relative`}>
+              <div className={`${isMapView ? 'flex-1' : 'hidden lg:flex lg:flex-1'} relative min-h-0`}>
                 <StationMap
                   recommendations={recommendations}
                   chargingStations={showCharging ? chargingStations : []}
@@ -409,10 +441,15 @@ export default function HomePage() {
                 <StationPanel recommendations={recommendations} />
               </div>
 
-              {/* Side panel — modern glass surface */}
+              {/* Side panel — modern glass surface
+                  Mobile + map view: bottom-sheet (Tesla/Uber style)
+                  with peek/full snap-points, sliding height transition.
+                  Desktop: fixed-width side rail (unchanged).         */}
               <aside
                 className={[
-                  isMapView ? 'hidden lg:flex' : 'flex',
+                  isMapView
+                    ? 'flex fixed lg:static inset-x-0 bottom-0 z-30 lg:z-auto rounded-t-3xl lg:rounded-none'
+                    : 'flex',
                   'flex-col w-full lg:w-[420px] xl:w-[460px]',
                   'border-l border-[var(--color-border-subtle)]',
                   'bg-[var(--color-bg)]/85 backdrop-blur-md',
@@ -437,6 +474,7 @@ export default function HomePage() {
                     <AddressSearch />
                   </div>
                 </div>
+                <AIInsightsHero recommendations={recommendations} />
                 <SearchHistory />
                 {/*
                   Customizable sidebar (Iter AB): order + visibility
@@ -479,6 +517,21 @@ export default function HomePage() {
                 */}
                 <StationList
                   recommendations={recommendations}
+                  active={smartFilters}
+                  onToggle={toggleSmartFilter}
+                  fuelType={filter.fuelType}
+                  onClear={clearSmartFilters}
+                />
+
+                {/* Station list comes right after the stats so the user sees
+                    every nearby station immediately without having to scroll
+                    past the AI advisor + savings calculator first. The
+                    intelligence section sits below — it's "context" once
+                    you've already seen the data. */}
+                <StationList
+                  recommendations={
+                    applySmartChips(recommendations, smartFilters, filter.fuelType) as typeof recommendations
+                  }
                   isLoading={isLoading}
                   isError={isError}
                   onStationClick={handleStationClick}
@@ -496,6 +549,10 @@ export default function HomePage() {
           </>
         )}
       </AppShell>
+
+      {/* AI Assistant FAB + Drawer — sits above everything,
+          available even when the sidebar is collapsed on mobile. */}
+      <AIAssistant />
 
       {/* Mobile floating bottom nav */}
       {!isNavigating && <BottomNav />}

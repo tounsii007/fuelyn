@@ -51,7 +51,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
       className="mx-4 mb-3 bg-white dark:bg-gray-800/90 rounded-2xl shadow-card
                  border border-gray-100 dark:border-gray-700/60 p-4"
     >
-      <header className="flex items-center justify-between mb-3">
+      <header className="flex items-center justify-between mb-1.5">
         <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
           {FUEL_TYPE_LABELS[fuelType]} {t('priceStats.pricesSuffix')}
         </p>
@@ -61,7 +61,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
       </header>
 
       {/* Stats Row */}
-      <dl className="flex items-end justify-between gap-2 mb-3">
+      <dl className="flex items-end justify-between gap-2 mb-2">
         <div className="text-center">
           <dt className="text-[10px] font-medium text-reach-safe">{t('priceStats.cheapestColLabel')}</dt>
           <dd className="text-base font-bold text-reach-safe tabular-nums">
@@ -145,7 +145,7 @@ export function PriceStats({ recommendations }: PriceStatsProps) {
           Sparpotenzial: bis zu {formatPrice(stats.spread)} €/L
           {stats.spread > 0.05 && ' — Vergleichen lohnt sich!'}
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

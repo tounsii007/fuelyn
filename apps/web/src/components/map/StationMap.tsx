@@ -18,6 +18,7 @@ import { useTranslations } from '@/lib/hooks/use-translations';
 import { getBrandConfig } from '@/lib/brand-config';
 import { getCachedIcon, priceMarkerKey, chargingMarkerKey, h2MarkerKey, gasMarkerKey, clusterMarkerKey } from '@/lib/utils/marker-cache';
 import { RouteLayer } from './RouteLayer';
+import { HeatmapLayer } from './HeatmapLayer';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -51,6 +52,11 @@ interface StationMapProps {
 
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const TILE_DARK_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// Carto's "Dark Matter Nolabels" base — true cinematic black
+// background, very few road labels, perfect substrate for the
+// Fuelyn marker style. We pair it with a manually-added Carto
+// labels overlay so place names stay legible without dominating.
+const TILE_PREMIUM_URL = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
 const TILE_SATELLITE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const TILE_TERRAIN_URL = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -192,7 +198,6 @@ function createPriceMarkerIcon(
   brand: string,
   mapStyle: string,
 ): L.DivIcon {
-  const priceText = price != null ? formatPrice(price) : 'n/a';
   const brandCfg = getBrandConfig(brand);
   const noPrice = price == null;
   const theme = MARKER_THEMES[isMapStyleId(mapStyle) ? mapStyle : 'standard'];
@@ -271,7 +276,10 @@ function createPriceMarkerIcon(
     : `0 1px 3px ${brandCfg.color}66, inset 0 1px 0 rgba(255,255,255,0.20), 0 0 0 0.5px rgba(15,23,42,0.08)`;
 
   return L.divIcon({
-    className: 'tp-marker',
+    // The `is-best` modifier triggers a slow gold-halo pulse keyframe
+    // (see globals.css). Use a hover/active aware class chain so the
+    // CSS layer can animate without us having to inline keyframes.
+    className: `tp-marker${isBest ? ' tp-marker--best' : ''}${priceTier === 'low' ? ' tp-marker--cheap' : ''}${isSelected ? ' tp-marker--selected' : ''}`,
     html: `
       <div class="tp-marker-bubble" style="
         position:relative;
@@ -373,24 +381,27 @@ function createUserLocationIcon(): L.DivIcon {
   return L.divIcon({
     className: 'tp-user-marker',
     html: `
-      <div style="position: relative; width: 16px; height: 16px;">
+      <div style="position: relative; width: 18px; height: 18px;">
         <div style="
-          position: absolute; inset: -4px;
-          background: rgba(37,117,234,0.12);
+          position: absolute; inset: -8px;
+          background: radial-gradient(circle, rgba(37,117,234,0.22) 0%, rgba(37,117,234,0) 70%);
           border-radius: 50%;
-          animation: tp-pulse 2.5s ease-out infinite;
+          animation: tp-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         "></div>
         <div style="
           position: absolute; inset: 0;
-          background: #2575EA;
-          border: 2.5px solid white;
+          background: radial-gradient(circle at 30% 30%, #4F95FF 0%, #2575EA 60%, #1D5FD7 100%);
+          border: 3px solid white;
           border-radius: 50%;
-          box-shadow: 0 2px 6px rgba(37,117,234,0.35), 0 0 0 2px rgba(37,117,234,0.12);
+          box-shadow:
+            0 0 0 2px rgba(37,117,234,0.18),
+            0 3px 10px rgba(37,117,234,0.45),
+            inset 0 1px 0 rgba(255,255,255,0.35);
         "></div>
       </div>
     `,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
   });
 }
 
@@ -635,27 +646,63 @@ function MapRefCapture({ mapRef }: { mapRef: MutableRefObject<L.Map | null> }) {
 function createClusterIcon(cluster: { getChildCount(): number }): L.DivIcon {
   const count = cluster.getChildCount();
   return getCachedIcon(clusterMarkerKey(count), () => {
-    const size = count < 10 ? 40 : count < 50 ? 48 : 56;
-    const fontSize = count < 10 ? 14 : count < 50 ? 13 : 12;
+    // Tier-based size + color: density translates into visual weight.
+    //   small (<10):   blue    — calm, expected count
+    //   medium (10-49): indigo — meaningful cluster
+    //   large (50+):   violet  — must-zoom-in territory
+    const tier = count < 10 ? 'small' : count < 50 ? 'medium' : 'large';
+    const size = tier === 'small' ? 42 : tier === 'medium' ? 50 : 58;
+    const fontSize = tier === 'small' ? 15 : tier === 'medium' ? 14 : 13;
+
+    const grad =
+      tier === 'small'
+        ? 'linear-gradient(135deg, #3B8AFF 0%, #2575EA 55%, #1747B8 100%)'
+        : tier === 'medium'
+          ? 'linear-gradient(135deg, #818CF8 0%, #6366F1 55%, #3730A3 100%)'
+          : 'linear-gradient(135deg, #C084FC 0%, #A855F7 55%, #6B21A8 100%)';
+
+    const haloColor =
+      tier === 'small'
+        ? '37,117,234'
+        : tier === 'medium'
+          ? '99,102,241'
+          : '168,85,247';
 
     return L.divIcon({
       className: 'tp-cluster',
       html: `
         <div style="
+          position: relative;
           width: ${size}px; height: ${size}px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #2575EA 0%, #1D5FD7 100%);
+          background: ${grad};
           color: white;
           display: flex; align-items: center; justify-content: center;
           font-family: 'Inter', system-ui, sans-serif;
           font-size: ${fontSize}px;
-          font-weight: 700;
-          box-shadow: 0 4px 14px rgba(37,117,234,0.4), 0 0 0 4px rgba(37,117,234,0.15);
-          border: 3px solid rgba(255,255,255,0.8);
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -0.5px;
+          border: 2.5px solid rgba(255,255,255,0.95);
+          box-shadow:
+            0 0 0 4px rgba(${haloColor},0.16),
+            0 0 0 8px rgba(${haloColor},0.08),
+            0 6px 20px rgba(${haloColor},0.45),
+            inset 0 1.5px 0 rgba(255,255,255,0.32),
+            inset 0 -1px 4px rgba(0,0,0,0.10);
+          text-shadow: 0 1px 2px rgba(0,0,0,0.25);
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+          overflow: hidden;
         ">
-          <span style="letter-spacing: 0.2px;">${count}</span>
+          <span style="position:relative; z-index:2;">${count}</span>
+          <span aria-hidden="true" style="
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.35) 0%, transparent 55%);
+            pointer-events: none;
+          "></span>
         </div>
       `,
       iconSize: [size, size],
@@ -708,6 +755,8 @@ export function StationMap({
   const updateSettings = useAppStore((s) => s.updateSettings);
   const setMapCenter = useAppStore((s) => s.setMapCenter);
   const setMapRadiusKm = useAppStore((s) => s.setMapRadiusKm);
+  /** Phase 3b: map-wide selection state used to dim non-selected markers. */
+  const selectedStationId = useAppStore((s) => s.selectedStationId);
 
   const h2Stations = useMemo(
     () => extraStations.filter(isHydrogenStation) as UnifiedHydrogenStation[],
@@ -726,10 +775,14 @@ export function StationMap({
         return { tileUrl: TILE_TERRAIN_URL, tileAttribution: TILE_TERRAIN_ATTRIBUTION };
       case 'dark':
         return { tileUrl: TILE_DARK_URL, tileAttribution: TILE_ATTRIBUTION };
+      case 'premium':
+        // Cinematic black-background no-labels base; pair with the
+        // labels-only overlay below so place names stay readable.
+        return { tileUrl: TILE_PREMIUM_URL, tileAttribution: TILE_ATTRIBUTION };
       default:
-        // Always use light Voyager tiles for the standard style —
-        // the map should stay bright and readable even in dark mode.
-        // Dark map tiles can be selected explicitly via the map style picker.
+        // Light Voyager tiles for the standard style — the map should
+        // stay bright and readable even in dark mode. Dark/Premium can
+        // be selected explicitly via the map style picker.
         return { tileUrl: TILE_URL, tileAttribution: TILE_ATTRIBUTION };
     }
   }, [mapStyle]);
@@ -749,6 +802,46 @@ export function StationMap({
   const userIcon = useMemo(() => createUserLocationIcon(), []);
   const mapRef = useRef<L.Map | null>(null);
   const [styleOpen, setStyleOpen] = useState(false);
+  /**
+   * Heatmap overlay toggle (Phase 3a). When ON we render a
+   * HeatmapLayer that paints translucent emerald/amber/rose circles
+   * over each station — a price-density visual that lets the user
+   * sweep the map for cheap regions without zooming into individual
+   * markers.
+   */
+  const [heatmapOn, setHeatmapOn] = useState(false);
+
+  // Price-tier classification across the current viewport. Stations
+  // are bucketed into 'low' (cheapest 33%), 'mid', or 'high' (most
+  // expensive 33%) based on a tertile cut on prices observed RIGHT NOW.
+  // The marker visual then carries an emerald / neutral / rose tint
+  // halo so the user can scan the map for cheap deals at a glance,
+  // independent of brand colour. Re-computed only when recommendations
+  // or fuel type change (cheap, runs once per useMemo invalidation).
+  const priceTiers = useMemo<Map<string, 'low' | 'mid' | 'high'>>(() => {
+    const out = new Map<string, 'low' | 'mid' | 'high'>();
+    const prices = recommendations
+      .map((r) => ({ id: r.station.id, p: r.station.prices?.[fuelType] }))
+      .filter((x): x is { id: string; p: number } =>
+        typeof x.p === 'number' && x.p > 0,
+      );
+    if (prices.length < 3) {
+      // Not enough variance to be meaningful — every priced station is
+      // 'mid', which renders as the existing neutral halo.
+      for (const x of prices) out.set(x.id, 'mid');
+      return out;
+    }
+    const sorted = [...prices].sort((a, b) => a.p - b.p);
+    const lowCut = sorted[Math.floor(sorted.length * 0.33)]!.p;
+    const highCut = sorted[Math.floor(sorted.length * 0.67)]!.p;
+    for (const x of prices) {
+      out.set(
+        x.id,
+        x.p <= lowCut ? 'low' : x.p >= highCut ? 'high' : 'mid',
+      );
+    }
+    return out;
+  }, [recommendations, fuelType]);
 
   const handleLocate = useCallback(() => {
     if (userLocation && mapRef.current) {
@@ -773,7 +866,7 @@ export function StationMap({
       <MapContainer
         center={center}
         zoom={DEFAULT_ZOOM}
-        className="w-full h-full z-0"
+        className={`w-full h-full z-0${selectedStationId ? ' fy-map-has-selection' : ''}`}
         zoomControl={false}
         attributionControl={true}
       >
@@ -825,17 +918,20 @@ export function StationMap({
           </>
         )}
 
-        <MarkerClusterGroup
-          chunkedLoading={true}
-          maxClusterRadius={60}
-          spiderfyOnMaxZoom={true}
-          showCoverageOnHover={false}
-          zoomToBoundsOnClick={true}
-          disableClusteringAtZoom={15}
-          iconCreateFunction={createClusterIcon}
-        >
+        {/* Clustering temporarily disabled: react-leaflet-cluster@4.1.3 is
+            incompatible with react-leaflet@5 / React 19. Children mounted
+            after a hydration-induced re-render are silently dropped, so no
+            station marker reaches the Leaflet layer. Plain <Marker> works.
+            Re-enable once the cluster lib catches up (or replace with
+            a fork like @changey/react-leaflet-markercluster). */}
+        <>
           {recommendations.map((rec) => {
             const price = rec.station.prices?.[fuelType];
+            const tier = priceTiers.get(rec.station.id) ?? 'mid';
+            const isSelected = selectedStationId === rec.station.id;
+            // Selection state participates in the cache key so we don't
+            // overwrite the un-selected variant — when the user clicks
+            // a different station, both icons stay reusable.
             const cacheKey = priceMarkerKey(
               price,
               rec.isBestOption,
@@ -923,7 +1019,7 @@ export function StationMap({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 }}>
                           <span style={{ fontSize: 11, color: textMuted }}>{FUEL_TYPE_LABELS[fuelType]}</span>
                           <span style={{ fontSize: 18, fontWeight: 800, color: textPrimary }}>
-                            {price != null ? `${formatPrice(price)} EUR` : 'n/a'}
+                            {price != null ? `${formatPrice(price)} €` : '—'}
                           </span>
                         </div>
                         {rec.isBestOption && (
@@ -949,7 +1045,7 @@ export function StationMap({
               </Marker>
             );
           })}
-        </MarkerClusterGroup>
+        </>
 
         {/* Charging station markers (for hybrid/electric vehicles) */}
         {chargingStations.map((cs) => {
@@ -1063,7 +1159,7 @@ export function StationMap({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
                     <span style={{ fontSize: 11, color: '#94A3B8' }}>{t('map.hydrogenLabel')}</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                      {h2.h2PricePerKg != null ? `${h2.h2PricePerKg.toFixed(2)} €/kg` : 'n/a'}
+                      {h2.h2PricePerKg != null ? `${h2.h2PricePerKg.toFixed(2)} €/kg` : '—'}
                     </span>
                   </div>
                   {h2.h2Pressure.length > 0 && (
@@ -1132,7 +1228,7 @@ export function StationMap({
                       <div key={gt} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
                         <span style={{ fontSize: 11, color: '#94A3B8' }}>{gt.toUpperCase()}</span>
                         <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                          {price != null ? `${price.toFixed(3)} €` : 'n/a'}
+                          {price != null ? `${price.toFixed(3)} €` : '—'}
                         </span>
                       </div>
                     );
@@ -1211,6 +1307,27 @@ export function StationMap({
             </svg>
           </button>
         )}
+
+        {/* Heatmap toggle (Phase 3a) — overlays a translucent
+            emerald/amber/rose density layer so cheap regions pop
+            without zooming into individual markers. */}
+        <button
+          type="button"
+          onClick={() => setHeatmapOn((on) => !on)}
+          className={btnClass + (heatmapOn ? ' ring-2 ring-emerald-500' : '')}
+          aria-label={heatmapOn ? 'Heatmap aus' : 'Heatmap an'}
+          title={heatmapOn ? 'Heatmap aus' : 'Heatmap an'}
+        >
+          <svg
+            className={`w-5 h-5 ${heatmapOn ? 'text-emerald-500' : 'text-gray-700 dark:text-gray-300'}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+        </button>
 
         <div className="relative">
           <button

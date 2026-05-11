@@ -7,6 +7,7 @@ import com.fuelyn.common.events.EventEnvelope;
 import com.fuelyn.common.events.PriceUpdatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -48,13 +49,30 @@ public class PriceEventConsumer {
             new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final AdvisorService advisorService;
+    private final PriceHistoryBuffer historyBuffer;
+    /** Phase C1 — anomaly detection. Optional so tests + minimal profiles
+     *  can run without the bean wired. */
+    private final PriceAnomalyDetector anomalyDetector;
+    private final AnomalyBroadcaster anomalyBroadcaster;
     /** Total events received since startup (exposed for /actuator/metrics). */
     private final AtomicLong eventsReceived = new AtomicLong();
     /** Cache invalidations performed since startup. */
     private final AtomicLong cacheInvalidations = new AtomicLong();
+    /** Events successfully recorded into the rolling history buffer. */
+    private final AtomicLong eventsBuffered = new AtomicLong();
+    /** Anomalies detected and broadcast since startup. */
+    private final AtomicLong anomaliesEmitted = new AtomicLong();
 
-    public PriceEventConsumer(AdvisorService advisorService) {
+    public PriceEventConsumer(
+            AdvisorService advisorService,
+            PriceHistoryBuffer historyBuffer,
+            @Autowired(required = false) PriceAnomalyDetector anomalyDetector,
+            @Autowired(required = false) AnomalyBroadcaster anomalyBroadcaster
+    ) {
         this.advisorService = advisorService;
+        this.historyBuffer = historyBuffer;
+        this.anomalyDetector = anomalyDetector;
+        this.anomalyBroadcaster = anomalyBroadcaster;
     }
 
     @KafkaListener(
@@ -78,10 +96,39 @@ public class PriceEventConsumer {
                     received, ev.stationId(), ev.fuelType(),
                     ev.previousPrice(), ev.newPrice(), ev.deltaPrice());
 
+            // Persist into the per-station rolling window so the next
+            // advisor request sees real history (EWMA, change-point,
+            // station-relative z-score). Cheap: O(1) deque append +
+            // size trim. Failures are non-fatal — the cache invalidation
+            // below is the correctness-critical step.
+            try {
+                historyBuffer.record(ev);
+                eventsBuffered.incrementAndGet();
+            } catch (Exception bufferEx) {
+                log.warn("History buffer rejected event for {}: {}",
+                        ev.stationId(), bufferEx.getMessage());
+            }
+
             // Cache-invalidation: drop everything once a price moved.
             // Cheap at our scale; correctness > micro-optimisation.
             advisorService.invalidateCache();
             cacheInvalidations.incrementAndGet();
+
+            // Phase C1 — anomaly detection runs AFTER buffer.record so the
+            // detector sees the freshly appended sample in its z-score
+            // calculation. Broadcast best-effort; a failed publish never
+            // blocks the consumer.
+            if (anomalyDetector != null && anomalyBroadcaster != null) {
+                anomalyDetector.detect(ev).ifPresent(anomaly -> {
+                    try {
+                        anomalyBroadcaster.publish(anomaly);
+                        anomaliesEmitted.incrementAndGet();
+                    } catch (Exception ex) {
+                        log.warn("Anomaly broadcast failed for {}: {}",
+                                anomaly.stationId(), ex.getMessage());
+                    }
+                });
+            }
 
             ack.acknowledge();
         } catch (Exception e) {
@@ -97,6 +144,7 @@ public class PriceEventConsumer {
 
     public long getEventsReceived()      { return eventsReceived.get(); }
     public long getCacheInvalidations()  { return cacheInvalidations.get(); }
+    public long getEventsBuffered()      { return eventsBuffered.get(); }
 
     /**
      * Best-effort coercion from the loosely-typed envelope.data()

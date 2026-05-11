@@ -131,9 +131,9 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
                    bg-[radial-gradient(circle,_oklch(0.58_0.25_295/0.35)_0%,_transparent_70%)]"
       />
 
-      <div className="relative p-4">
+      <div className="relative p-3">
         {/* Header row — eyebrow + live indicator */}
-        <header className="flex items-center justify-between mb-3">
+        <header className="flex items-center justify-between mb-2">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">
             <SparkleIcon />
             {t('bestDeal.eyebrow')}
@@ -161,7 +161,7 @@ export function BestDealCard({ recommendations }: BestDealCardProps) {
         </Link>
 
         {/* Price hero */}
-        <div className="mt-4 flex items-baseline gap-3">
+        <div className="mt-2.5 flex items-baseline gap-3">
           <PriceTag price={station.prices?.[fuelType] ?? null} fuelType={fuelType} size="lg" />
           {savingsCt > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full
@@ -294,7 +294,7 @@ function Stat({
         ? 'text-amber-300'
         : 'text-white/95';
   return (
-    <div className="flex flex-col gap-0.5 px-2.5 py-2 rounded-xl bg-white/5 border border-white/10">
+    <div className="flex flex-col gap-0.5 px-2 py-1.5 rounded-xl bg-white/5 border border-white/10">
       <div className="flex items-center gap-1.5 text-[var(--color-fg-subtle)]">
         <span className="w-3 h-3 inline-flex">{icon}</span>
         <span className="text-[9px] font-medium uppercase tracking-wider">{label}</span>

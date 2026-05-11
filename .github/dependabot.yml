@@ -1,0 +1,89 @@
+# ============================================================
+# Dependabot — Phase E
+#
+# Strategy:
+#   • Group minor/patch bumps to keep PR noise low (one PR per
+#     ecosystem per week).
+#   • Major bumps go into individual PRs because they typically
+#     require code changes.
+#   • Security updates are always individual + immediate.
+# ============================================================
+
+version: 2
+updates:
+  # ─── Frontend (apps/web + packages/*) ─────────────────────
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+      eslint:
+        patterns: ['eslint*', '@typescript-eslint/*']
+    ignore:
+      # React 19 is recent — let it stabilise before tracking
+      # bleeding-edge minor releases.
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+    labels:
+      - 'dependencies'
+      - 'frontend'
+
+  # ─── Backend (Maven) ──────────────────────────────────────
+  - package-ecosystem: 'maven'
+    directory: '/backend'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:30'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 5
+    groups:
+      spring-boot:
+        patterns: ['org.springframework*']
+      minor-and-patch:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+    labels:
+      - 'dependencies'
+      - 'backend'
+
+  # ─── GitHub Actions ───────────────────────────────────────
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels:
+      - 'dependencies'
+      - 'ci'
+
+  # ─── Docker base images ───────────────────────────────────
+  - package-ecosystem: 'docker'
+    directory: '/backend/price-service'
+    schedule:
+      interval: 'weekly'
+    labels: ['dependencies', 'docker']
+  - package-ecosystem: 'docker'
+    directory: '/backend/ai-service'
+    schedule:
+      interval: 'weekly'
+    labels: ['dependencies', 'docker']
+  - package-ecosystem: 'docker'
+    directory: '/backend/gateway'
+    schedule:
+      interval: 'weekly'
+    labels: ['dependencies', 'docker']
+  - package-ecosystem: 'docker'
+    directory: '/apps/web'
+    schedule:
+      interval: 'weekly'
+    labels: ['dependencies', 'docker']

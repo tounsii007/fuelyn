@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             : 'bg-transparent border-b border-transparent',
         ].join(' ')}
       >
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <Brand />
 
           {/* Three logical groups separated by dividers:
@@ -82,6 +82,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <Divider />
 
+            {/* Primary: fuel selectors — always visible because they
+                gate every result on the page. */}
             <PopoverSelect
               icon={<FuelIcon />}
               value={fuelType}
@@ -102,6 +104,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <Divider />
 
+            {/* Map / list toggle — primary because it changes the
+                visual mode of the entire app. */}
             <IconButton
               onClick={toggleView}
               label={isMapView ? t('appShell.toggleListView') : t('appShell.toggleMapView')}
