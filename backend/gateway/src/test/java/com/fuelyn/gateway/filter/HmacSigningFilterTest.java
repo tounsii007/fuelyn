@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,11 +27,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class HmacSigningFilterTest {
 
-    private TankpilotProperties props;
+    private FuelynProperties props;
 
     @BeforeEach
     void setUp() {
-        props = new TankpilotProperties();
+        props = new FuelynProperties();
         props.getSecurity().setHmacSecret("unit-test-secret-32+chars-for-hmac-signing");
         props.getSecurity().setJwtSecret("unit-test-jwt-secret-min-32-chars-for-hs256-signing");
         props.getSecurity().setServiceId("gateway-test");

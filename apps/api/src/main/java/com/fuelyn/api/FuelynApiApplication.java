@@ -6,9 +6,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class TankpilotApiApplication {
+public class FuelynApiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TankpilotApiApplication.class, args);
+        SpringApplication.run(FuelynApiApplication.class, args);
     }
 }

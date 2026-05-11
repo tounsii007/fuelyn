@@ -14,8 +14,7 @@ export type { BadgeProps } from './Badge';
 export { ToastProvider, useToast } from './Toast';
 export type { ToastInput } from './Toast';
 
-export { SkeletonV2 } from './SkeletonV2';
-export type { SkeletonProps } from './SkeletonV2';
+export { Skeleton, StationCardSkeleton } from './Skeleton';
 
 export { ThemeToggle } from './ThemeToggle';
 

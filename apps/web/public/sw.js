@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Service Worker KILL-SWITCH
+// Fuelyn — Service Worker KILL-SWITCH
 //
 // Purpose: unregister any prior service worker version and purge
 // every cache it left behind. The previous SW (v3) is the root

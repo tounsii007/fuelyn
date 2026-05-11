@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,11 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ApiKeyValidationFilterTest {
 
-    private TankpilotProperties props;
+    private FuelynProperties props;
 
     @BeforeEach
     void setUp() {
-        props = new TankpilotProperties();
+        props = new FuelynProperties();
         props.getSecurity().setApiKeys(
                 List.of("first-key-very-long-and-strong-32+chars-aaaa",
                         "second-key-also-very-long-and-strong-32-chars",

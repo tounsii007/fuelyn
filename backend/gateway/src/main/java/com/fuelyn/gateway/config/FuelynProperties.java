@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Component
 @ConfigurationProperties(prefix = "fuelyn")
-public class TankpilotProperties {
+public class FuelynProperties {
 
     private final Security security = new Security();
     private final Gateway gateway = new Gateway();

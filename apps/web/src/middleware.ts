@@ -2,37 +2,40 @@
 // Next.js Edge Middleware — security headers + request correlation.
 //
 // Runs at the edge (no Node APIs) for every non-API request. Adds:
-//   • Content-Security-Policy (without nonces — see note below)
+//   • Content-Security-Policy (see note below)
 //   • Strict-Transport-Security
 //   • X-Content-Type-Options, X-Frame-Options, Referrer-Policy
 //   • Permissions-Policy
 //   • X-Request-Id (propagated to BFF/backend so logs correlate)
 //
 // ─── CSP design note ─────────────────────────────────────────
-// We chose 'unsafe-inline' for script-src + style-src instead of the
-// stricter nonce/strict-dynamic approach because:
+//   1. 'unsafe-eval' is enabled ONLY in development (HMR/refresh
+//      needs it). Production drops it — Next.js production bundles
+//      do not use eval().
 //
-//   1. Next.js 16 emits multiple inline + chunked <script> tags during
-//      hydration. With 'strict-dynamic', the nonce must propagate to
-//      every one of them. Next.js does not do this automatically — you
-//      need a manual `headers()` lookup in every layout/page that
-//      renders <Script> tags. Easy to break, hard to test.
+//   2. 'unsafe-inline' for style-src is kept: Tailwind v4 + the Next
+//      runtime emit inline <style> tags during hydration and there is
+//      no nonce-aware path that covers all of them. For script-src we
+//      keep 'unsafe-inline' for the same hydration reason (chunked
+//      <script> tags) but the app loads zero third-party scripts, so
+//      the attack surface is the same-origin code we already trust.
 //
-//   2. With Tailwind v4 + emotion-style runtime, inline styles are
-//      unavoidable, so 'unsafe-inline' for style-src is required anyway.
-//
-//   3. The app is single-origin (no third-party scripts), so the actual
-//      threat surface for injection is small. We mitigate the residual
-//      risk through `default-src 'self'` and explicit allow-lists for
-//      every external host (fonts, map tiles, Tankerkoenig, etc.).
+//   3. connect-src lists only hosts the *browser* actually contacts.
+//      OpenAI is server-side only (apps/web/src/lib/ai/openai-client.ts)
+//      and is therefore not listed.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
 
 function buildCsp(): string {
+  const isDev = process.env.NODE_ENV !== 'production';
+  const scriptSrc = isDev
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'";
+
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    scriptSrc,
     // Tailwind v4 + Next emits inline <style> tags during hydration.
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -43,7 +46,7 @@ function buildCsp(): string {
     // can switch between (light / dark / satellite / terrain), plus
     // the OSRM routing API used by the navigation panel and the
     // route-planner page (RouteLayer hits it directly from the client).
-    "connect-src 'self' https://creativecommons.tankerkoenig.de https://api.openchargemap.io https://api.openai.com https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://router.project-osrm.org",
+    "connect-src 'self' https://creativecommons.tankerkoenig.de https://api.openchargemap.io https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://router.project-osrm.org",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

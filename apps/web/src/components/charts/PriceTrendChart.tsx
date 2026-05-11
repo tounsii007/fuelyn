@@ -1,5 +1,5 @@
 // ============================================================
-// PriceHistoryChart -- Pure SVG price trend chart
+// PriceTrendChart -- Pure SVG price trend chart
 // Features: 7/30 day toggle, line + area fill, min/max/avg
 // annotations, responsive sizing, brand colors.
 // ============================================================
@@ -14,7 +14,7 @@ import type { FuelType } from '@fuelyn/core';
 
 type Period = 7 | 30;
 
-interface PriceHistoryChartProps {
+interface PriceTrendChartProps {
   /** External data; when omitted, mock data is generated. */
   data?: PriceDataPoint[];
   fuelType?: FuelType;
@@ -43,12 +43,12 @@ function toY(price: number, min: number, range: number): number {
   return PAD_T + PLOT_H - ((price - min) / range) * PLOT_H;
 }
 
-export function PriceHistoryChart({
+export function PriceTrendChart({
   data: externalData,
   fuelType = 'e10',
   showToggle = true,
   className = '',
-}: PriceHistoryChartProps) {
+}: PriceTrendChartProps) {
   const [period, setPeriod] = useState<Period>(7);
   const gradientId = useId();
 

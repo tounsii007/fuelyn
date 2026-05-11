@@ -1,5 +1,5 @@
 # ============================================================
-# TankPilot — Caddy reverse proxy (auto-HTTPS via internal CA).
+# Fuelyn — Caddy reverse proxy (auto-HTTPS via internal CA).
 #
 # Non-default public ports:
 #   HTTPS: 49443

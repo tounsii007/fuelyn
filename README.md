@@ -25,7 +25,7 @@ fuelyn/
 ├─ apps/
 │  ├─ api/        # Java (separate Legacy-API)
 │  ├─ web/        # Next.js 16 Web-App (BFF + UI + Edge-Middleware)
-│  └─ mobile/     # Expo 55 Mobile-App
+│  └─ mobile/     # Expo 55 Mobile-App — STUB, siehe apps/mobile/STATUS.md
 ├─ backend/       # Spring Boot 3.4 Multi-Modul (Java 21)
 │  ├─ common/         # Shared Security, DTOs, Observability
 │  ├─ gateway/        # Spring Cloud Gateway (Port 8080, mgmt 9080)
@@ -166,15 +166,20 @@ npm test                  # Vitest (core + web)
 cd backend && mvn test    # JUnit 5 + Mockito (alle Module)
 ```
 
-| Suite | Anzahl | Status |
-|-------|--------|--------|
-| Java common      | 25 | ✅ |
-| Java price       | 16 | ✅ |
-| Java ai-service  |  9 | ✅ |
-| Java gateway     |  3 | ✅ |
-| TS core (vitest) | 20 | ✅ |
-| TS web (vitest)  | 21 | ✅ |
-| **Gesamt**       | **94** | ✅ |
+Grobe Größenordnung (Test-Files, nicht Cases — die Zahlen wachsen
+mit jedem Feature und werden hier nicht aktiv gepflegt):
+
+| Suite                 | Files |
+|-----------------------|-------|
+| Java backend (JUnit5) | ~31   |
+| TS core (vitest)      | ~35   |
+| TS web (vitest)       | ~27   |
+
+Substanz schwankt: harte Unit-Tests (`csrf`, `jwt`, `rate-limit`,
+`pkpass-signer`, `stripe-signature`, engine/*) neben einigen
+Smoke-/Snapshot-Tests gegen Tailwind-Klassen. Die Suite ist gut
+genug, um Regressionen zu fangen, aber kein E2E-Ersatz —
+Playwright/Cypress steht noch in Phase 4 der ROADMAP.
 
 ## CI
 
@@ -213,6 +218,6 @@ GitHub Actions führt bei jedem Push/PR aus:
 - OKLCH-basiertes Design-Token-System (`apps/web/src/styles/tokens.css`)
 - Light / Dark / System-Theme mit FOUC-freier Hydration
 - Component-Library: `Button`, `Card`, `Input`, `Badge`, `Tooltip`, `Toast`,
-  `SkeletonV2`, `ThemeToggle`
+  `Skeleton`, `ThemeToggle`
 - `prefers-reduced-motion` respektiert
 - Visible Focus-Ring (a11y)

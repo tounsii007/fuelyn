@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.reactivestreams.Publisher;
@@ -59,7 +59,7 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
     private final int maxSignedBodyBytes;
 
     public HmacSigningFilter(
-            TankpilotProperties properties,
+            FuelynProperties properties,
             @Value("${fuelyn.gateway.max-signed-body-bytes:262144}") int maxSignedBodyBytes
     ) {
         this.hmacSecret = properties.getSecurity().getHmacSecret();

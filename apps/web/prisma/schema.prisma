@@ -1,5 +1,5 @@
 // ============================================================
-// TankPilot — Prisma Schema (SQLite)
+// Fuelyn — Prisma Schema (SQLite)
 // Stores price history snapshots, station metadata, and
 // collection run logs for the price-history backend.
 // ============================================================

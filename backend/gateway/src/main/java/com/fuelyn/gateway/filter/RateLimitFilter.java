@@ -3,7 +3,7 @@ package com.fuelyn.gateway.filter;
 import com.fuelyn.gateway.security.GatewayTrustedProxyResolver;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -31,7 +31,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private final Cache<String, AtomicInteger> requestCounts;
     private final GatewayTrustedProxyResolver trustedProxyResolver;
 
-    public RateLimitFilter(TankpilotProperties properties, GatewayTrustedProxyResolver trustedProxyResolver) {
+    public RateLimitFilter(FuelynProperties properties, GatewayTrustedProxyResolver trustedProxyResolver) {
         this.burstCapacity = properties.getGateway().getRateLimit().getBurstCapacity();
         this.trustedProxyResolver = trustedProxyResolver;
         this.requestCounts = Caffeine.newBuilder()

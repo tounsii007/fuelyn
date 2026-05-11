@@ -73,12 +73,12 @@ spring:
 
 fuelyn:
   security:
-    hmac-secret: "${TANKPILOT_HMAC_SECRET:}"
-    jwt-public-key: "${TANKPILOT_JWT_PUBLIC_KEY:}"
-    jwt-private-key: "${TANKPILOT_JWT_PRIVATE_KEY:}"
+    hmac-secret: "${FUELYN_HMAC_SECRET:}"
+    jwt-public-key: "${FUELYN_JWT_PUBLIC_KEY:}"
+    jwt-private-key: "${FUELYN_JWT_PRIVATE_KEY:}"
     service-id: gateway
     api-keys:
-      - "${TANKPILOT_API_KEY:}"
+      - "${FUELYN_API_KEY:}"
   gateway:
     rate-limit:
       requests-per-second: 10

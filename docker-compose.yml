@@ -301,10 +301,10 @@ services:
       MANAGEMENT_PORT: "29800"
       PRICE_SERVICE_URI: http://price-service:28810
       AI_SERVICE_URI: http://ai-service:28820
-      TANKPILOT_HMAC_SECRET: ${HMAC_SECRET}
-      TANKPILOT_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      TANKPILOT_JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
-      TANKPILOT_API_KEY: ${API_KEY_1}
+      FUELYN_HMAC_SECRET: ${HMAC_SECRET}
+      FUELYN_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      FUELYN_JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      FUELYN_API_KEY: ${API_KEY_1}
       CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://fuelyn.localhost:49443,https://api.fuelyn.localhost:49443
     expose:
       - "28800"

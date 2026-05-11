@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useAppStore } from '@/lib/store/app-store';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PriceHistoryChart } from '@/components/charts/PriceHistoryChart';
+import { PriceTrendChart } from '@/components/charts/PriceTrendChart';
 import { ConsumptionTracker } from '@/components/intelligence/ConsumptionTracker';
 import { BestTimeHeatmap } from '@/components/stats/BestTimeHeatmap';
 
@@ -88,10 +88,10 @@ export default function StatsPage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Verbrauchsstatistik</h1>
 
       {/* KI Preisverlauf-Chart */}
-      <PriceHistoryChart className="mb-4" />
+      <PriceTrendChart className="mb-4" />
 
       {/* Best-Time heatmap — derived from the same priceHistory
-          stream as PriceHistoryChart but rendered as a 7×24 grid
+          stream as PriceTrendChart but rendered as a 7×24 grid
           so the user spots day/hour patterns at a glance. */}
       <BestTimeHeatmap className="mb-4" />
 

@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -33,7 +33,7 @@ public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
 
     private final List<String> validApiKeys;
 
-    public ApiKeyValidationFilter(TankpilotProperties properties) {
+    public ApiKeyValidationFilter(FuelynProperties properties) {
         // Pre-filter to drop empty / blank entries that a misconfigured
         // env-var expansion might leave behind. Otherwise the loop below
         // would still iterate them (good for constant-time guarantees) but

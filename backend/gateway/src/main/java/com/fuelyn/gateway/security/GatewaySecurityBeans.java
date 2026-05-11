@@ -1,6 +1,6 @@
 package com.fuelyn.gateway.security;
 
-import com.fuelyn.gateway.config.TankpilotProperties;
+import com.fuelyn.gateway.config.FuelynProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class GatewaySecurityBeans {
 
     @Bean
-    public GatewayTrustedProxyResolver gatewayTrustedProxyResolver(TankpilotProperties properties) {
+    public GatewayTrustedProxyResolver gatewayTrustedProxyResolver(FuelynProperties properties) {
         return new GatewayTrustedProxyResolver(properties.getSecurity().getTrustedProxies());
     }
 }

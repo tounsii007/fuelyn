@@ -437,7 +437,7 @@ Target ≥ 8 %.
 
 ### 3.2 Web Push for price alerts
 
-Connect the existing `tankpilot.alerts.v1` Kafka consumer to
+Connect the existing `fuelyn.alerts.v1` Kafka consumer to
 the Web Push API.
 
 **Architecture**
@@ -564,7 +564,7 @@ Phase 4 closes the loop:
   weight version, compute mean regret per group.
 - If a candidate weight set has ≥ 5 % lower mean regret than the
   current default with p < 0.05, auto-promote.
-- Config flag `tankpilot.ai.weights-version` selects one of
+- Config flag `fuelyn.ai.weights-version` selects one of
   several `WeightsProfile` objects.
 
 ### 4.6 Rate-limit / abuse protection

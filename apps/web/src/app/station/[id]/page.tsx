@@ -12,7 +12,7 @@ import { OpeningHoursDetail } from '@/components/stations/OpeningHoursDetail';
 import { PriceHistoryChart } from '@/components/stations/PriceHistoryChart';
 import { PriceReportForm } from '@/components/stations/PriceReportForm';
 import { WalletPassButton } from '@/components/stations/WalletPassButton';
-import { PriceHistoryChart as PriceTrendChart } from '@/components/charts/PriceHistoryChart';
+import { PriceTrendChart } from '@/components/charts/PriceTrendChart';
 import { FuelAdvisor } from '@/components/intelligence/FuelAdvisor';
 import {
   FUEL_TYPES,
