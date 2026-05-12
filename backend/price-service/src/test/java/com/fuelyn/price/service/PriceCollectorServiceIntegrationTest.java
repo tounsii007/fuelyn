@@ -103,8 +103,10 @@ class PriceCollectorServiceIntegrationTest {
                 publisher,
                 10.0,                       // radius
                 90,                         // maxHistoryDays
+                4,                          // parallelism
                 new SelfRefProxy(ref),      // satisfies @Lazy
                 cacheManager,
+                null,                       // meterRegistry
                 new CollectionProperties()  // empty → defaults
         );
         ref.set(s);
@@ -121,7 +123,7 @@ class PriceCollectorServiceIntegrationTest {
     private static final class SelfRefProxy extends PriceCollectorService {
         private final AtomicReference<PriceCollectorService> target;
         SelfRefProxy(AtomicReference<PriceCollectorService> target) {
-            super(null, null, null, null, null, 0, 0, null, null, new CollectionProperties());
+            super(null, null, null, null, null, 0, 0, 0, null, null, null, new CollectionProperties());
             this.target = target;
         }
         @Override public CollectionResult collectForArea(double lat, double lng, String name) {

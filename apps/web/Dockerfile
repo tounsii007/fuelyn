@@ -10,15 +10,40 @@ COPY packages/core/package.json ./packages/core/
 # Only install the web workspace + its transitive @fuelyn/core dep.
 # Skipping `apps/mobile` (Expo) and `apps/api` (Java) keeps the layer small
 # and avoids native-module install failures on Alpine.
-RUN npm ci \
-    --workspace=@fuelyn/web \
-    --workspace=@fuelyn/core \
-    --include-workspace-root
+#
+# Network resilience:
+#   * BuildKit cache mount on /root/.npm — partial downloads survive a
+#     build retry, so a flaky link doesn't restart the 60-min layer from
+#     zero.
+#   * maxsockets=4 — npm defaults to 50 parallel connections, which
+#     overwhelms residential / restricted networks and surfaces as
+#     ECONNRESET / ETIMEDOUT in the middle of large packages. Four
+#     concurrent fetches finish almost as fast on a healthy link and
+#     are far more robust on a constrained one.
+#   * fetch-retries=5 with a 20 s floor / 5 min ceiling rides out
+#     transient drops without giving up.
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 300000 \
+    && npm config set fetch-timeout 600000 \
+    && npm config set maxsockets 4 \
+    && npm ci \
+        --workspace=@fuelyn/web \
+        --workspace=@fuelyn/core \
+        --include-workspace-root
 
 # ─── Build ───────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
+# Prisma 7 default engine "client" requires an adapter (e.g.
+# @prisma/adapter-pg). For our SQLite-dev / Postgres-prod setup we
+# don't want to pull in an adapter, so we pin to the legacy
+# "library" engine via the documented env-var. Both `prisma generate`
+# (build-time) and `new PrismaClient()` (runtime) read this — the
+# runner stage below inherits it via the runtime ENV declaration.
+ENV PRISMA_CLIENT_ENGINE_TYPE=library
 COPY --from=deps /workspace/node_modules ./node_modules
 COPY . .
 
@@ -36,6 +61,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=23700
 ENV HOSTNAME=0.0.0.0
+# Match builder so runtime PrismaClient picks the library engine.
+ENV PRISMA_CLIENT_ENGINE_TYPE=library
 
 # Non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001

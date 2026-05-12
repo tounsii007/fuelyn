@@ -65,9 +65,9 @@ class PriceCollectorCleanupTest {
                 new EmptyClient(),
                 snapshotRepo, stationRepo, runRepo,
                 new NoopPublisher(),
-                10.0, 7,
+                10.0, 7, 4,
                 new SelfRef(ref),
-                null,
+                null, null,
                 new CollectionProperties()
         );
         ref.set(s);
@@ -173,7 +173,7 @@ class PriceCollectorCleanupTest {
     static class SelfRef extends PriceCollectorService {
         private final AtomicReference<PriceCollectorService> target;
         SelfRef(AtomicReference<PriceCollectorService> target) {
-            super(null, null, null, null, null, 0, 0, null, null, new CollectionProperties());
+            super(null, null, null, null, null, 0, 0, 0, null, null, null, new CollectionProperties());
             this.target = target;
         }
         @Override public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {

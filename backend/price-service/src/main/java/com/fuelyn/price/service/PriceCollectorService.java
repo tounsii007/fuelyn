@@ -35,9 +35,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -168,8 +172,10 @@ public class PriceCollectorService {
             PriceEventPublisher priceEventPublisher,
             @Value("${fuelyn.collection.radius-km:10}") double radiusKm,
             @Value("${fuelyn.collection.max-history-days:90}") int maxHistoryDays,
+            @Value("${fuelyn.collection.parallelism:4}") int parallelism,
             @Lazy PriceCollectorService self,
             @Autowired(required = false) CacheManager cacheManager,
+            @Autowired(required = false) MeterRegistry meterRegistry,
             CollectionProperties collectionProperties
     ) {
         this.tankerkoenigClient = tankerkoenigClient;
@@ -179,8 +185,10 @@ public class PriceCollectorService {
         this.priceEventPublisher = priceEventPublisher;
         this.radiusKm = radiusKm;
         this.maxHistoryDays = maxHistoryDays;
+        this.parallelism = parallelism;
         this.self = self;
         this.cacheManager = cacheManager;
+        this.meterRegistry = meterRegistry;
         this.cities = resolveCities(collectionProperties);
     }
 
@@ -232,6 +240,10 @@ public class PriceCollectorService {
         run.setStatus("running");
         runRepo.save(run);
 
+        int totalStations = 0;
+        int totalPrices = 0;
+        int failedCount = 0;
+
         for (CityCoord city : cities) {
             try {
                 // Routed through `self` so the @Transactional proxy actually
@@ -242,16 +254,16 @@ public class PriceCollectorService {
                 totalPrices += cityResult.pricesCount();
             } catch (Exception e) {
                 log.error("Collection failed for {}: {}", city.name(), e.getMessage());
+                failedCount++;
             }
         }
 
         long duration = System.currentTimeMillis() - start;
-        int failedCount = failedCities.get();
-        int total = CITIES.size();
+        int total = cities.size();
 
         run.setCompletedAt(LocalDateTime.now());
-        run.setStationsCount(totalStations.get());
-        run.setPricesCount(totalPrices.get());
+        run.setStationsCount(totalStations);
+        run.setPricesCount(totalPrices);
         run.setStatus(failedCount > total / 4 ? "completed-with-errors" : "completed");
         runRepo.save(run);
 

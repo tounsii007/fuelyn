@@ -24,7 +24,15 @@ import { isProduction } from '@/lib/config/runtime';
 // a worker restart.
 const DEV_SECRET_FALLBACK = randomBytes(32).toString('hex');
 
-if (isProduction() && !process.env.FUELYN_JWT_SECRET) {
+// NEXT_PHASE skip: `next build` evaluates every API-route module to
+// collect page data. During that phase NODE_ENV=production but secrets
+// aren't always wired into the build container — that's fine, the check
+// in session.ts that actually mints tokens still fires at request time.
+if (
+  isProduction() &&
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  !process.env.FUELYN_JWT_SECRET
+) {
   throw new Error(
     '[fuelyn-auth] FUELYN_JWT_SECRET must be set in production. Refusing to issue sessions with a per-process random fallback.',
   );

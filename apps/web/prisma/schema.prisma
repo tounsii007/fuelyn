@@ -5,7 +5,15 @@
 // ============================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  // Prisma 7 default engine "client" requires a runtime adapter
+  // (e.g. @prisma/adapter-pg). For our SQLite dev / Postgres prod
+  // setup we don't want an adapter dependency, so we pin to the
+  // legacy "library" engine which carries its own native binary.
+  // Without this, `next build` page-data collection blows up with:
+  //   PrismaClientConstructorValidationError: engine type "client"
+  //   requires either "adapter" or "accelerateUrl" to be provided.
+  engineType = "library"
 }
 
 // Iter AH: SQLite is fine for `pnpm dev` but ephemeral on

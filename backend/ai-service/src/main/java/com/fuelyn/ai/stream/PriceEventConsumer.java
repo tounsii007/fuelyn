@@ -2,6 +2,8 @@ package com.fuelyn.ai.stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fuelyn.ai.anomaly.AnomalyBroadcaster;
+import com.fuelyn.ai.anomaly.PriceAnomalyDetector;
 import com.fuelyn.ai.service.AdvisorService;
 import com.fuelyn.common.events.EventEnvelope;
 import com.fuelyn.common.events.PriceUpdatedEvent;
