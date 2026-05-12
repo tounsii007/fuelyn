@@ -1,0 +1,64 @@
+# ============================================================
+# WSL2 / Docker Desktop resource configuration template.
+#
+# Copy this file to %USERPROFILE%\.wslconfig and restart WSL:
+#
+#   PowerShell:
+#     Copy-Item .\infra\docker\wslconfig.template `
+#               -Destination "$env:USERPROFILE\.wslconfig"
+#     wsl --shutdown
+#     # then start Docker Desktop again
+#
+# Why this matters
+# ----------------
+# Docker Desktop on Windows runs every container inside a single
+# WSL2 VM. The VM gets whatever resources WSL2 is allowed to
+# claim from the host — by default WSL2 caps memory at ~50% of
+# host RAM and CPUs at host-count.
+#
+# The Docker Desktop dashboard shows numbers like
+# "Container memory usage: 4.85 GB / 7.27 GB" — the 7.27 GB is
+# the WSL2-VM ceiling, NOT a per-container cap from
+# docker-compose. To let containers stretch further you have to
+# lift the VM ceiling here.
+#
+# The values below assume a 16 GB host with 8 logical CPUs.
+# Adjust to your machine — but keep at least ~4 GB and 2 CPUs
+# free for Windows itself so the host stays responsive.
+# ============================================================
+[wsl2]
+
+# Hard memory cap for the WSL2 VM. Set this to a value that
+# leaves Windows enough room (rule of thumb: host_total - 4 GB).
+# Examples:
+#   16 GB host → memory=12GB
+#   32 GB host → memory=24GB
+#   64 GB host → memory=48GB
+memory=12GB
+
+# Number of logical CPUs the WSL2 VM can use. 0 means "all".
+# On an 8-core box, leaving "all" is fine — Linux is good at
+# yielding cores when idle.
+processors=0
+
+# Swap space inside the WSL2 VM. Keeps long-running Java/Ollama
+# containers from getting OOM-killed during transient spikes.
+swap=8GB
+
+# How fast WSL2 returns idle memory to Windows. Default is
+# "dropcache" which is sluggish; "gradual" is much better for
+# desktops that also run an IDE + browser.
+# (Requires WSL ≥ 2.5; older versions silently ignore it.)
+autoMemoryReclaim=gradual
+
+# Sparse VHD: only allocate disk blocks that are actually used.
+# Cuts the Docker Desktop disk image from ~20 GB to ~5 GB on a
+# fresh repo and reclaims space automatically when you `docker
+# system prune`.
+sparseVhd=true
+
+# Optional — useful when running Ollama with GPU passthrough.
+# Leave commented unless you've set up an NVIDIA WSL driver.
+#
+# [wsl2.gpu]
+# nvidiaPassthrough=true
