@@ -24,13 +24,23 @@ import { isProduction } from '@/lib/config/runtime';
 // a worker restart.
 const DEV_SECRET_FALLBACK = randomBytes(32).toString('hex');
 
-// NEXT_PHASE skip: `next build` evaluates every API-route module to
-// collect page data. During that phase NODE_ENV=production but secrets
-// aren't always wired into the build container — that's fine, the check
-// in session.ts that actually mints tokens still fires at request time.
+// Skip cases mirror lib/db/client.ts:
+//   1. NEXT_PHASE=phase-production-build → build-time, no secrets yet.
+//   2. Localhost deploy → `next build` bakes NODE_ENV=production into
+//      the bundle, so the runtime check would fire even for the
+//      dev docker-compose stack. A localhost FUELYN_PUBLIC_ORIGIN is
+//      our marker for "not real prod, dev fallback is OK". The
+//      runtime check in session.ts (per-request) stays hard.
+const JWT_PUBLIC_ORIGIN = process.env.FUELYN_PUBLIC_ORIGIN ?? '';
+const JWT_IS_LOCAL_DEPLOY =
+  JWT_PUBLIC_ORIGIN.includes('localhost') ||
+  JWT_PUBLIC_ORIGIN.includes('127.0.0.1') ||
+  JWT_PUBLIC_ORIGIN.includes('fuelyn.localhost');
+
 if (
   isProduction() &&
   process.env.NEXT_PHASE !== 'phase-production-build' &&
+  !JWT_IS_LOCAL_DEPLOY &&
   !process.env.FUELYN_JWT_SECRET
 ) {
   throw new Error(

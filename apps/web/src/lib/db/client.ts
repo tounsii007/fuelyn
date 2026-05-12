@@ -16,13 +16,26 @@ import { isProduction } from '@/lib/config/runtime';
 // SQLite would lose all User / SyncRecord / Subscription state on each
 // restart — webhooks would fail to find the customer they're updating.
 //
-// NEXT_PHASE skip: `next build` evaluates every API-route module to
-// collect page data. During that phase NODE_ENV=production but
-// DATABASE_URL is typically the same dev SQLite URL since no real
-// secrets are wired into the build container. The check must only
-// fire at request time, not at build time — Next.js sets
-// `NEXT_PHASE=phase-production-build` for exactly this distinction.
-if (isProduction() && process.env.NEXT_PHASE !== 'phase-production-build') {
+// Skip cases:
+//   1. `next build`: NEXT_PHASE=phase-production-build, every API-route
+//      module is evaluated to collect page data. Build-time secrets are
+//      never wired in, so the check would always trip.
+//   2. Localhost dev/staging: `next build` hard-codes NODE_ENV=production
+//      into the compiled bundle, so the standalone server runs as
+//      "production" inside Docker even though it's a dev environment.
+//      A localhost-bound FUELYN_PUBLIC_ORIGIN is the operator saying
+//      "I know this is SQLite, I'm running it locally, that's fine".
+const PUBLIC_ORIGIN = process.env.FUELYN_PUBLIC_ORIGIN ?? '';
+const IS_LOCAL_DEPLOY =
+  PUBLIC_ORIGIN.includes('localhost') ||
+  PUBLIC_ORIGIN.includes('127.0.0.1') ||
+  PUBLIC_ORIGIN.includes('fuelyn.localhost');
+
+if (
+  isProduction() &&
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  !IS_LOCAL_DEPLOY
+) {
   const url = process.env.DATABASE_URL ?? '';
   if (!url || url.startsWith('file:')) {
     throw new Error(
