@@ -10,11 +10,12 @@ import { useAppStore } from '@/lib/store/app-store';
 import { VehicleForm } from '@/components/vehicle/VehicleForm';
 import { VehicleManager } from '@/components/vehicle/VehicleManager';
 import { ChargingPlannerCard } from '@/components/charging/ChargingPlannerCard';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { FUEL_TYPE_LABELS, DRIVE_TYPE_LABELS, formatConsumption, formatRange } from '@fuelyn/core';
 import { computeRemainingRange } from '@fuelyn/core';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export default function VehiclePage() {
+  const { t } = useTranslations();
   const vehicle = useAppStore((s) => s.vehicle);
   const setVehicleFormOpen = useAppStore((s) => s.setVehicleFormOpen);
   const isFormOpen = useAppStore((s) => s.isVehicleFormOpen);
@@ -30,11 +31,11 @@ export default function VehiclePage() {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
-        Zurück
+        {t('common.back')}
       </Link>
 
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-        Fahrzeug
+        {t('vehicle.pageTitle')}
       </h1>
 
       {/*
@@ -60,44 +61,43 @@ export default function VehiclePage() {
                 onClick={() => setVehicleFormOpen(true)}
                 className="text-sm text-brand-600 hover:text-brand-700 font-medium"
               >
-                Bearbeiten
+                {t('common.edit')}
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Antrieb</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicle.driveTypeLabel')}</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {DRIVE_TYPE_LABELS[vehicle.driveType ?? 'benzin']}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {vehicle.driveType === 'elektro' ? 'Energieart'
-                    : vehicle.driveType === 'h2' ? 'Energieart'
-                    : vehicle.driveType === 'gas' ? 'Kraftstoff'
-                    : 'Kraftstoff'}
+                  {vehicle.driveType === 'elektro' || vehicle.driveType === 'h2'
+                    ? t('vehicle.energyType')
+                    : t('vehicle.fuelTypeShort')}
                 </p>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {vehicle.driveType === 'elektro' ? 'Strom'
-                    : vehicle.driveType === 'h2' ? 'Wasserstoff'
+                  {vehicle.driveType === 'elektro' ? t('vehicle.electricity')
+                    : vehicle.driveType === 'h2' ? t('vehicle.hydrogen')
                     : vehicle.driveType === 'gas' ? (vehicle.preferredGasType?.toUpperCase() ?? 'LPG')
                     : FUEL_TYPE_LABELS[vehicle.fuelType]}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Verbrauch</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicle.consumptionShort')}</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {vehicle.driveType === 'elektro'
-                    ? `${vehicle.consumption} kWh/100km`
+                    ? `${vehicle.consumption} ${t('vehicle.consumptionUnitElectric')}`
                     : vehicle.driveType === 'h2'
-                      ? `${vehicle.consumption} kg/100km`
+                      ? `${vehicle.consumption} ${t('vehicle.consumptionUnitH2')}`
                       : formatConsumption(vehicle.consumption)}
                 </p>
               </div>
               {vehicle.tankCapacity != null && vehicle.tankCapacity > 0 && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Tankgröße</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicle.tankCapacity')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {vehicle.tankCapacity} L
                   </p>
@@ -105,7 +105,7 @@ export default function VehiclePage() {
               )}
               {vehicle.batteryCapacity != null && vehicle.batteryCapacity > 0 && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Batterie</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicle.batteryCapacity')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {vehicle.batteryCapacity} kWh
                   </p>
@@ -113,7 +113,7 @@ export default function VehiclePage() {
               )}
               {range != null && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Reichweite</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicle.range')}</p>
                   <p className="text-sm font-medium text-reach-safe">
                     ~{formatRange(range)}
                   </p>
@@ -141,6 +141,7 @@ export default function VehiclePage() {
 }
 
 function FuelCostCalculator({ consumption }: { consumption: number }) {
+  const { t } = useTranslations();
   const [distance, setDistance] = useState(100);
   const [price, setPrice] = useState(1.65);
 
@@ -153,12 +154,12 @@ function FuelCostCalculator({ consumption }: { consumption: number }) {
         <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25v-.008zm2.25-4.5h.008v.008H10.5v-.008zm0 2.25h.008v.008H10.5v-.008zm0 2.25h.008v.008H10.5v-.008zm2.25-6.75h.008v.008H12.75v-.008zm0 2.25h.008v.008H12.75v-.008zm0 2.25h.008v.008H12.75v-.008zm0 2.25h.008v.008H12.75v-.008zm2.25-6.75h.008v.008H15v-.008zm0 2.25h.008v.008H15v-.008zm0 2.25h.008v.008H15v-.008zm0 2.25h.008v.008H15v-.008z" />
         </svg>
-        Tankkosten-Rechner
+        {t('fuelCostCalc.title')}
       </h3>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
-          <label className="text-xs text-gray-500 dark:text-gray-400">Strecke (km)</label>
+          <label className="text-xs text-gray-500 dark:text-gray-400">{t('fuelCostCalc.distance')} ({t('fuelCostCalc.distanceUnit')})</label>
           <input
             type="number"
             value={distance}
@@ -169,7 +170,7 @@ function FuelCostCalculator({ consumption }: { consumption: number }) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 dark:text-gray-400">Preis (&euro;/L)</label>
+          <label className="text-xs text-gray-500 dark:text-gray-400">{t('fuelCostCalc.price')} ({t('fuelCostCalc.priceUnit')})</label>
           <input
             type="number"
             value={price}
@@ -204,13 +205,13 @@ function FuelCostCalculator({ consumption }: { consumption: number }) {
       <div className="bg-brand-50 dark:bg-brand-900/20 rounded-xl p-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-brand-600/70 dark:text-brand-400/70">Verbrauch</p>
+            <p className="text-xs text-brand-600/70 dark:text-brand-400/70">{t('fuelCostCalc.consumption')}</p>
             <p className="text-lg font-bold text-brand-700 dark:text-brand-300">
               {liters.toFixed(1)} L
             </p>
           </div>
           <div>
-            <p className="text-xs text-brand-600/70 dark:text-brand-400/70">Kosten</p>
+            <p className="text-xs text-brand-600/70 dark:text-brand-400/70">{t('fuelCostCalc.cost')}</p>
             <p className="text-lg font-bold text-brand-700 dark:text-brand-300">
               {cost.toFixed(2)} &euro;
             </p>
@@ -218,7 +219,9 @@ function FuelCostCalculator({ consumption }: { consumption: number }) {
         </div>
         <div className="mt-2 pt-2 border-t border-brand-100 dark:border-brand-800/30">
           <p className="text-xs text-brand-600/60 dark:text-brand-400/60">
-            {(cost / distance * 100).toFixed(1)} &euro; pro 100 km &middot; {consumption} L/100km
+            {t('fuelCostCalc.summary')
+              .replace('{cost}', (cost / distance * 100).toFixed(1))
+              .replace('{consumption}', String(consumption))}
           </p>
         </div>
       </div>

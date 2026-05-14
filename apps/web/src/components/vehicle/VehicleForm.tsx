@@ -94,7 +94,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
     <div className="animate-slide-up bg-white dark:bg-surface-dark-secondary rounded-3xl shadow-sheet p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Fahrzeugdaten
+          {t('vehicle.title')}
         </h2>
         <button
           type="button"
@@ -128,15 +128,15 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
               </div>
             </div>
           )}
-          label="Fahrzeugmodell"
+          label={t('vehicle.modelLabel')}
           id="vehicle-name"
-          placeholder="Marke oder Modell eingeben..."
+          placeholder={t('vehicle.modelPlaceholder')}
         />
 
         {/* Drive Type Selector */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Antriebsart
+            {t('vehicle.driveTypeFormLabel')}
           </label>
           <div className="grid grid-cols-3 gap-2">
             {DRIVE_TYPES.map((dt) => (
@@ -176,7 +176,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
         {showFuelFields && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Kraftstoffart
+              {t('vehicle.fuelType')}
             </label>
             <div className="flex gap-2">
               {FUEL_TYPES.map((ft) => (
@@ -199,7 +199,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
 
         <div>
           <label htmlFor="consumption" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Verbrauch ({isElectric ? 'kWh/100 km' : isH2 ? 'kg/100 km' : 'L/100 km'})
+            {t('vehicle.consumptionShort')} ({isElectric ? t('vehicle.consumptionUnitElectric') : isH2 ? t('vehicle.consumptionUnitH2') : t('vehicle.consumptionUnit')})
           </label>
           <input
             id="consumption"
@@ -209,7 +209,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
             max="50"
             value={consumption}
             onChange={(e) => setConsumption(e.target.value)}
-            placeholder="z. B. 6.5"
+            placeholder={t('vehicle.consumptionPlaceholder')}
             required
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600
                        bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
@@ -222,8 +222,8 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
         {showFuelFields && (
           <div>
             <label htmlFor="tank-capacity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tankgröße in Liter
-              <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">(optional)</span>
+              {t('vehicle.tankCapacityWithUnit')}
+              <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">({t('vehicle.tankCapacityOptional')})</span>
             </label>
             <input
               id="tank-capacity"
@@ -233,7 +233,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
               max="200"
               value={tankCapacity}
               onChange={(e) => setTankCapacity(e.target.value)}
-              placeholder="z. B. 50"
+              placeholder={t('vehicle.tankCapacityPlaceholder')}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600
                          bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
                          text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2
@@ -246,8 +246,8 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
         {showBatteryField && (
           <div>
             <label htmlFor="battery-capacity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Batteriekapazität in kWh
-              <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">(optional)</span>
+              {t('vehicle.batteryCapacityWithUnit')}
+              <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">({t('vehicle.tankCapacityOptional')})</span>
             </label>
             <input
               id="battery-capacity"
@@ -257,7 +257,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
               max="200"
               value={batteryCapacity}
               onChange={(e) => setBatteryCapacity(e.target.value)}
-              placeholder={isElectric ? 'z. B. 77' : 'z. B. 13'}
+              placeholder={isElectric ? t('vehicle.batteryCapacityPlaceholderElectric') : t('vehicle.batteryCapacityPlaceholderHybrid')}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600
                          bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
                          text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2
@@ -268,12 +268,12 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Aktueller Tankstand
+            {t('vehicle.currentFuelLevel')}
           </label>
           <div className="flex gap-2 mb-2">
             {([
               { value: 'km' as const, label: 'km' },
-              { value: 'liters' as const, label: 'Liter' },
+              { value: 'liters' as const, label: t('vehicle.fuelLevelLiters') },
               { value: 'percentage' as const, label: '%' },
             ]).map((option) => (
               <button
@@ -297,7 +297,11 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
             value={fuelLevel}
             onChange={(e) => setFuelLevel(e.target.value)}
             placeholder={
-              fuelUnit === 'km' ? 'z. B. 350' : fuelUnit === 'liters' ? 'z. B. 25' : 'z. B. 50'
+              fuelUnit === 'km'
+                ? t('vehicle.fuelLevelPlaceholderKm')
+                : fuelUnit === 'liters'
+                  ? t('vehicle.fuelLevelPlaceholderLiters')
+                  : t('vehicle.fuelLevelPlaceholderPercent')
             }
             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600
                        bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
@@ -313,7 +317,7 @@ export function VehicleForm({ onClose }: VehicleFormProps) {
                      focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2
                      shadow-sm"
         >
-          Fahrzeug speichern
+          {t('vehicle.saveVehicle')}
         </button>
       </form>
     </div>
