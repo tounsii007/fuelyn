@@ -297,9 +297,9 @@ export const de = {
     sectionTitle: 'Privatsphäre & Standort',
     toggleTitle: 'Live-Standort verfolgen',
     toggleDesc:
-      'Aktualisiert deine Position automatisch während du dich bewegst, ' +
-      'damit Entfernungen und Reihenfolge sich anpassen. Schluckt mehr ' +
-      'Akku — daher standardmäßig aus.',
+      'Aktualisiert deine Position automatisch, während du dich bewegst, ' +
+      'damit Entfernungen und Reihenfolge sich anpassen. Verbraucht mehr ' +
+      'Akku — daher standardmäßig deaktiviert.',
     permission: 'Berechtigung',
     permissionGranted: 'Erteilt',
     permissionDenied: 'Verweigert',
@@ -513,7 +513,7 @@ export const de = {
     items: {
       'first-fill':           { label: 'Erster Tank',          desc: 'Deine allererste Eintragung im Logbuch.' },
       'fills-10':             { label: '10 Tankfüllungen',     desc: 'Du nimmst es ernst.' },
-      'fills-50':             { label: '50 Tankfüllungen',     desc: 'Stamm-User-Status.' },
+      'fills-50':             { label: '50 Tankfüllungen',     desc: 'Stammgast-Status.' },
       'fills-100':            { label: '100 Tankfüllungen',    desc: 'Hundert Mal an der Säule.' },
       'liters-500':           { label: '500 Liter getankt',    desc: 'Halbe Tonne Sprit.' },
       'liters-2000':          { label: '2.000 Liter getankt',  desc: 'Eine ganze Saison.' },
@@ -772,7 +772,7 @@ export const de = {
     subtitle: 'Wähle das aktive Fahrzeug — alle Berechnungen folgen ihm.',
     add: 'Fahrzeug hinzufügen',
     delete: 'Entfernen',
-    confirmDelete: 'Wirklich?',
+    confirmDelete: 'Wirklich löschen?',
     unnamed: 'Unbenanntes Fahrzeug',
     newVehicleName: 'Neues Fahrzeug',
   },
@@ -794,7 +794,7 @@ export const de = {
 
   borderCrossing: {
     eyebrow: 'Grenze in Reichweite',
-    hint: 'In {fuel} sparst du in der Nachbarschaft etwa {ctPerL} ct/L.',
+    hint: 'Beim {fuel}-Tanken im Nachbarland sparst du etwa {ctPerL} ct/L.',
     savingPerL: 'Geschätzte Ersparnis pro Liter',
     savingPerFill: 'Pro Tankfüllung',
     disclaimer: 'Schätzung auf Basis EU-Marktdaten — nicht Live-Preise.',
@@ -869,7 +869,7 @@ export const de = {
     savingsBeatBody: 'Du hast {percent}% unter dem Marktdurchschnitt getankt — gut gemacht!',
     savingsBehindBody: 'So viel mehr hast du gegenüber dem Marktschnitt gezahlt. Mit deinem Wochentag-Pattern sind nächstes Jahr ~{euro} € drin.',
     frequencyEyebrow: 'Dein aktivster Monat',
-    frequencyBody: '{visits} Tankstopps in einem Monat — busy!',
+    frequencyBody: '{visits} Tankstopps in einem Monat — viel los!',
     outroEyebrow: 'Bis nächstes Jahr',
     outroHeadline: 'Danke, dass du smart tankst.',
     outroSummary: 'Insgesamt {entries} Tankstopps · {brands} Marken · {stations} Stationen',

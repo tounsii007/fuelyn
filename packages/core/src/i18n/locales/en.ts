@@ -25,7 +25,7 @@ export const en: TranslationKeys = {
     offline: 'No internet connection',
     km: 'km',
     min: 'min',
-    liter: 'liters',
+    liter: 'litres',
     perLiter: '\u20AC/L',
     refresh: 'Refresh',
   },
@@ -34,7 +34,7 @@ export const en: TranslationKeys = {
     map: 'Map',
     list: 'List',
     settings: 'Settings',
-    favorites: 'Favorites',
+    favorites: 'Favourites',
     vehicle: 'Vehicle',
     more: 'More',
     compare: 'Compare',
@@ -88,7 +88,7 @@ export const en: TranslationKeys = {
   },
 
   station: {
-    stations: 'Gas Stations',
+    stations: 'Petrol stations',
     stationSingular: 'Station',
     nearby: 'Nearby stations',
     detail: 'Station details',
@@ -101,8 +101,8 @@ export const en: TranslationKeys = {
     allDay: 'Open 24 hours',
     navigate: 'Start navigation',
     directions: 'Directions',
-    addFavorite: 'Add to favorites',
-    removeFavorite: 'Remove from favorites',
+    addFavorite: 'Add to favourites',
+    removeFavorite: 'Remove from favourites',
     bestOption: 'Best option',
     recommended: 'Recommended',
     noPrice: 'No price available',
@@ -119,11 +119,11 @@ export const en: TranslationKeys = {
 
   recommendation: {
     cheapest: 'Cheapest price',
-    veryCheap: 'Very low price',
+    veryCheap: 'Great price',
     veryClose: 'Very close',
     nearby: 'Nearby',
     currentlyOpen: 'Currently open',
-    favorite: 'Favorite',
+    favorite: 'Favourite',
     whyRecommended: 'Why recommended?',
   },
 
@@ -168,9 +168,9 @@ export const en: TranslationKeys = {
   },
 
   favorites: {
-    title: 'Favorites',
-    empty: 'No favorites saved yet.',
-    emptyHint: 'Tap the heart icon on a station to save it as a favorite.',
+    title: 'Favourites',
+    empty: 'No favourites saved yet.',
+    emptyHint: 'Tap the heart icon on a station to save it as a favourite.',
   },
 
   settings: {
@@ -212,7 +212,7 @@ export const en: TranslationKeys = {
 
   location: {
     permissionTitle: 'Location access',
-    permissionMessage: 'Fuelyn uses your location to find nearby gas stations.',
+    permissionMessage: 'Fuelyn uses your location to find nearby petrol stations.',
     permissionDenied: 'Location access denied',
     permissionDeniedHint: 'Please allow location access in settings or search for a location manually.',
     searchPlaceholder: 'Enter city, ZIP code, or place...',
@@ -223,8 +223,8 @@ export const en: TranslationKeys = {
   onboarding: {
     welcome: 'Welcome to Fuelyn',
     welcomeBody:
-      'Find not just the cheapest gas station, but the smartest one near you \u2014 based on price, distance and reachability.',
-    subtitle: 'Find the best gas station \u2014 not just the cheapest.',
+      'Find not just the cheapest petrol station, but the smartest one near you \u2014 weighing price, distance and how reachable it really is.',
+    subtitle: 'Find the best petrol station \u2014 not just the cheapest.',
     fuelQuestion: 'What do you drive?',
     fuelSelect: 'Choose your default fuel type',
     howItWorks: 'How it works',
@@ -274,7 +274,7 @@ export const en: TranslationKeys = {
     belowAvg: 'ct below avg',
     aboveAvg: 'ct above avg',
     routeDetail: 'Route',
-    savingsVsAvg: 'p/L vs. avg',
+    savingsVsAvg: 'ct/L vs. avg',
   },
 
   compare: {
@@ -468,11 +468,11 @@ export const en: TranslationKeys = {
     subtitle: 'Projected from your log ({start} – {end})',
     scenario: {
       'switch-to-hybrid':       { title: 'With a hybrid', desc: '~30% lower consumption.' },
-      'switch-to-ev':           { title: 'With an EV', desc: '~18 kWh/100km at €0.45/kWh.' },
-      'switch-to-diesel':       { title: 'With a diesel', desc: 'Cheaper duty + ~15% lower consumption.' },
+      'switch-to-ev':           { title: 'With an EV', desc: '~18 kWh/100 km at €0.45/kWh.' },
+      'switch-to-diesel':       { title: 'With a diesel', desc: 'Lower fuel duty + ~15% lower consumption.' },
       'switch-to-e10':          { title: 'On E10 instead of E5', desc: '~1.5% cheaper, ~1.5% more consumption.' },
-      'fill-at-best-station':   { title: 'At the cheapest station', desc: 'Always the best pump nearby.' },
-      'fill-before-8am':        { title: 'Filling before 8am', desc: 'Consistently in the morning cheap window.' },
+      'fill-at-best-station':   { title: 'At the cheapest station', desc: 'Always the lowest-priced pump nearby, every fill-up.' },
+      'fill-before-8am':        { title: 'Filling before 8 a.m.', desc: 'Consistently in the morning cheap window.' },
     },
   },
 
@@ -512,16 +512,16 @@ export const en: TranslationKeys = {
       'streak-3':             { label: 'Smart streak: 3',     desc: '3 below-market fills in a row.' },
       'streak-7':             { label: 'Smart streak: 7',     desc: 'A whole week of timing.' },
       'streak-14':            { label: 'Smart streak: 14',    desc: 'Two weeks of bargains.' },
-      'saved-10':             { label: '£10 saved',           desc: 'First real savings.' },
-      'saved-50':             { label: '£50 saved',           desc: 'A week of groceries.' },
-      'saved-100':            { label: '£100 saved',          desc: 'First three-figure savings.' },
-      'saved-500':            { label: '£500 saved',          desc: 'Pro-tier.' },
+      'saved-10':             { label: '€10 saved',           desc: 'First real savings.' },
+      'saved-50':             { label: '€50 saved',           desc: 'A week of groceries.' },
+      'saved-100':            { label: '€100 saved',          desc: 'First three-figure savings.' },
+      'saved-500':            { label: '€500 saved',          desc: 'Pro tier.' },
       'co2-220':              { label: '10 trees offset',     desc: '220 kg CO₂ tracked.' },
       'co2-1100':             { label: '50 trees offset',     desc: 'A small grove.' },
       'brands-3':             { label: 'Brand switcher',      desc: 'Fueled at 3 different brands.' },
       'stations-5':           { label: 'Station tester',      desc: 'Visited 5 different stations.' },
       'stations-15':          { label: 'Station tourist',     desc: 'Visited 15 different stations.' },
-      'smart-time-of-day':    { label: 'Early bird / night owl', desc: 'At least one fill before 8am or after 8pm.' },
+      'smart-time-of-day':    { label: 'Early bird / night owl', desc: 'At least one fill before 8 a.m. or after 8 p.m.' },
     },
   },
 
@@ -764,7 +764,7 @@ export const en: TranslationKeys = {
     subtitle: 'Pick the active vehicle — all calculations follow it.',
     add: 'Add vehicle',
     delete: 'Remove',
-    confirmDelete: 'Sure?',
+    confirmDelete: 'Remove?',
     unnamed: 'Unnamed vehicle',
     newVehicleName: 'New vehicle',
   },
@@ -974,7 +974,7 @@ export const en: TranslationKeys = {
   hero: {
     headlinePart1: 'Fuel up,',
     headlinePart2: 'when it’s actually cheap.',
-    body: 'Allow location access for live prices nearby — or browse around Berlin first.',
+    body: 'Allow location access for live prices near you — or have a browse around Berlin first.',
     ctaShare: 'Share location',
     ctaDemo: 'Open demo (Berlin)',
     highlightLive: 'Live prices',
