@@ -42,15 +42,16 @@ export function getCachedIcon(
 }
 
 /**
- * Build a cache key for price marker icons.
- * Encodes every visual-differentiating parameter.
+ * Build a cache key for price marker icons. Encodes every visual-
+ * differentiating parameter so cached icons never bleed across
+ * states.
  *
- * `mapStyle` is included because each tile style (light Voyager,
- * Dark, Satellite, Terrain) gets its own marker palette so the
- * card stays legible against the background. Two markers that are
- * identical in everything else but rendered on different basemaps
- * must NOT share a DivIcon — otherwise switching map styles would
- * leave stale markers around.
+ * `variant` is a free-form bucket the caller uses to differentiate
+ * markers that share every other input — currently the price tier
+ * (low/mid/high) drives an emerald/neutral/rose halo, and tier IS
+ * what gets passed through this slot. Kept stringly-typed so the
+ * caller can also stuff selection/zoom-band information in later
+ * without a schema change.
  */
 export function priceMarkerKey(
   price: number | null,
@@ -58,9 +59,9 @@ export function priceMarkerKey(
   isOpen: boolean,
   reachability: 'safe' | 'tight' | 'unreachable',
   brand: string,
-  mapStyle: string,
+  variant: string,
 ): string {
-  return buildKey('price', price, isBest, isOpen, reachability, brand, mapStyle);
+  return buildKey('price', price, isBest, isOpen, reachability, brand, variant);
 }
 
 /**

@@ -152,17 +152,28 @@ function StationCardImpl({ recommendation, marketAvg, onStationClick, onClick }:
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
-      className={`w-full text-left px-3 py-2.5 rounded-2xl cursor-pointer
+      className={`relative w-full text-left px-3 py-2.5 rounded-2xl cursor-pointer
         bg-white dark:bg-surface-dark-secondary
         border border-gray-100 dark:border-gray-700/60
         shadow-card fy-card-interactive
-        ${isBestOption ? 'ring-1.5 ring-brand-500 ring-offset-1 dark:ring-offset-surface-dark' : ''}
+        transition-shadow duration-200
+        hover:shadow-[0_8px_24px_-4px_rgba(15,23,42,0.10),0_2px_6px_-2px_rgba(15,23,42,0.06)]
+        ${isBestOption
+          ? 'ring-1 ring-brand-500/60 ring-offset-1 dark:ring-offset-surface-dark bg-gradient-to-br from-white via-brand-50/40 to-white dark:from-surface-dark-secondary dark:via-brand-900/20 dark:to-surface-dark-secondary'
+          : ''}
         animate-fade-in group`}
     >
-      {/* Best Option Badge */}
+      {/* Best Option Badge — modernized: small gradient pill with star */}
       {isBestOption && (
         <div className="flex items-center gap-1.5 mb-1.5">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-600 text-white">
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide
+                       text-white shadow-sm
+                       bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600"
+          >
+            <svg className="w-2.5 h-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 1.5l2.224 4.507 4.974.723-3.6 3.509.85 4.953L10 13.523l-4.448 2.339.85-4.953-3.6-3.509 4.974-.723L10 1.5z"/>
+            </svg>
             Beste Option
           </span>
         </div>

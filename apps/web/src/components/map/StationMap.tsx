@@ -15,6 +15,15 @@ import { formatPrice, FUEL_TYPE_LABELS, isHydrogenStation, isGasStation } from '
 import { useAppStore } from '@/lib/store/app-store';
 import { getBrandConfig } from '@/lib/brand-config';
 import { getCachedIcon, priceMarkerKey, chargingMarkerKey, h2MarkerKey, gasMarkerKey } from '@/lib/utils/marker-cache';
+import {
+  notchSvg,
+  groundShadowDiv,
+  lightningIcon,
+  dropletIcon,
+  flameIcon,
+  starIcon,
+  CHIP_SHEEN_GRADIENT,
+} from '@/lib/utils/marker-svg';
 import { RouteLayer } from './RouteLayer';
 import { HeatmapLayer } from './HeatmapLayer';
 
@@ -73,10 +82,6 @@ function isFiniteCoordinate(value: number): boolean {
   return Number.isFinite(value) && Math.abs(value) <= 180;
 }
 
-function getStarSvg(size: number): string {
-  return `<svg viewBox="0 0 20 20" width="${size}" height="${size}" fill="currentColor" aria-hidden="true"><path d="M10 1.5l2.224 4.507 4.974.723-3.6 3.509.85 4.953L10 13.523l-4.448 2.339.85-4.953-3.6-3.509 4.974-.723L10 1.5z"/></svg>`;
-}
-
 type PriceTier = 'low' | 'mid' | 'high';
 
 function createPriceMarkerIcon(
@@ -93,11 +98,12 @@ function createPriceMarkerIcon(
 
   // Stations without a price for the currently filtered fuel type render
   // as a compact, dimmed brand chip — discoverable but not competing
-  // visually with priced stations. Uses the same depth treatment
-  // (gradient + inner highlight + sheen overlay) as the priced bubble's
-  // brand chip, just standalone.
+  // visually with priced stations. Same depth treatment as the priced
+  // bubble's brand chip (gradient + inner highlight + sheen overlay)
+  // plus the speech-bubble notch so it shares the family resemblance.
   if (noPrice) {
-    const dimOpacity = isOpen ? 0.7 : 0.34;
+    const dimOpacity = isOpen ? 0.72 : 0.34;
+    const closedFilter = isOpen ? '' : 'filter: grayscale(0.5) saturate(0.7);';
     const fontSize = brandCfg.initials.length > 2 ? '9px' : '12px';
     const letterSp = brandCfg.initials.length > 2 ? '0px' : '-0.3px';
     return L.divIcon({
@@ -105,6 +111,7 @@ function createPriceMarkerIcon(
       html: `
         <div class="tp-marker-bubble" style="
           opacity: ${dimOpacity};
+          ${closedFilter}
           position: relative;
           width: 32px; height: 32px;
           border-radius: 11px;
@@ -126,23 +133,13 @@ function createPriceMarkerIcon(
           transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
           transform-origin: bottom center;
           overflow: hidden;
-        "><span style="position:relative;z-index:1">${brandCfg.initials}</span><span aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.04) 45%,rgba(0,0,0,0.10) 100%);"></span></div>
-        <div style="
-          width: 2px; height: 8px;
-          background: linear-gradient(to bottom, ${brandCfg.color}80 0%, ${brandCfg.color}40 60%, ${brandCfg.color}00 100%);
-          margin: 0 auto;
-        "></div>
-        <div style="
-          width: 5px; height: 5px;
-          background: ${brandCfg.color}80;
-          border-radius: 50%;
-          margin: -1px auto 0;
-          box-shadow: 0 0 0 2px rgba(255,255,255,0.5), 0 0 0 3px ${brandCfg.color}20;
-        "></div>
+        "><span style="position:relative;z-index:1">${brandCfg.initials}</span><span aria-hidden="true" style="position:absolute;inset:0;background:${CHIP_SHEEN_GRADIENT};"></span></div>
+        ${notchSvg(brandCfg.color, 'rgba(255,255,255,0.55)')}
+        ${groundShadowDiv()}
       `,
       iconSize: [0, 0],
-      iconAnchor: [16, 46],
-      popupAnchor: [0, -48],
+      iconAnchor: [16, 44],
+      popupAnchor: [0, -46],
     });
   }
 
@@ -154,11 +151,10 @@ function createPriceMarkerIcon(
   // - priceTier: emerald/neutral/rose halo by quartile across the
   //   current view → user can scan the map for cheap deals at a glance,
   //   independent of the brand colour.
-  // - !isOpen: muted, desaturated
+  // - !isOpen: muted, desaturated + grayscale (modern closed treatment)
   const opacity = !isOpen ? 0.55 : 1;
+  const closedFilter = !isOpen ? 'filter: grayscale(0.5) saturate(0.65);' : '';
 
-  // Reachability concerns trump price tier — being unreachable is a
-  // safety signal, not an aesthetic preference.
   // Reachability concerns dominate aesthetics — render the warning ring
   // verbatim regardless of tier when the station is reachable but tight,
   // or unreachable for the user's vehicle range.
@@ -177,8 +173,6 @@ function createPriceMarkerIcon(
       ? '0 0 0 1px rgba(239,68,68,0.30), 0 1px 3px rgba(15,23,42,0.10), 0 6px 16px rgba(15,23,42,0.08)'
       : '0 1px 3px rgba(15,23,42,0.10), 0 6px 16px rgba(15,23,42,0.08), 0 0 0 1px rgba(15,23,42,0.06)';
 
-  const stemColor = isBest ? '#2575EA' : brandCfg.color;
-
   // Bubble appearance — best gets full blue/glass + gold halo,
   // regular gets translucent white with subtle tier-aware ring.
   const bubbleBg = isBest
@@ -189,6 +183,14 @@ function createPriceMarkerIcon(
   const bubbleShadow = isBest
     ? '0 0 0 2px rgba(251,191,36,0.7), 0 0 0 5px rgba(251,191,36,0.2), 0 6px 18px rgba(37,117,234,0.45), 0 12px 36px rgba(251,191,36,0.22)'
     : (reachabilityShadow ?? tierShadow);
+
+  // Notch fill/stroke match the bubble. For the translucent-white
+  // bubble we use a solid white to avoid the SVG triangle going see-
+  // through against the map.
+  const notchFill = isBest ? '#1D5FD7' : '#FFFFFF';
+  const notchStroke = isBest
+    ? 'rgba(255,255,255,0.45)'
+    : 'rgba(15,23,42,0.10)';
 
   // Brand chip: bigger, stronger highlight, embedded sheen overlay.
   const chipBg = isBest ? 'rgba(255,255,255,0.18)' : brandCfg.gradient;
@@ -208,6 +210,7 @@ function createPriceMarkerIcon(
     html: `
       <div class="tp-marker-bubble${isBest ? ' is-best' : ''}" style="
         opacity: ${opacity};
+        ${closedFilter}
         background: ${bubbleBg};
         color: ${bubbleColor};
         border: 1.5px solid ${bubbleBorder};
@@ -242,8 +245,8 @@ function createPriceMarkerIcon(
           text-shadow: ${chipText === '#FFFFFF' ? '0 1px 1px rgba(0,0,0,0.25)' : 'none'};
           position: relative;
           overflow: hidden;
-        "><span style="position:relative;z-index:1">${brandCfg.initials}</span><span style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.04) 45%,rgba(0,0,0,0.10) 100%);"></span></span>
-        <span style="font-size:14px; letter-spacing:-0.3px; font-variant-numeric: tabular-nums;">${priceText}</span>
+        "><span style="position:relative;z-index:1">${brandCfg.initials}</span><span style="position:absolute;inset:0;background:${CHIP_SHEEN_GRADIENT};"></span></span>
+        <span style="font-size:14px; letter-spacing:-0.3px; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum', 'cv11';">${priceText}</span>
         ${isBest ? `
           <span style="
             position: absolute;
@@ -255,25 +258,15 @@ function createPriceMarkerIcon(
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 8px rgba(245,158,11,0.55), 0 0 0 1px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
             color: white;
-          ">${getStarSvg(11)}</span>
+          ">${starIcon(11)}</span>
         ` : ''}
       </div>
-      <div style="
-        width: 2px; height: 10px;
-        background: linear-gradient(to bottom, ${stemColor} 0%, ${stemColor}55 60%, ${stemColor}00 100%);
-        margin: 0 auto;
-      "></div>
-      <div style="
-        width: 7px; height: 7px;
-        background: ${stemColor};
-        border-radius: 50%;
-        margin: -1px auto 0;
-        box-shadow: 0 0 0 2px ${stemColor}25, 0 0 0 4px rgba(255,255,255,0.6), 0 1px 3px rgba(15,23,42,0.2);
-      "></div>
+      ${notchSvg(notchFill, notchStroke)}
+      ${groundShadowDiv()}
     `,
     iconSize: [0, 0],
-    iconAnchor: [48, 54],
-    popupAnchor: [0, -57],
+    iconAnchor: [48, 44],
+    popupAnchor: [0, -46],
   });
 }
 
@@ -305,138 +298,127 @@ function createUserLocationIcon(): L.DivIcon {
   });
 }
 
-// ─── Charging Station Marker ────────────────────────────────
+// ─── Energy Station Markers (Charging / Hydrogen / Gas) ────
+//
+// Shared visual language with the price marker: speech-bubble pill
+// + downward notch + soft ground shadow. The differentiator is the
+// inline SVG icon at the leading edge — a lightning bolt for EV
+// charging, a droplet for H2, and a flame for LPG/CNG. SVG is used
+// in place of the legacy HTML emoji entities (`&#9889;` etc.)
+// because emoji rendering depends on the OS font stack: the same
+// glyph would land as a glassy iOS lightning bolt for some users
+// and a flat Windows 11 monochrome for others. SVG gives every
+// user the same crisp identity.
+
+interface EnergyMarkerOpts {
+  readonly available: boolean;
+  readonly label: string;
+  readonly iconSvg: string;
+  readonly bgGradient: string;
+  readonly borderColor: string;
+  readonly notchFill: string;
+  readonly glowRgba: string;
+}
+
+function createEnergyMarkerIcon({
+  available,
+  label,
+  iconSvg,
+  bgGradient,
+  borderColor,
+  notchFill,
+  glowRgba,
+}: EnergyMarkerOpts): L.DivIcon {
+  const opacity = available ? 1 : 0.55;
+  const dimFilter = available ? '' : 'filter: grayscale(0.5) saturate(0.65);';
+
+  return L.divIcon({
+    className: 'tp-marker',
+    html: `
+      <div class="tp-marker-bubble" style="
+        opacity: ${opacity};
+        ${dimFilter}
+        background: ${bgGradient};
+        color: white;
+        border: 1.5px solid ${borderColor};
+        border-radius: 16px;
+        padding: 4px 11px 4px 5px;
+        font-size: 11.5px;
+        font-weight: 700;
+        font-family: 'Inter', system-ui, sans-serif;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+        box-shadow:
+          0 2px 6px ${glowRgba},
+          0 6px 16px rgba(15,23,42,0.10),
+          inset 0 1px 0 rgba(255,255,255,0.30),
+          inset 0 -1px 2px rgba(0,0,0,0.10);
+        text-shadow: 0 1px 1px rgba(0,0,0,0.20);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease;
+        transform-origin: bottom center;
+      ">
+        <span style="
+          display: inline-flex;
+          width: 18px; height: 18px;
+          border-radius: 6px;
+          align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.20);
+          color: white;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+        ">${iconSvg}</span>
+        <span style="font-variant-numeric: tabular-nums; font-feature-settings: 'tnum', 'cv11';">${label}</span>
+      </div>
+      ${notchSvg(notchFill, 'rgba(255,255,255,0.40)')}
+      ${groundShadowDiv()}
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [38, 42],
+    popupAnchor: [0, -44],
+  });
+}
 
 function createChargingMarkerIcon(isOperational: boolean, maxPowerKW: number | null): L.DivIcon {
-  const powerText = maxPowerKW ? `${maxPowerKW}kW` : '';
-  const opacity = isOperational ? 1 : 0.5;
-  // Blue markers for EV charging (#3b82f6)
-  const bgColor = isOperational ? '#3b82f6' : '#94A3B8';
-  const borderColor = isOperational ? '#2563eb' : '#CBD5E1';
-
-  return L.divIcon({
-    className: 'tp-marker',
-    html: `
-      <div style="
-        opacity: ${opacity};
-        background: ${bgColor};
-        color: white;
-        border: 2px solid ${borderColor};
-        border-radius: 14px;
-        padding: 3px 8px;
-        font-size: 11px;
-        font-weight: 700;
-        font-family: 'Inter', system-ui, sans-serif;
-        white-space: nowrap;
-        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-      ">
-        <span style="font-size: 13px;">&#9889;</span>
-        <span>${powerText}</span>
-      </div>
-      <div style="
-        width: 2px; height: 8px;
-        background: linear-gradient(to bottom, ${bgColor}, transparent);
-        margin: 0 auto;
-      "></div>
-    `,
-    iconSize: [0, 0],
-    iconAnchor: [35, 40],
-    popupAnchor: [0, -42],
+  const powerText = maxPowerKW ? `${maxPowerKW} kW` : 'EV';
+  return createEnergyMarkerIcon({
+    available: isOperational,
+    label: powerText,
+    iconSvg: lightningIcon(12, '#FFFFFF'),
+    bgGradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+    borderColor: 'rgba(255,255,255,0.55)',
+    notchFill: '#2563eb',
+    glowRgba: 'rgba(59,130,246,0.45)',
   });
 }
-
-// ─── Hydrogen Station Marker (Cyan/Teal) ───────────────────
 
 function createH2MarkerIcon(isAvailable: boolean, pricePerKg: number | null): L.DivIcon {
-  const priceText = pricePerKg != null ? `${pricePerKg.toFixed(2)}€` : 'H2';
-  const opacity = isAvailable ? 1 : 0.5;
-  // Cyan/teal markers for H2 (#06b6d4)
-  const bgColor = isAvailable ? '#06b6d4' : '#94A3B8';
-  const borderColor = isAvailable ? '#0891b2' : '#CBD5E1';
-
-  return L.divIcon({
-    className: 'tp-marker',
-    html: `
-      <div style="
-        opacity: ${opacity};
-        background: ${bgColor};
-        color: white;
-        border: 2px solid ${borderColor};
-        border-radius: 14px;
-        padding: 3px 8px;
-        font-size: 11px;
-        font-weight: 700;
-        font-family: 'Inter', system-ui, sans-serif;
-        white-space: nowrap;
-        box-shadow: 0 2px 8px rgba(6,182,212,0.3);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-      ">
-        <span style="font-size: 12px;">&#128167;</span>
-        <span>${priceText}</span>
-      </div>
-      <div style="
-        width: 2px; height: 8px;
-        background: linear-gradient(to bottom, ${bgColor}, transparent);
-        margin: 0 auto;
-      "></div>
-    `,
-    iconSize: [0, 0],
-    iconAnchor: [35, 40],
-    popupAnchor: [0, -42],
+  const label = pricePerKg != null ? `${pricePerKg.toFixed(2)} €` : 'H₂';
+  return createEnergyMarkerIcon({
+    available: isAvailable,
+    label,
+    iconSvg: dropletIcon(12, '#FFFFFF'),
+    bgGradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+    borderColor: 'rgba(255,255,255,0.55)',
+    notchFill: '#0891b2',
+    glowRgba: 'rgba(6,182,212,0.45)',
   });
 }
 
-// ─── Gas Station Marker (LPG/CNG — Orange) ─────────────────
-
 function createGasMarkerIcon(isOpen: boolean, gasTypes: readonly string[], lowestPrice: number | null): L.DivIcon {
-  const label = lowestPrice != null ? `${lowestPrice.toFixed(2)}€` : gasTypes.map((t) => t.toUpperCase()).join('/');
-  const opacity = isOpen ? 1 : 0.5;
-  // Orange markers for Gas (#f97316)
-  const bgColor = isOpen ? '#f97316' : '#94A3B8';
-  const borderColor = isOpen ? '#ea580c' : '#CBD5E1';
-
-  return L.divIcon({
-    className: 'tp-marker',
-    html: `
-      <div style="
-        opacity: ${opacity};
-        background: ${bgColor};
-        color: white;
-        border: 2px solid ${borderColor};
-        border-radius: 14px;
-        padding: 3px 8px;
-        font-size: 11px;
-        font-weight: 700;
-        font-family: 'Inter', system-ui, sans-serif;
-        white-space: nowrap;
-        box-shadow: 0 2px 8px rgba(249,115,22,0.3);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-        transition: transform 0.15s ease;
-      ">
-        <span style="font-size: 12px;">&#128293;</span>
-        <span>${label}</span>
-      </div>
-      <div style="
-        width: 2px; height: 8px;
-        background: linear-gradient(to bottom, ${bgColor}, transparent);
-        margin: 0 auto;
-      "></div>
-    `,
-    iconSize: [0, 0],
-    iconAnchor: [35, 40],
-    popupAnchor: [0, -42],
+  const label = lowestPrice != null
+    ? `${lowestPrice.toFixed(2)} €`
+    : gasTypes.map((t) => t.toUpperCase()).join('/');
+  return createEnergyMarkerIcon({
+    available: isOpen,
+    label,
+    iconSvg: flameIcon(12, '#FFFFFF'),
+    bgGradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+    borderColor: 'rgba(255,255,255,0.55)',
+    notchFill: '#ea580c',
+    glowRgba: 'rgba(249,115,22,0.45)',
   });
 }
 
@@ -808,55 +790,66 @@ export function StationMap({
               icon={icon}
             >
               <Popup className="tp-popup" closeButton={false} autoPan={false}>
-                <div style={{
-                  fontFamily: "'Inter', system-ui, sans-serif",
-                  padding: '4px 2px',
-                  minWidth: 180,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      width: 30, height: 30, borderRadius: 10,
-                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                      color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 15, flexShrink: 0,
-                    }}>&#9889;</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>
-                        {cs.operator || 'Ladestation'}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {cs.address}, {cs.city}
-                      </div>
-                    </div>
-                  </div>
-                  {cs.connections.length > 0 && (
-                    <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
-                      {cs.connections.slice(0, 3).map((c, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                          <span>{c.type}</span>
-                          <span style={{ fontWeight: 700 }}>{c.powerKW ? `${c.powerKW} kW` : '—'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {cs.usageCost && (
+                {(() => {
+                  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+                  const textPrimary = isDark ? '#F1F5F9' : '#0F172A';
+                  const textSecondary = isDark ? '#CBD5E1' : '#64748B';
+                  const textMuted = isDark ? '#94A3B8' : '#94A3B8';
+                  const rowText = isDark ? '#E2E8F0' : '#475569';
+                  const costBg = isDark ? 'rgba(59,130,246,0.18)' : '#EFF6FF';
+                  return (
                     <div style={{
-                      marginTop: 6, padding: '3px 8px',
-                      background: '#EFF6FF', borderRadius: 8,
-                      fontSize: 11, fontWeight: 600, color: '#2563eb',
-                      textAlign: 'center',
+                      fontFamily: "'Inter', system-ui, sans-serif",
+                      padding: '4px 2px',
+                      minWidth: 180,
                     }}>
-                      {cs.usageCost}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{
+                          width: 30, height: 30, borderRadius: 10,
+                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                          color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 8px rgba(59,130,246,0.40), inset 0 1px 0 rgba(255,255,255,0.20)',
+                        }} dangerouslySetInnerHTML={{ __html: lightningIcon(15, '#FFFFFF') }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: textPrimary }}>
+                            {cs.operator || 'Ladestation'}
+                          </div>
+                          <div style={{ fontSize: 11, color: textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {cs.address}, {cs.city}
+                          </div>
+                        </div>
+                      </div>
+                      {cs.connections.length > 0 && (
+                        <div style={{ fontSize: 11, color: rowText, marginTop: 4 }}>
+                          {cs.connections.slice(0, 3).map((c, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                              <span style={{ color: textMuted }}>{c.type}</span>
+                              <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{c.powerKW ? `${c.powerKW} kW` : '—'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {cs.usageCost && (
+                        <div style={{
+                          marginTop: 6, padding: '3px 8px',
+                          background: costBg, borderRadius: 8,
+                          fontSize: 11, fontWeight: 600, color: '#3b82f6',
+                          textAlign: 'center',
+                        }}>
+                          {cs.usageCost}
+                        </div>
+                      )}
+                      <div style={{
+                        marginTop: 6, fontSize: 10, color: cs.isOperational ? '#3b82f6' : '#EF4444',
+                        fontWeight: 600, textAlign: 'center',
+                      }}>
+                        {cs.isOperational ? 'In Betrieb' : 'Außer Betrieb'}
+                      </div>
                     </div>
-                  )}
-                  <div style={{
-                    marginTop: 6, fontSize: 10, color: cs.isOperational ? '#3b82f6' : '#EF4444',
-                    fontWeight: 600, textAlign: 'center',
-                  }}>
-                    {cs.isOperational ? 'In Betrieb' : 'Außer Betrieb'}
-                  </div>
-                </div>
+                  );
+                })()}
               </Popup>
             </Marker>
           );
@@ -879,47 +872,56 @@ export function StationMap({
               }}
             >
               <Popup className="tp-popup" closeButton={false} autoPan={false}>
-                <div style={{
-                  fontFamily: "'Inter', system-ui, sans-serif",
-                  padding: '4px 2px',
-                  minWidth: 180,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      width: 30, height: 30, borderRadius: 10,
-                      background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
-                      color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 15, flexShrink: 0,
-                    }}>&#128167;</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>
-                        {h2.operator || h2.name || 'H2-Tankstelle'}
+                {(() => {
+                  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+                  const textPrimary = isDark ? '#F1F5F9' : '#0F172A';
+                  const textSecondary = isDark ? '#CBD5E1' : '#64748B';
+                  const textMuted = isDark ? '#94A3B8' : '#94A3B8';
+                  return (
+                    <div style={{
+                      fontFamily: "'Inter', system-ui, sans-serif",
+                      padding: '4px 2px',
+                      minWidth: 180,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{
+                          width: 30, height: 30, borderRadius: 10,
+                          background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+                          color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 8px rgba(6,182,212,0.40), inset 0 1px 0 rgba(255,255,255,0.20)',
+                        }} dangerouslySetInnerHTML={{ __html: dropletIcon(15, '#FFFFFF') }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: textPrimary }}>
+                            {h2.operator || h2.name || 'H2-Tankstelle'}
+                          </div>
+                          <div style={{ fontSize: 11, color: textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {h2.address.street} {h2.address.houseNumber}, {h2.address.city}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {h2.address.street} {h2.address.houseNumber}, {h2.address.city}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: textMuted }}>Wasserstoff</span>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                          {h2.h2PricePerKg != null ? `${h2.h2PricePerKg.toFixed(2)} €/kg` : '—'}
+                        </span>
+                      </div>
+                      {h2.h2Pressure.length > 0 && (
+                        <div style={{ fontSize: 10, color: textSecondary, marginTop: 4, textAlign: 'center' }}>
+                          {h2.h2Pressure.map((p) => `${p} bar`).join(', ')}
+                        </div>
+                      )}
+                      <div style={{
+                        marginTop: 6, fontSize: 10,
+                        color: h2.h2Available ? '#06b6d4' : '#EF4444',
+                        fontWeight: 600, textAlign: 'center',
+                      }}>
+                        {h2.h2Available ? 'Verfügbar' : 'Nicht verfügbar'}
                       </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: '#94A3B8' }}>Wasserstoff</span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
-                      {h2.h2PricePerKg != null ? `${h2.h2PricePerKg.toFixed(2)} €/kg` : '—'}
-                    </span>
-                  </div>
-                  {h2.h2Pressure.length > 0 && (
-                    <div style={{ fontSize: 10, color: '#64748B', marginTop: 4, textAlign: 'center' }}>
-                      {h2.h2Pressure.map((p) => `${p} bar`).join(', ')}
-                    </div>
-                  )}
-                  <div style={{
-                    marginTop: 6, fontSize: 10,
-                    color: h2.h2Available ? '#06b6d4' : '#EF4444',
-                    fontWeight: 600, textAlign: 'center',
-                  }}>
-                    {h2.h2Available ? 'Verfügbar' : 'Nicht verfügbar'}
-                  </div>
-                </div>
+                  );
+                })()}
               </Popup>
             </Marker>
           );
@@ -945,47 +947,56 @@ export function StationMap({
               }}
             >
               <Popup className="tp-popup" closeButton={false} autoPan={false}>
-                <div style={{
-                  fontFamily: "'Inter', system-ui, sans-serif",
-                  padding: '4px 2px',
-                  minWidth: 180,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      width: 30, height: 30, borderRadius: 10,
-                      background: 'linear-gradient(135deg, #f97316, #ea580c)',
-                      color: 'white',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 15, flexShrink: 0,
-                    }}>&#128293;</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>
-                        {gs.operator || gs.name || 'Gastankstelle'}
+                {(() => {
+                  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+                  const textPrimary = isDark ? '#F1F5F9' : '#0F172A';
+                  const textSecondary = isDark ? '#CBD5E1' : '#64748B';
+                  const textMuted = isDark ? '#94A3B8' : '#94A3B8';
+                  return (
+                    <div style={{
+                      fontFamily: "'Inter', system-ui, sans-serif",
+                      padding: '4px 2px',
+                      minWidth: 180,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{
+                          width: 30, height: 30, borderRadius: 10,
+                          background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                          color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 8px rgba(249,115,22,0.40), inset 0 1px 0 rgba(255,255,255,0.20)',
+                        }} dangerouslySetInnerHTML={{ __html: flameIcon(15, '#FFFFFF') }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: textPrimary }}>
+                            {gs.operator || gs.name || 'Gastankstelle'}
+                          </div>
+                          <div style={{ fontSize: 11, color: textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {gs.address.street} {gs.address.houseNumber}, {gs.address.city}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {gs.address.street} {gs.address.houseNumber}, {gs.address.city}
+                      {gs.gasTypes.map((gt) => {
+                        const price = gs.gasPrices[gt];
+                        return (
+                          <div key={gt} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
+                            <span style={{ fontSize: 11, color: textMuted }}>{gt.toUpperCase()}</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+                              {price != null ? `${price.toFixed(3)} €` : '—'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      <div style={{
+                        marginTop: 6, fontSize: 10,
+                        color: gs.isOpen ? '#f97316' : '#EF4444',
+                        fontWeight: 600, textAlign: 'center',
+                      }}>
+                        {gs.isOpen ? 'Geöffnet' : 'Geschlossen'}
                       </div>
                     </div>
-                  </div>
-                  {gs.gasTypes.map((gt) => {
-                    const price = gs.gasPrices[gt];
-                    return (
-                      <div key={gt} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
-                        <span style={{ fontSize: 11, color: '#94A3B8' }}>{gt.toUpperCase()}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                          {price != null ? `${price.toFixed(3)} €` : '—'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div style={{
-                    marginTop: 6, fontSize: 10,
-                    color: gs.isOpen ? '#f97316' : '#EF4444',
-                    fontWeight: 600, textAlign: 'center',
-                  }}>
-                    {gs.isOpen ? 'Geöffnet' : 'Geschlossen'}
-                  </div>
-                </div>
+                  );
+                })()}
               </Popup>
             </Marker>
           );
@@ -1125,39 +1136,59 @@ export function StationMap({
       </div>
 
       <div
-        className="absolute bottom-4 left-4 z-[1000] bg-white/90 dark:bg-gray-800/90
-                   backdrop-blur-sm rounded-xl px-3 py-2 shadow-md
-                   border border-gray-100 dark:border-gray-700
-                   text-[10px] text-gray-500 dark:text-gray-400
-                   flex items-center gap-3 flex-wrap"
+        className="absolute bottom-4 left-4 z-[1000]
+                   bg-white/85 dark:bg-gray-900/80
+                   backdrop-blur-md backdrop-saturate-150
+                   rounded-2xl px-3.5 py-2
+                   shadow-[0_4px_18px_-2px_rgba(15,23,42,0.12),0_2px_4px_-2px_rgba(15,23,42,0.06)]
+                   border border-white/60 dark:border-gray-700/60
+                   text-[10.5px] text-gray-500 dark:text-gray-400
+                   flex items-center gap-x-3.5 gap-y-1 flex-wrap"
       >
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-reach-safe" />
-          Tankstellen
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.18)]" />
+          <span className="font-medium text-gray-600 dark:text-gray-300">Tankstellen</span>
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span
-            className="w-3.5 h-3.5 rounded bg-brand-600 text-white flex items-center justify-center"
-            dangerouslySetInnerHTML={{ __html: getStarSvg(8) }}
+            className="w-4 h-4 rounded-md flex items-center justify-center text-white
+                       bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500
+                       shadow-[0_1px_3px_rgba(245,158,11,0.45)]"
+            dangerouslySetInnerHTML={{ __html: starIcon(9, 'currentColor') }}
           />
-          Beste
+          <span className="font-medium text-gray-600 dark:text-gray-300">Beste</span>
         </span>
         {chargingStations.length > 0 && (
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#3b82f6' }}>&#9889;</span>
-            Ladesäulen
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-4 h-4 rounded-md flex items-center justify-center text-white
+                         bg-gradient-to-br from-blue-400 to-blue-600
+                         shadow-[0_1px_3px_rgba(59,130,246,0.45)]"
+              dangerouslySetInnerHTML={{ __html: lightningIcon(9, 'currentColor') }}
+            />
+            <span className="font-medium text-gray-600 dark:text-gray-300">Ladesäulen</span>
           </span>
         )}
         {h2Stations.length > 0 && (
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#06b6d4' }}>&#128167;</span>
-            Wasserstoff
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-4 h-4 rounded-md flex items-center justify-center text-white
+                         bg-gradient-to-br from-cyan-400 to-cyan-600
+                         shadow-[0_1px_3px_rgba(6,182,212,0.45)]"
+              dangerouslySetInnerHTML={{ __html: dropletIcon(9, 'currentColor') }}
+            />
+            <span className="font-medium text-gray-600 dark:text-gray-300">Wasserstoff</span>
           </span>
         )}
         {gasStations.length > 0 && (
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded text-white text-[8px] flex items-center justify-center font-bold" style={{ background: '#f97316' }}>&#128293;</span>
-            Gas (LPG/CNG)
+          <span className="flex items-center gap-1.5">
+            <span
+              className="w-4 h-4 rounded-md flex items-center justify-center text-white
+                         bg-gradient-to-br from-orange-400 to-orange-600
+                         shadow-[0_1px_3px_rgba(249,115,22,0.45)]"
+              dangerouslySetInnerHTML={{ __html: flameIcon(9, 'currentColor') }}
+            />
+            <span className="font-medium text-gray-600 dark:text-gray-300">LPG/CNG</span>
           </span>
         )}
       </div>

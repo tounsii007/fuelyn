@@ -140,15 +140,32 @@
   }
 
   /* Marker hover effect — additive, preserves the bubble's layered
-     brand-tinted box-shadow set inline. */
-  .tp-marker:hover .tp-marker-bubble {
-    transform: translateY(-3px) scale(1.07) !important;
+     brand-tinted box-shadow set inline. The whole tp-marker root
+     scales (bubble + notch + ground shadow together) so the speech
+     bubble keeps its anchor relationship as it lifts. */
+  .tp-marker {
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: bottom center;
+  }
+  .tp-marker:hover {
+    transform: translateY(-2px) scale(1.07);
     z-index: 1000;
+  }
+  .tp-marker:hover .tp-marker-bubble {
     filter: brightness(1.04) saturate(1.05);
   }
 
-  .tp-marker:active .tp-marker-bubble {
-    transform: translateY(-1px) scale(1.04) !important;
+  .tp-marker:active {
+    transform: translateY(-0.5px) scale(1.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tp-marker,
+    .tp-marker:hover,
+    .tp-marker:active {
+      transition: none;
+      transform: none;
+    }
   }
 
   /* Selected-station spotlight (Phase 3b) — when the user clicks any
@@ -163,9 +180,14 @@
   }
   .tp-marker--selected {
     z-index: 1200 !important;
+    transform: scale(1.14) translateY(-1px);
+  }
+  .tp-marker--selected:hover {
+    /* Already lifted by --selected — don't re-apply the hover scale
+       on top, or the marker visually jumps higher than intended. */
+    transform: scale(1.14) translateY(-1px);
   }
   .tp-marker--selected .tp-marker-bubble {
-    transform: scale(1.16) translateY(-2px);
     box-shadow:
       0 0 0 3px rgba(37, 117, 234, 0.85),
       0 0 0 7px rgba(37, 117, 234, 0.30),
