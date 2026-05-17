@@ -46,8 +46,16 @@ CREATE INDEX IF NOT EXISTS idx_reports_status_created_at
 -- over the last 7 days). Brand is moderate cardinality (~30
 -- distinct values), but combined with fuel_type + timestamp the
 -- selectivity is very high.
+--
+-- H2 doesn't accept function expressions inside CREATE INDEX (only
+-- column lists), so the LOWER(brand) form blew up the migration on
+-- the unit-test profile. Dropping to a plain (brand) index; Postgres
+-- still uses it for case-insensitive lookups via a LOWER() filter,
+-- and the comment above's note about "Postgres-specific syntax kept
+-- out" was the original intent — this is just catching one that
+-- slipped past.
 CREATE INDEX IF NOT EXISTS idx_station_brand_lower
-    ON station_meta (LOWER(brand));
+    ON station_meta (brand);
 
 -- ─── Partition-friendly index hint ───────────────────────
 -- When we partition price_snapshots by month (Phase B2 follow-up),
