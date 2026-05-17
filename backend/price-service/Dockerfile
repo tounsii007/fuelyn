@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.m2 \
 
 # ─── Runtime stage ───────────────────────────────────────
 # Alpine JRE (small + has wget for compose healthchecks). Non-root user.
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 RUN addgroup -S app && adduser -S -G app app
 COPY --from=builder --chown=app:app /workspace/price-service/target/*.jar /app/app.jar
