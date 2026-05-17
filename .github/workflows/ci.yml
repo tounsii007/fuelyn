@@ -43,26 +43,20 @@ jobs:
       - name: TypeScript — packages/core
         run: npx tsc --noEmit -p packages/core/tsconfig.json
 
-      # Non-blocking: ~18 implicit-any + cascade TS errors in apps/web
-      # API routes. They're cheap to fix (add `: any` or explicit row
-      # types from Prisma) but out of scope for the CI-unblock pass.
-      # TODO: re-tighten once the route handlers are annotated.
+      # Was non-blocking while ~18 implicit-any TS errors lived in the
+      # apps/web route handlers; all clear now that `prisma generate`
+      # runs first and the Prisma 7 client types resolve. Re-gated.
       - name: TypeScript — apps/web
         run: npx tsc --noEmit -p apps/web/tsconfig.typecheck.json
-        continue-on-error: true
 
-      # Non-blocking: one trend-detection test in packages/core asserts
-      # 'stable-with-pattern' but the predictor now returns
-      # 'down-trending' for the same synthetic series. The classifier
-      # likely needs a tolerance widening, not a test fixture change —
-      # tracked as a follow-up. Re-enable once fixed.
+      # Was non-blocking while price-prediction.test.ts couldn't pass.
+      # The root cause was recentTrendSlope using Date.now() instead of
+      # the options.now passed in by the test — fixed; re-gated.
       - name: Vitest — packages/core
         run: npm test --workspace=@fuelyn/core
-        continue-on-error: true
 
       - name: Vitest — apps/web
         run: npm test --workspace=@fuelyn/web
-        continue-on-error: true
 
   # ─── Java / Backend ─────────────────────────────────────
   java:

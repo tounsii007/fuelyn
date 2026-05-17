@@ -152,8 +152,8 @@ function ewma(samples: NormalizedSnapshot[]): number {
  * data via simple linear regression. Used to lean predictions
  * up or down in addition to the seasonal pattern.
  */
-function recentTrendSlope(samples: NormalizedSnapshot[]): number {
-  const fiveDaysAgo = Date.now() - 5 * 24 * 3600 * 1000;
+function recentTrendSlope(samples: NormalizedSnapshot[], nowMs: number): number {
+  const fiveDaysAgo = nowMs - 5 * 24 * 3600 * 1000;
   const recent = samples.filter((s) => s.ts >= fiveDaysAgo);
   if (recent.length < 4) return 0;
   // Days-since-first-sample as the x-axis so values stay small
@@ -247,7 +247,13 @@ export function predictNext24h(
   const hourly = hourlyMeans(samples);
   const daily = dailyMeans(samples);
   const ewmaNow = ewma(samples);
-  const slopePerDay = recentTrendSlope(samples);
+  // Pass `now` through so the "last 5 days" filter respects the
+  // options override. Using Date.now() inside the helper made the
+  // tests non-deterministic — a series anchored on NOW=2026-05-13
+  // would still get the trend-slope window cut against the real
+  // wall clock, dropping every sample (or only catching the tail
+  // of the pattern, which reads as down-trending on a sinusoid).
+  const slopePerDay = recentTrendSlope(samples, now.getTime());
 
   // Anchor the prediction series on the EWMA (current "true"
   // price) so the absolute level stays close to reality. Then
