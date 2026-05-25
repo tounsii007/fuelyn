@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # ─── Build stage ──────────────────────────────────────────
 # Use the official Maven + Temurin 21 image so `mvn` is on PATH out of the box.
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM maven:3-eclipse-temurin-26 AS builder
 WORKDIR /workspace
 
 # Copy ALL module poms first so the multi-module parent can be parsed.
