@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # ─── Dependencies ────────────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /workspace
 RUN apk add --no-cache libc6-compat
 # Workspace manifests first for cache-friendly layer.
@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
         --include-workspace-root
 
 # ─── Build ───────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
 # Prisma 7 default engine "client" requires an adapter (e.g.
@@ -66,7 +66,7 @@ RUN cd apps/web \
 RUN npm run build --workspace=@fuelyn/web
 
 # ─── Runtime (Next.js standalone) ────────────────────────
-FROM node:20-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
