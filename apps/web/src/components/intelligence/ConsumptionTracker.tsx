@@ -10,12 +10,14 @@ import { useState, useMemo, useCallback } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { FUEL_TYPE_LABELS } from '@fuelyn/core';
 import type { FuelType } from '@fuelyn/core';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 interface ConsumptionTrackerProps {
   className?: string;
 }
 
 export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) {
+  const { t } = useTranslations();
   const fuelLog = useAppStore((s) => s.fuelLog);
   const addFuelLogEntry = useAppStore((s) => s.addFuelLogEntry);
   const removeFuelLogEntry = useAppStore((s) => s.removeFuelLogEntry);
@@ -95,10 +97,10 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
       <div className="px-4 pt-4 pb-3 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-            Verbrauchstracker
+            {t('consumptionTracker.title')}
           </h3>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
-            Tankf&uuml;llungen protokollieren &amp; Verbrauch berechnen
+            {t('consumptionTracker.subtitle')}
           </p>
         </div>
         <button
@@ -108,7 +110,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
                      bg-brand-600 text-white hover:bg-brand-700 active:scale-95
                      transition-all"
         >
-          {showForm ? 'Abbrechen' : '+ Eintrag'}
+          {showForm ? t('common.cancel') : t('consumptionTracker.addEntryCta')}
         </button>
       </div>
 
@@ -124,7 +126,9 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
             </span>
           </div>
           <p className="text-[10px] text-brand-600/60 dark:text-brand-400/60 mt-0.5">
-            Berechnet aus {consumption.fillUps} Eintr&auml;gen &middot; {consumption.totalKm.toLocaleString('de-DE')} km
+            {t('consumptionTracker.consumptionFootnote')
+              .replace('{entries}', String(consumption.fillUps))
+              .replace('{km}', consumption.totalKm.toLocaleString('de-DE'))}
           </p>
         </div>
       )}
@@ -132,9 +136,9 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
       {/* Quick stats */}
       {stats && (
         <div className="grid grid-cols-3 gap-2 mx-4 mb-3">
-          <MiniStat label="Ausgaben" value={`${stats.totalCost.toFixed(0)} \u20ac`} />
-          <MiniStat label="Liter" value={`${stats.totalLiters.toFixed(0)} L`} />
-          <MiniStat label={'\u00d8 Preis'} value={`${stats.avgPrice.toFixed(3)} \u20ac`} />
+          <MiniStat label={t('consumptionTracker.statSpend')} value={`${stats.totalCost.toFixed(0)} \u20ac`} />
+          <MiniStat label={t('consumptionTracker.statLiters')} value={`${stats.totalLiters.toFixed(0)} L`} />
+          <MiniStat label={t('consumptionTracker.statAvgPrice')} value={`${stats.avgPrice.toFixed(3)} \u20ac`} />
         </div>
       )}
 
@@ -144,19 +148,19 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
           <div className="grid grid-cols-2 gap-2.5 mb-3">
             <div className="col-span-2">
               <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 block">
-                Tankstelle
+                {t('consumptionTracker.formStation')}
               </label>
               <input
                 type="text"
                 value={form.stationName}
                 onChange={(e) => setForm({ ...form, stationName: e.target.value })}
-                placeholder="z.B. Aral Hauptstr."
+                placeholder={t('consumptionTracker.formStationPlaceholder')}
                 className={inputClass}
               />
             </div>
             <div>
               <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 block">
-                Kraftstoff
+                {t('consumptionTracker.formFuel')}
               </label>
               <select
                 value={form.fuelType}
@@ -170,7 +174,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
             </div>
             <div>
               <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 block">
-                Liter
+                {t('consumptionTracker.formLiters')}
               </label>
               <input
                 type="number"
@@ -183,7 +187,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
             </div>
             <div>
               <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 block">
-                Preis (&euro;/L)
+                {t('consumptionTracker.formPrice')}
               </label>
               <input
                 type="number"
@@ -196,7 +200,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
             </div>
             <div>
               <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5 block">
-                km-Stand <span className="text-gray-300">(optional)</span>
+                {t('consumptionTracker.formOdometer')} <span className="text-gray-300">{t('consumptionTracker.formOdometerOptional')}</span>
               </label>
               <input
                 type="number"
@@ -211,7 +215,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
           {/* Total preview */}
           {form.liters && form.pricePerLiter && (
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 mb-3 text-center">
-              <span className="text-[10px] text-gray-400">Gesamt: </span>
+              <span className="text-[10px] text-gray-400">{t('consumptionTracker.formTotal')} </span>
               <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                 {(parseFloat(form.liters) * parseFloat(form.pricePerLiter) || 0).toFixed(2)} &euro;
               </span>
@@ -224,7 +228,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
             className="w-full py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-xl
                        hover:bg-brand-700 active:scale-[0.98] transition-all"
           >
-            Speichern
+            {t('common.save')}
           </button>
         </div>
       )}
@@ -234,7 +238,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
         <div className="border-t border-gray-50 dark:border-gray-700/50">
           <div className="px-4 py-2">
             <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Letzte Eintr&auml;ge
+              {t('consumptionTracker.recentEntries')}
             </p>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
@@ -258,7 +262,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
                   type="button"
                   onClick={() => removeFuelLogEntry(entry.id)}
                   className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
-                  aria-label="Eintrag entfernen"
+                  aria-label={t('consumptionTracker.removeEntryAria')}
                 >
                   <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -273,7 +277,7 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
                 href="/fuel-log"
                 className="text-[10px] font-medium text-brand-600 dark:text-brand-400 hover:underline"
               >
-                Alle {fuelLog.length} Eintr&auml;ge anzeigen
+                {t('consumptionTracker.viewAll').replace('{n}', String(fuelLog.length))}
               </a>
             </div>
           )}
@@ -284,14 +288,14 @@ export function ConsumptionTracker({ className = '' }: ConsumptionTrackerProps) 
       {fuelLog.length === 0 && !showForm && (
         <div className="px-4 pb-4 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-            Noch keine Tankf&uuml;llungen erfasst.
+            {t('consumptionTracker.emptyTitle')}
           </p>
           <button
             type="button"
             onClick={() => setShowForm(true)}
             className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
           >
-            Erste Tankf&uuml;llung eintragen
+            {t('consumptionTracker.emptyCta')}
           </button>
         </div>
       )}

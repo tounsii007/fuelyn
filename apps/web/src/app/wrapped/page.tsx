@@ -28,6 +28,7 @@ import {
   OutroSlide,
 } from '@/components/wrapped/slides';
 import { Button } from '@/components/ui/Button';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 export default function WrappedPage() {
   return (
@@ -99,6 +100,7 @@ function buildSlides(report: WrappedReport): StorySlide[] {
 }
 
 function NotEnoughData({ year }: { year: number }) {
+  const { t } = useTranslations();
   return (
     <main className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center text-white fy-enter">
@@ -106,20 +108,18 @@ function NotEnoughData({ year }: { year: number }) {
           Fuelyn Wrapped {year}
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
-          Noch nicht genug Daten.
+          {t('wrappedNoData.title')}
         </h1>
         <p className="mt-4 text-sm text-white/80 leading-relaxed">
-          Wir brauchen mindestens 3 Einträge in deinem Tank-Logbuch, bevor wir
-          dir ein Jahr in Zahlen erzählen können. Trag deinen letzten Tank-Stopp
-          ein — und tippe wieder hier rein.
+          {t('wrappedNoData.body')}
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link href="/fuel-log">
-            <Button size="lg">Tank-Logbuch öffnen</Button>
+            <Button size="lg">{t('wrappedNoData.openFuelLog')}</Button>
           </Link>
           <Link href="/">
             <Button size="lg" variant="ghost" className="text-white border-white/30 hover:bg-white/10">
-              Zur Karte
+              {t('wrappedNoData.toMap')}
             </Button>
           </Link>
         </div>

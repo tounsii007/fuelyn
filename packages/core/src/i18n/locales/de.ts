@@ -26,6 +26,7 @@ export const de = {
     liter: 'Liter',
     perLiter: '€/L',
     refresh: 'Aktualisieren',
+    mapLoading: 'Karte wird geladen…',
   },
 
   nav: {
@@ -146,22 +147,44 @@ export const de = {
 
   vehicle: {
     title: 'Fahrzeugdaten',
+    pageTitle: 'Fahrzeug',
     name: 'Fahrzeugname',
     namePlaceholder: 'z. B. Mein Golf',
+    modelLabel: 'Fahrzeugmodell',
+    modelPlaceholder: 'Marke oder Modell eingeben…',
+    driveTypeLabel: 'Antrieb',
+    driveTypeFormLabel: 'Antriebsart',
+    energyType: 'Energieart',
+    electricity: 'Strom',
+    hydrogen: 'Wasserstoff',
     fuelType: 'Kraftstoffart',
+    fuelTypeShort: 'Kraftstoff',
     consumption: 'Durchschnittsverbrauch',
+    consumptionShort: 'Verbrauch',
     consumptionUnit: 'L/100 km',
+    consumptionUnitElectric: 'kWh/100 km',
+    consumptionUnitH2: 'kg/100 km',
     consumptionPlaceholder: 'z. B. 6.5',
     tankCapacity: 'Tankgröße',
+    tankCapacityWithUnit: 'Tankgröße in Liter',
     tankCapacityUnit: 'Liter',
     tankCapacityPlaceholder: 'z. B. 50',
     tankCapacityOptional: 'optional',
+    batteryCapacity: 'Batterie',
+    batteryCapacityWithUnit: 'Batteriekapazität in kWh',
+    batteryCapacityUnit: 'kWh',
+    batteryCapacityPlaceholderElectric: 'z. B. 77',
+    batteryCapacityPlaceholderHybrid: 'z. B. 13',
+    range: 'Reichweite',
     currentRange: 'Verbleibende Reichweite',
     currentRangeUnit: 'km',
     currentFuelLevel: 'Aktueller Tankstand',
     fuelLevelPercent: 'Prozent',
     fuelLevelLiters: 'Liter',
     fuelLevelKm: 'Reichweite (km)',
+    fuelLevelPlaceholderKm: 'z. B. 350',
+    fuelLevelPlaceholderLiters: 'z. B. 25',
+    fuelLevelPlaceholderPercent: 'z. B. 50',
     saveVehicle: 'Fahrzeug speichern',
     noVehicle: 'Kein Fahrzeug hinterlegt',
     addVehicle: 'Fahrzeug hinzufügen',
@@ -297,9 +320,9 @@ export const de = {
     sectionTitle: 'Privatsphäre & Standort',
     toggleTitle: 'Live-Standort verfolgen',
     toggleDesc:
-      'Aktualisiert deine Position automatisch während du dich bewegst, ' +
-      'damit Entfernungen und Reihenfolge sich anpassen. Schluckt mehr ' +
-      'Akku — daher standardmäßig aus.',
+      'Aktualisiert deine Position automatisch, während du dich bewegst, ' +
+      'damit Entfernungen und Reihenfolge sich anpassen. Verbraucht mehr ' +
+      'Akku — daher standardmäßig deaktiviert.',
     permission: 'Berechtigung',
     permissionGranted: 'Erteilt',
     permissionDenied: 'Verweigert',
@@ -513,7 +536,7 @@ export const de = {
     items: {
       'first-fill':           { label: 'Erster Tank',          desc: 'Deine allererste Eintragung im Logbuch.' },
       'fills-10':             { label: '10 Tankfüllungen',     desc: 'Du nimmst es ernst.' },
-      'fills-50':             { label: '50 Tankfüllungen',     desc: 'Stamm-User-Status.' },
+      'fills-50':             { label: '50 Tankfüllungen',     desc: 'Stammgast-Status.' },
       'fills-100':            { label: '100 Tankfüllungen',    desc: 'Hundert Mal an der Säule.' },
       'liters-500':           { label: '500 Liter getankt',    desc: 'Halbe Tonne Sprit.' },
       'liters-2000':          { label: '2.000 Liter getankt',  desc: 'Eine ganze Saison.' },
@@ -772,7 +795,7 @@ export const de = {
     subtitle: 'Wähle das aktive Fahrzeug — alle Berechnungen folgen ihm.',
     add: 'Fahrzeug hinzufügen',
     delete: 'Entfernen',
-    confirmDelete: 'Wirklich?',
+    confirmDelete: 'Wirklich löschen?',
     unnamed: 'Unbenanntes Fahrzeug',
     newVehicleName: 'Neues Fahrzeug',
   },
@@ -794,7 +817,7 @@ export const de = {
 
   borderCrossing: {
     eyebrow: 'Grenze in Reichweite',
-    hint: 'In {fuel} sparst du in der Nachbarschaft etwa {ctPerL} ct/L.',
+    hint: 'Beim {fuel}-Tanken im Nachbarland sparst du etwa {ctPerL} ct/L.',
     savingPerL: 'Geschätzte Ersparnis pro Liter',
     savingPerFill: 'Pro Tankfüllung',
     disclaimer: 'Schätzung auf Basis EU-Marktdaten — nicht Live-Preise.',
@@ -869,7 +892,7 @@ export const de = {
     savingsBeatBody: 'Du hast {percent}% unter dem Marktdurchschnitt getankt — gut gemacht!',
     savingsBehindBody: 'So viel mehr hast du gegenüber dem Marktschnitt gezahlt. Mit deinem Wochentag-Pattern sind nächstes Jahr ~{euro} € drin.',
     frequencyEyebrow: 'Dein aktivster Monat',
-    frequencyBody: '{visits} Tankstopps in einem Monat — busy!',
+    frequencyBody: '{visits} Tankstopps in einem Monat — viel los!',
     outroEyebrow: 'Bis nächstes Jahr',
     outroHeadline: 'Danke, dass du smart tankst.',
     outroSummary: 'Insgesamt {entries} Tankstopps · {brands} Marken · {stations} Stationen',
@@ -1010,6 +1033,47 @@ export const de = {
 
   pinDrop: {
     toast: 'Suchzentrum gesetzt',
+  },
+
+  fuelCostCalc: {
+    title: 'Tankkosten-Rechner',
+    distance: 'Strecke',
+    distanceUnit: 'km',
+    price: 'Preis',
+    priceUnit: '€/L',
+    consumption: 'Verbrauch',
+    cost: 'Kosten',
+    summary: '{cost} € pro 100 km · {consumption} L/100 km',
+  },
+
+  consumptionTracker: {
+    title: 'Verbrauchstracker',
+    subtitle: 'Tankfüllungen protokollieren & Verbrauch berechnen',
+    addEntryCta: '+ Eintrag',
+    consumptionFootnote: 'Berechnet aus {entries} Einträgen · {km} km',
+    statSpend: 'Ausgaben',
+    statLiters: 'Liter',
+    statAvgPrice: 'Ø Preis',
+    formStation: 'Tankstelle',
+    formStationPlaceholder: 'z. B. Aral Hauptstr.',
+    formFuel: 'Kraftstoff',
+    formLiters: 'Liter',
+    formPrice: 'Preis (€/L)',
+    formOdometer: 'km-Stand',
+    formOdometerOptional: '(optional)',
+    formTotal: 'Gesamt:',
+    recentEntries: 'Letzte Einträge',
+    removeEntryAria: 'Eintrag entfernen',
+    viewAll: 'Alle {n} Einträge anzeigen',
+    emptyTitle: 'Noch keine Tankfüllungen erfasst.',
+    emptyCta: 'Erste Tankfüllung eintragen',
+  },
+
+  wrappedNoData: {
+    title: 'Noch nicht genug Daten.',
+    body: 'Wir brauchen mindestens 3 Einträge in deinem Tank-Logbuch, bevor wir dir ein Jahr in Zahlen erzählen können. Trag deinen letzten Tank-Stopp ein — und tippe wieder hier rein.',
+    openFuelLog: 'Tank-Logbuch öffnen',
+    toMap: 'Zur Karte',
   },
 } as const;
 

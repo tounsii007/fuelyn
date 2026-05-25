@@ -64,20 +64,26 @@ import type {
   ChargingStation as CoreChargingStation,
 } from '@fuelyn/core';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from '@/lib/hooks/use-translations';
+
+function MapLoadingState() {
+  const { t } = useTranslations();
+  return (
+    <div className="w-full h-full flex items-center justify-center fy-mesh">
+      <div className="flex items-center gap-3 px-5 py-3 rounded-[var(--radius-pill)] fy-glass shadow-[var(--shadow-md)]">
+        <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-brand-500)] animate-pulse" />
+        <span className="text-sm text-[var(--color-fg-muted)]">{t('common.mapLoading')}</span>
+      </div>
+    </div>
+  );
+}
 
 // Leaflet requires browser APIs — load dynamically with no SSR
 const StationMap = dynamic(
   () => import('@/components/map/StationMap').then((mod) => ({ default: mod.StationMap })),
   {
     ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center fy-mesh">
-        <div className="flex items-center gap-3 px-5 py-3 rounded-[var(--radius-pill)] fy-glass shadow-[var(--shadow-md)]">
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-brand-500)] animate-pulse" />
-          <span className="text-sm text-[var(--color-fg-muted)]">Karte wird geladen…</span>
-        </div>
-      </div>
-    ),
+    loading: () => <MapLoadingState />,
   },
 );
 
