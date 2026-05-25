@@ -52,6 +52,14 @@ updates:
       minor-and-patch:
         patterns: ['*']
         update-types: ['minor', 'patch']
+    ignore:
+      # Spring Boot 4.x drops spring-boot-starter-aop from default BOM in
+      # some configs (price-service) and reorganizes the actuator package
+      # tree. Pin to 3.x line; tracked in roadmap.
+      - dependency-name: 'org.springframework.boot:*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'org.springframework.cloud:*'
+        update-types: ['version-update:semver-major']
     labels:
       - 'dependencies'
       - 'backend'
