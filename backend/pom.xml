@@ -31,7 +31,7 @@
         <resilience4j.version>2.4.0</resilience4j.version>
         <caffeine.version>3.2.4</caffeine.version>
         <jjwt.version>0.13.0</jjwt.version>
-        <shedlock.version>6.9.2</shedlock.version>
+        <shedlock.version>7.7.0</shedlock.version>
         <logstash-logback.version>8.0</logstash-logback.version>
         <spotless.version>3.5.1</spotless.version>
     </properties>
