@@ -33,7 +33,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <shedlock.version>6.9.2</shedlock.version>
         <logstash-logback.version>8.0</logstash-logback.version>
-        <spotless.version>2.44.5</spotless.version>
+        <spotless.version>3.5.1</spotless.version>
     </properties>
 
     <dependencyManagement>
