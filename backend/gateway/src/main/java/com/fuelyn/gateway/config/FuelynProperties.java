@@ -25,8 +25,13 @@ public class FuelynProperties {
     }
 
     public static class Security {
-        private String hmacSecret = "change-me-in-production-32chars!";
-        private String jwtSecret = "change-this-jwt-secret-in-production-min-32-chars!!";
+        // No committed secret defaults: the real values are injected from
+        // FUELYN_HMAC_SECRET / FUELYN_JWT_SECRET via application.yml's
+        // ${FUELYN_*:} bindings (see docker-compose.yml, which maps the
+        // shared HMAC_SECRET / generated keys). Empty here means "not
+        // configured" rather than a guessable placeholder in source.
+        private String hmacSecret = "";
+        private String jwtSecret = "";
         private String serviceId = "gateway";
         private List<String> apiKeys = new ArrayList<>();
         /**
