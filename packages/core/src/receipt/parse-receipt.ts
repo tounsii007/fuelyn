@@ -159,7 +159,7 @@ export function extractLiters(text: string): number | null {
   // implausible for a fuel fill-up.
   const patterns = [
     /(\d{1,3}[.,]\d{1,3})\s*(?:L|Liter|liter)\b/,
-    /Menge\s*[:\s]\s*(\d{1,3}[.,]\d{1,3})/i,
+    /Menge[:\s]*(\d{1,3}[.,]\d{1,3})/i,
     /(\d{1,3}[.,]\d{1,3})\s*l\b/i,
   ];
   for (const re of patterns) {
@@ -181,8 +181,8 @@ export function extractLiters(text: string): number | null {
  */
 export function extractPricePerLiter(text: string): number | null {
   const patterns = [
-    /(?:EUR|€)\s*\/?\s*L\s*[:\s]?\s*(\d[.,]\d{2,3})/i,
-    /Preis\s*\/?\s*L\s*[:\s]\s*(\d[.,]\d{2,3})/i,
+    /(?:EUR|€)[\s/]*L[:\s]*(\d[.,]\d{2,3})/i,
+    /Preis[\s/]*L[:\s]*(\d[.,]\d{2,3})/i,
     /(\d[.,]\d{2,3})\s*(?:EUR|€)\s*\/\s*L/i,
   ];
   for (const re of patterns) {
@@ -202,7 +202,7 @@ export function extractPricePerLiter(text: string): number | null {
  */
 export function extractTotal(text: string): number | null {
   const patterns = [
-    /(?:Summe|Gesamt|Total|Zu\s*zahlen|Endbetrag)\s*[:\s]?\s*(\d{1,3}(?:[.,]\d{1,3})?[.,]\d{2})\s*(?:EUR|€)?/i,
+    /(?:Summe|Gesamt|Total|Zu\s*zahlen|Endbetrag)[:\s]*(\d{1,3}(?:[.,]\d{1,3})?[.,]\d{2})\s*(?:EUR|€)?/i,
     /(?:Summe|Gesamt|Total|Zu\s*zahlen|Endbetrag)[\s\S]{0,15}?(\d{1,3}[.,]\d{2})/i,
   ];
   for (const re of patterns) {
