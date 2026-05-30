@@ -38,7 +38,7 @@ jobs:
         run: npx prisma generate --schema apps/web/prisma/schema.prisma
 
       - name: ESLint
-        run: npx eslint apps/web/src packages/core/src
+        run: npx eslint apps/web/src packages/core/src apps/mobile/src
 
       - name: TypeScript — packages/core
         run: npx tsc --noEmit -p packages/core/tsconfig.json
@@ -48,6 +48,14 @@ jobs:
       # runs first and the Prisma 7 client types resolve. Re-gated.
       - name: TypeScript — apps/web
         run: npx tsc --noEmit -p apps/web/tsconfig.typecheck.json
+
+      # Expo/React-Native stub. Type-checked against its own tsconfig
+      # (jsx: react-jsx, src/**). Note: this gates the TS *code*, not
+      # Expo-SDK dependency alignment — `expo-doctor` currently reports
+      # version drift (async-storage major, RN minor, TS major) that is
+      # a separate, deliberate decision and intentionally not gated here.
+      - name: TypeScript — apps/mobile
+        run: npx tsc --noEmit -p apps/mobile/tsconfig.json
 
       # Was non-blocking while price-prediction.test.ts couldn't pass.
       # The root cause was recentTrendSlope using Date.now() instead of
