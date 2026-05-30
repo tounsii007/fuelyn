@@ -4,8 +4,15 @@
 // Used by BFF routes that need to call the Java microservices.
 // ============================================================
 
+import { requireInProduction } from '@/lib/config/runtime';
+
 const BACKEND_URL = process.env.JAVA_BACKEND_URL ?? 'http://localhost:8080';
-const API_KEY = process.env.JAVA_BACKEND_API_KEY ?? 'dev-api-key-change-in-production';
+// In production a missing key crashes at module load (fail loud) rather
+// than silently authenticating to the gateway with the committed dev
+// default; the dev fallback only applies outside production.
+const API_KEY =
+  requireInProduction('JAVA_BACKEND_API_KEY', process.env.JAVA_BACKEND_API_KEY) ||
+  'dev-api-key-change-in-production';
 const TIMEOUT_MS = 10_000;
 
 interface BackendRequestOptions {
