@@ -122,6 +122,10 @@ services:
       PGPORT: "25432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # One-shot bootstrap that creates the `fuelyn_web` database for the
+      # web BFF (Prisma). Runs only when pgdata is first initialised —
+      # see the script header for the existing-volume caveat.
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d:ro
     expose:
       - "25432"
     healthcheck:
@@ -347,6 +351,28 @@ services:
       retries: 12
       start_period: 60s
 
+  # ─── Web schema migration (one-shot) ───────────────────────
+  # Applies the Prisma schema to the `fuelyn_web` Postgres database
+  # before the web service starts. Reuses the web image's *builder*
+  # stage (which carries the Prisma CLI; the slim runner does not),
+  # so no extra image to maintain. Exits 0 on success — `web` waits
+  # for that via service_completed_successfully.
+  web-migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fuelyn:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:25432/fuelyn_web
+    command:
+      - sh
+      - -c
+      - cd apps/web && npx prisma db push --accept-data-loss --skip-generate
+
   web:
     build:
       context: .
@@ -355,15 +381,14 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+      web-migrate:
+        condition: service_completed_successfully
     environment:
-      # Iter AH note: kept at "development" inside the container because
-      # the Prisma schema is still on SQLite (provider="sqlite") and our
-      # production guard rejects file:// URLs. To run NODE_ENV=production
-      # in Docker, switch the schema to postgresql + run prisma migrate
-      # against the postgres service in this compose. The Next.js build
-      # artefact itself is already production-mode (next build was run
-      # in the builder stage); this var only gates the runtime checks.
-      NODE_ENV: ${WEB_NODE_ENV:-development}
+      # Persistence is Postgres now (the Iter-AH SQLite caveat is gone),
+      # so the container runs in real production mode. The production DB
+      # guard in lib/db/client.ts is satisfied by the postgresql:// URL
+      # below. Override with WEB_NODE_ENV if you ever need dev semantics.
+      NODE_ENV: ${WEB_NODE_ENV:-production}
       PORT: "23700"
       HOSTNAME: "0.0.0.0"
       JAVA_BACKEND_URL: http://gateway:28800
@@ -382,14 +407,11 @@ services:
       FUELYN_JWT_SECRET: ${FUELYN_JWT_SECRET:?FUELYN_JWT_SECRET required}
       FUELYN_PUBLIC_ORIGIN: ${FUELYN_PUBLIC_ORIGIN:-https://localhost:49443}
       FUELYN_ADMIN_TOKEN: ${FUELYN_ADMIN_TOKEN}
-      # ─── Iter W cloud-sync (Prisma SQLite) ─────────────────
-      # The web container owns its own SQLite under /app/data so
-      # User / SyncRecord / Subscription state survives restarts.
-      # In a real prod deploy, swap to postgresql:// pointing at
-      # the postgres service.
-      DATABASE_URL: file:/app/data/web.db
-    volumes:
-      - web_data:/app/data
+      # ─── Cloud-sync persistence (Prisma → Postgres) ────────
+      # The web BFF owns its own `fuelyn_web` database on the shared
+      # Postgres server; `web-migrate` applies the schema first. User /
+      # SyncRecord / Subscription / Telemetry state lives there.
+      DATABASE_URL: postgresql://fuelyn:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:25432/fuelyn_web
     expose:
       - "23700"
     healthcheck:
@@ -404,4 +426,3 @@ volumes:
   caddy_data:
   caddy_config:
   ollama_data:
-  web_data:

@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
   // Fallback: try local Prisma
   try {
-    const { prisma } = await import('@/lib/db/prisma');
+    const { prisma } = await import('@/lib/db/client');
 
     const since = new Date();
     since.setDate(since.getDate() - days);

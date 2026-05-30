@@ -32,9 +32,14 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile.dev
     working_dir: /workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       NODE_ENV: development
-      DATABASE_URL: file:./prisma/dev.db
+      # Dev persistence is Postgres too (unified with prod). The
+      # Dockerfile.dev CMD runs `prisma db push` against this on start.
+      DATABASE_URL: postgresql://fuelyn:fuelyn@postgres:25432/fuelyn_web
       # Iter AH — provided via root .env.
       FUELYN_JWT_SECRET: ${FUELYN_JWT_SECRET}
       FUELYN_PUBLIC_ORIGIN: http://localhost:3000
@@ -56,3 +61,28 @@ services:
       - /workspace/apps/web/node_modules
       - /workspace/packages/core/node_modules
       - /workspace/apps/web/.next
+
+  # Dev Postgres — the web BFF's `fuelyn_web` database. Host port 25432
+  # is mapped so a bare-metal `npm run dev:web` (outside Docker) can
+  # reach it too, matching the prisma.config.ts localhost default.
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    command: ["postgres", "-c", "port=25432"]
+    environment:
+      POSTGRES_DB: fuelyn_web
+      POSTGRES_USER: fuelyn
+      POSTGRES_PASSWORD: fuelyn
+      PGPORT: "25432"
+    ports:
+      - "25432:25432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -p 25432 -U fuelyn -d fuelyn_web"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata_dev:
