@@ -25,13 +25,12 @@ public class FuelynProperties {
     }
 
     public static class Security {
-        // No committed secret defaults: the real values are injected from
-        // FUELYN_HMAC_SECRET / FUELYN_JWT_SECRET via application.yml's
-        // ${FUELYN_*:} bindings (see docker-compose.yml, which maps the
-        // shared HMAC_SECRET / generated keys). Empty here means "not
-        // configured" rather than a guessable placeholder in source.
+        // No committed secret default: the real value is injected from
+        // FUELYN_HMAC_SECRET via application.yml's ${FUELYN_*:} binding
+        // (see docker-compose.yml, which maps the shared HMAC_SECRET).
+        // Empty here means "not configured" rather than a guessable
+        // placeholder in source.
         private String hmacSecret = "";
-        private String jwtSecret = "";
         private String serviceId = "gateway";
         private List<String> apiKeys = new ArrayList<>();
         /**
@@ -44,8 +43,6 @@ public class FuelynProperties {
 
         public String getHmacSecret() { return hmacSecret; }
         public void setHmacSecret(String hmacSecret) { this.hmacSecret = hmacSecret; }
-        public String getJwtSecret() { return jwtSecret; }
-        public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }
         public String getServiceId() { return serviceId; }
         public void setServiceId(String serviceId) { this.serviceId = serviceId; }
         public List<String> getApiKeys() { return apiKeys; }

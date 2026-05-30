@@ -2,7 +2,6 @@
 # ============================================================
 # Generate a working .env file for local docker-compose.
 #
-# - Creates an RSA 2048 keypair for JWT (RS256)
 # - Generates 32-byte hex secrets for HMAC + API keys + cron
 # - Refuses to overwrite an existing .env (use `--force` to override)
 # ============================================================
@@ -21,15 +20,6 @@ if ! command -v openssl >/dev/null 2>&1; then
   echo "[!] openssl is required" >&2
   exit 1
 fi
-
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-openssl genpkey -algorithm RSA -out "$TMP/private.pem" -pkeyopt rsa_keygen_bits:2048 >/dev/null 2>&1
-openssl rsa -in "$TMP/private.pem" -pubout -out "$TMP/public.pem" >/dev/null 2>&1
-
-JWT_PRIVATE_KEY="$(awk '{printf "%s\\n", $0}' "$TMP/private.pem")"
-JWT_PUBLIC_KEY="$(awk '{printf "%s\\n", $0}' "$TMP/public.pem")"
 
 HMAC_SECRET="$(openssl rand -hex 32)"
 API_KEY_1="$(openssl rand -hex 32)"
@@ -57,10 +47,6 @@ CRON_SECRET=$CRON_SECRET
 # Web (Next.js BFF) secrets
 FUELYN_JWT_SECRET=$FUELYN_JWT_SECRET
 FUELYN_ADMIN_TOKEN=$FUELYN_ADMIN_TOKEN
-
-# RS256 keypair (PEM, newlines escaped as \\n for env transport)
-JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY"
-JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY"
 
 # External APIs (fill in real values)
 TANKERKOENIG_API_KEY=

@@ -30,7 +30,6 @@
         <spring-cloud.version>2024.0.3</spring-cloud.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <caffeine.version>3.2.4</caffeine.version>
-        <jjwt.version>0.13.0</jjwt.version>
         <shedlock.version>7.7.0</shedlock.version>
         <logstash-logback.version>9.0</logstash-logback.version>
         <spotless.version>3.5.1</spotless.version>
@@ -61,23 +60,6 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
-            </dependency>
-
-            <!-- JWT -->
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.version}</version>
             </dependency>
 
             <!-- ShedLock (distributed scheduling) -->

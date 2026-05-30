@@ -154,8 +154,6 @@ Placeholders/zu kurz/zu wenig Entropie):
 
 ```bash
 export HMAC_SECRET="$(openssl rand -hex 32)"
-export JWT_PUBLIC_KEY="$(awk '{printf \"%s\\n\",$0}' public.pem)"
-export JWT_PRIVATE_KEY="$(awk '{printf \"%s\\n\",$0}' private.pem)"
 export TANKERKOENIG_API_KEY=...
 ```
 
@@ -195,7 +193,7 @@ GitHub Actions führt bei jedem Push/PR aus:
 | Schicht | Maßnahme |
 |---------|----------|
 | **Secrets**           | Entropy + Letter-Run-Policy lehnt Placeholder ab |
-| **JWT**               | RS256 (asymmetrisch); Verify-only Mode für nicht-issuende Services |
+| **Service-Auth**      | HMAC-SHA256 (timestamp:body), Replay-Schutz (5 min), Body-Cap |
 | **CRON-Endpunkte**    | `timingSafeEqual` (Node `crypto`) |
 | **CSP / HSTS**        | Edge-Middleware; per-Request Nonce |
 | **Rate Limit**        | Lazy-Sweep In-Memory + Trusted-Proxy-Opt-in |

@@ -370,7 +370,7 @@ All backend services already exist and are healthy in this monorepo — see `doc
 
 - Flyway migrations
 - ShedLock for distributed scheduling
-- RS256 JWT (asymmetric)
+- HMAC-SHA256 service-to-service request signing (replay-protected)
 - Resilience4j circuit breakers
 - Micrometer + OpenTelemetry tracing bridge
 - Logback JSON logs (`logstash-logback-encoder`)

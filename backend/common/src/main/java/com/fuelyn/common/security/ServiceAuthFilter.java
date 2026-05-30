@@ -17,17 +17,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
- * Servlet filter that validates inter-service requests using JWT tokens or HMAC signatures.
+ * Servlet filter that validates inter-service requests using HMAC signatures.
  *
- * <p>For every incoming request (except public endpoints), this filter checks for
- * one of two authentication mechanisms:</p>
- * <ol>
- *   <li><strong>JWT Token</strong> via {@code X-Service-Token} header - verifies the
- *       token is valid and not expired.</li>
- *   <li><strong>HMAC Signature</strong> via {@code X-Signature}, {@code X-Timestamp},
- *       and {@code X-Service-Id} headers - verifies the request body integrity and
- *       freshness.</li>
- * </ol>
+ * <p>For every incoming request (except public endpoints), this filter verifies
+ * an <strong>HMAC Signature</strong> via the {@code X-Signature},
+ * {@code X-Timestamp}, and {@code X-Service-Id} headers - confirming the request
+ * body integrity and freshness.</p>
  *
  * <p>Public endpoints (health checks, actuator, Swagger) are excluded from
  * authentication to allow monitoring and documentation access.</p>
@@ -35,22 +30,16 @@ import java.util.Set;
  * <h3>Authentication Flow</h3>
  * <pre>
  * Request -> Check if public endpoint -> YES -> pass through
- *                                     -> NO  -> Check X-Service-Token (JWT)
+ *                                     -> NO  -> Check X-Signature (HMAC)
  *                                                -> valid -> pass through
- *                                                -> missing/invalid -> Check X-Signature (HMAC)
- *                                                                      -> valid -> pass through
- *                                                                      -> invalid -> 401 Unauthorized
+ *                                                -> invalid -> 401 Unauthorized
  * </pre>
  *
- * @see JwtTokenProvider
  * @see HmacRequestSigner
  */
 public class ServiceAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(ServiceAuthFilter.class);
-
-    /** Header containing the JWT service token. */
-    public static final String HEADER_SERVICE_TOKEN = "X-Service-Token";
 
     /** Header containing the HMAC signature. */
     public static final String HEADER_SIGNATURE = "X-Signature";
@@ -82,15 +71,14 @@ public class ServiceAuthFilter extends OncePerRequestFilter {
      */
     private static final int DEFAULT_MAX_SIGNED_BODY_BYTES = 256 * 1024;
 
-    private final JwtTokenProvider jwtTokenProvider;
     private final String hmacSecret;
     private final int maxSignedBodyBytes;
 
     /**
      * Constructs a new service authentication filter with the default body cap.
      */
-    public ServiceAuthFilter(JwtTokenProvider jwtTokenProvider, String hmacSecret) {
-        this(jwtTokenProvider, hmacSecret, DEFAULT_MAX_SIGNED_BODY_BYTES);
+    public ServiceAuthFilter(String hmacSecret) {
+        this(hmacSecret, DEFAULT_MAX_SIGNED_BODY_BYTES);
     }
 
     /**
@@ -100,8 +88,7 @@ public class ServiceAuthFilter extends OncePerRequestFilter {
      *                           for HMAC verification; requests exceeding
      *                           this limit are rejected with 413.
      */
-    public ServiceAuthFilter(JwtTokenProvider jwtTokenProvider, String hmacSecret, int maxSignedBodyBytes) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    public ServiceAuthFilter(String hmacSecret, int maxSignedBodyBytes) {
         this.hmacSecret = hmacSecret;
         this.maxSignedBodyBytes = maxSignedBodyBytes;
     }
@@ -119,20 +106,7 @@ public class ServiceAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Try JWT authentication first
-        String serviceToken = request.getHeader(HEADER_SERVICE_TOKEN);
-        if (serviceToken != null && !serviceToken.isBlank()) {
-            if (jwtTokenProvider.isValid(serviceToken)) {
-                String serviceId = jwtTokenProvider.getServiceId(serviceToken);
-                log.debug("Authenticated service '{}' via JWT for {} {}", serviceId, request.getMethod(), path);
-                request.setAttribute("authenticatedServiceId", serviceId);
-                filterChain.doFilter(request, response);
-                return;
-            }
-            log.warn("Invalid JWT token received for {} {}", request.getMethod(), path);
-        }
-
-        // Fall back to HMAC signature verification
+        // HMAC signature verification
         String signature = request.getHeader(HEADER_SIGNATURE);
         String timestamp = request.getHeader(HEADER_TIMESTAMP);
         String serviceId = request.getHeader(HEADER_SERVICE_ID);
