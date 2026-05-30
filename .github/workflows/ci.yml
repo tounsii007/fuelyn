@@ -50,12 +50,23 @@ jobs:
         run: npx tsc --noEmit -p apps/web/tsconfig.typecheck.json
 
       # Expo/React-Native stub. Type-checked against its own tsconfig
-      # (jsx: react-jsx, src/**). Note: this gates the TS *code*, not
-      # Expo-SDK dependency alignment — `expo-doctor` currently reports
-      # version drift (async-storage major, RN minor, TS major) that is
-      # a separate, deliberate decision and intentionally not gated here.
+      # (jsx: react-jsx, src/**). This gates the TS *code*; the Expo-SDK
+      # dependency alignment is gated by the next step.
       - name: TypeScript — apps/mobile
         run: npx tsc --noEmit -p apps/mobile/tsconfig.json
+
+      # Expo-SDK dependency alignment gate. `expo install --check` is the
+      # deterministic, offline core of `expo-doctor`: it validates each
+      # native module in apps/mobile against the installed Expo SDK's
+      # bundledNativeModules and exits 1 on drift. This is what catches a
+      # Dependabot bump that moves a native module off the SDK pin (how
+      # async-storage reached 3.x and safe-area 5.8.0 past SDK 56's
+      # 2.2.0 / ~5.7.0). `typescript` and `react` are intentionally ahead
+      # of the SDK and exempted via expo.install.exclude in
+      # apps/mobile/package.json.
+      - name: Expo SDK alignment — apps/mobile
+        working-directory: apps/mobile
+        run: npx --no-install expo install --check
 
       # Was non-blocking while price-prediction.test.ts couldn't pass.
       # The root cause was recentTrendSlope using Date.now() instead of

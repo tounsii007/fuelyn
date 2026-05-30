@@ -33,6 +33,18 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'react-dom'
         update-types: ['version-update:semver-major']
+      # Expo-managed native modules (apps/mobile). Their versions are
+      # dictated by the installed Expo SDK (see `expo install --check` /
+      # Expo's bundledNativeModules), not by plain semver. Left to
+      # Dependabot, caret ranges drift them off the SDK pin: async-storage
+      # had already reached 3.x (SDK 56 wants 2.2.0) and safe-area 5.8.0
+      # (wants ~5.7.0). Pin them here; they move only via
+      # `expo install --fix` during a deliberate SDK upgrade.
+      - dependency-name: 'react-native'
+      - dependency-name: '@react-native-async-storage/async-storage'
+      - dependency-name: 'react-native-screens'
+      - dependency-name: 'react-native-safe-area-context'
+      - dependency-name: 'react-native-maps'
     labels:
       - 'dependencies'
       - 'frontend'
