@@ -51,13 +51,14 @@ export async function POST(request: NextRequest) {
   // attacker could trick a user into installing a wallet pass whose
   // QR code points at a phishing page.
   const origins = new Set(allowedOrigins());
-  let allowed = false;
-  try {
-    const u = new URL(parsed.data.deepLink);
-    allowed = origins.has(`${u.protocol}//${u.host}`);
-  } catch {
-    allowed = false;
-  }
+  const allowed: boolean = (() => {
+    try {
+      const u = new URL(parsed.data.deepLink);
+      return origins.has(`${u.protocol}//${u.host}`);
+    } catch {
+      return false;
+    }
+  })();
   if (!allowed) {
     return NextResponse.json(
       { error: 'deepLink must point to this app' },

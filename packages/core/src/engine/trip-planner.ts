@@ -128,9 +128,9 @@ export function planTrip(input: TripPlannerInput): TripPlanResult {
     const horizonKm = currentKm + reachableKm;
 
     if (horizonKm >= totalKm) {
-      // Can finish without another stop — account for the fuel we'll burn.
-      const remainingKm = totalKm - currentKm;
-      tankLitres -= (remainingKm / 100) * vehicle.consumption;
+      // Can finish without another stop — no further state updates needed
+      // since the loop exits immediately. (Previously decremented tankLitres
+      // here for symmetry, but the value is never read again before return.)
       currentKm = totalKm;
       break;
     }

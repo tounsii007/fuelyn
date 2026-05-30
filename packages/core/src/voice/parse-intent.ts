@@ -368,7 +368,7 @@ function extractBrand(
 
 /** "45 liter", "45 litre", "45 l", "45,5 liter". Returns null if absent. */
 function extractLiters(text: string): number | null {
-  const re = /(-?\d+(?:[.,]\d+)?)\s*(?:l(?:itres?|iter|iters)?)\b/i;
+  const re = /(-?\d{1,4}(?:[.,]\d{1,3})?)\s*(?:l(?:itres?|iter|iters)?)\b/i;
   const m = re.exec(text);
   if (!m) return null;
   const n = Number(m[1]!.replace(',', '.'));
@@ -412,14 +412,14 @@ function extractPricePerLiter(text: string): number | null {
 
 /** "8 km", "8km", "radius 8". Returns null if absent. */
 function extractRadius(text: string): number | null {
-  const re = /(\d+(?:[.,]\d+)?)\s*km\b/i;
+  const re = /(\d{1,4}(?:[.,]\d{1,3})?)\s*km\b/i;
   const m = re.exec(text);
   if (m) {
     const n = Number(m[1]!.replace(',', '.'));
     if (Number.isFinite(n) && n > 0 && n <= 100) return n;
   }
   // "radius 8" / "umkreis 8"
-  const re2 = /(?:radius|umkreis|reichweite)\s+(\d+(?:[.,]\d+)?)/i;
+  const re2 = /(?:radius|umkreis|reichweite)\s+(\d{1,4}(?:[.,]\d{1,3})?)/i;
   const m2 = re2.exec(text);
   if (m2) {
     const n = Number(m2[1]!.replace(',', '.'));

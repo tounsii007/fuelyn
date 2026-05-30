@@ -126,6 +126,12 @@ model AuthToken {
   tokenHash String   @unique
   /** "magic-link" | "session" */
   kind      String
+  /** Email the link was issued for. Bound at issue time so /claim
+   *  resolves the target account from the token, never the request
+   *  body — otherwise a valid link could be redeemed against another
+   *  account (takeover). Nullable for backward compat; new tokens
+   *  always set it and claim rejects tokens without it. */
+  email     String?
   expiresAt DateTime
   consumedAt DateTime?
   createdAt DateTime @default(now())

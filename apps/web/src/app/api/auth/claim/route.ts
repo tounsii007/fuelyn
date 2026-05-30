@@ -65,6 +65,16 @@ export async function POST(request: NextRequest) {
     return GENERIC_REJECT;
   }
 
+  // The email is bound to the token when the link is issued. A token
+  // may only be redeemed for the exact address it was mailed to —
+  // resolve the target account from the token's own email, never the
+  // request body. Trusting the body would let an attacker redeem a
+  // valid link (issued for an address they control) against any other
+  // account by passing the victim's email here (account takeover).
+  if (!auth.email || auth.email !== parsed.data.email) {
+    return GENERIC_REJECT;
+  }
+
   // The User who originally requested the magic link.
   const requestingUser = await prisma.user.findUnique({
     where: { id: auth.userId },

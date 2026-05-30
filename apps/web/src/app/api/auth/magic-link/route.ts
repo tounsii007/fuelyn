@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       userId: session.userId,
       kind: 'magic-link',
       tokenHash,
+      email: parsed.data.email,
       expiresAt,
     },
   });
