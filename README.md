@@ -185,7 +185,7 @@ Playwright/Cypress steht noch in Phase 4 der ROADMAP.
 
 GitHub Actions führt bei jedem Push/PR aus:
 - ESLint + TypeScript Type-Check (core + web)
-- Vitest (core + web)
+- Vitest + Coverage-Gates (core + web) — `--coverage` erzwingt die Schwellwerte aus den `vitest.config.ts` (Regressions-Floor)
 - Spotless (Java-Format-Check)
 - Maven test (alle Backend-Module)
 - Docker-Build-Smoke-Test (auf PRs)
