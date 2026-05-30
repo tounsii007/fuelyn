@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -139,20 +138,13 @@ public class ServiceAuthFilter extends OncePerRequestFilter {
         String serviceId = request.getHeader(HEADER_SERVICE_ID);
 
         if (signature != null && timestamp != null && serviceId != null) {
-            // Wrap request to allow reading the body multiple times
-            ContentCachingRequestWrapper wrappedRequest =
-                    (request instanceof ContentCachingRequestWrapper)
-                            ? (ContentCachingRequestWrapper) request
-                            : new ContentCachingRequestWrapper(request);
-
             // Bounded read of the request body for HMAC verification. The
             // previous unbounded readAllBytes() was a soft-DoS vector — any
             // attacker that could reach the filter could pin the JVM heap
-            // with a multi-GB upload before the cache wrapper even ran out
-            // of memory.
+            // with a multi-GB upload before running out of memory.
             byte[] cached;
             try {
-                cached = readBodyWithCap(wrappedRequest.getInputStream(), maxSignedBodyBytes);
+                cached = readBodyWithCap(request.getInputStream(), maxSignedBodyBytes);
             } catch (BodyTooLargeException tooBig) {
                 log.warn("HMAC body exceeded {} bytes from service '{}' for {} {}",
                         maxSignedBodyBytes, serviceId, request.getMethod(), path);
@@ -168,8 +160,13 @@ public class ServiceAuthFilter extends OncePerRequestFilter {
 
             if (HmacRequestSigner.verify(body, timestamp, signature, hmacSecret)) {
                 log.debug("Authenticated service '{}' via HMAC for {} {}", serviceId, request.getMethod(), path);
-                wrappedRequest.setAttribute("authenticatedServiceId", serviceId);
-                filterChain.doFilter(wrappedRequest, response);
+                // Reading the body above consumed the single-pass servlet
+                // stream. Replay those exact bytes downstream so the
+                // controller's @RequestBody parsing still works.
+                CachedBodyHttpServletRequest replayable =
+                        new CachedBodyHttpServletRequest(request, cached);
+                replayable.setAttribute("authenticatedServiceId", serviceId);
+                filterChain.doFilter(replayable, response);
                 return;
             }
             log.warn("Invalid HMAC signature from service '{}' for {} {}", serviceId, request.getMethod(), path);

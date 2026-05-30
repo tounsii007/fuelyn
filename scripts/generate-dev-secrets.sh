@@ -36,6 +36,14 @@ API_KEY_1="$(openssl rand -hex 32)"
 CRON_SECRET="$(openssl rand -hex 32)"
 POSTGRES_PASSWORD="$(openssl rand -hex 16)"
 
+# Web (Next.js BFF) secrets. FUELYN_JWT_SECRET is REQUIRED by
+# docker-compose.yml (the web service uses ${FUELYN_JWT_SECRET:?}),
+# so the stack won't start without it. FUELYN_ADMIN_TOKEN gates the
+# moderation queue (/api/admin/*); without it those endpoints
+# fail closed (403).
+FUELYN_JWT_SECRET="$(openssl rand -hex 32)"
+FUELYN_ADMIN_TOKEN="$(openssl rand -hex 32)"
+
 cat > "$ENV_FILE" <<EOF
 # Generated $(date -u +"%Y-%m-%dT%H:%M:%SZ") by scripts/generate-dev-secrets.sh
 # DO NOT COMMIT. Already in .gitignore.
@@ -45,6 +53,10 @@ POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 HMAC_SECRET=$HMAC_SECRET
 API_KEY_1=$API_KEY_1
 CRON_SECRET=$CRON_SECRET
+
+# Web (Next.js BFF) secrets
+FUELYN_JWT_SECRET=$FUELYN_JWT_SECRET
+FUELYN_ADMIN_TOKEN=$FUELYN_ADMIN_TOKEN
 
 # RS256 keypair (PEM, newlines escaped as \\n for env transport)
 JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY"

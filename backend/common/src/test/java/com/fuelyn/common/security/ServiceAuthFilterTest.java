@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +19,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -174,6 +176,34 @@ class ServiceAuthFilterTest {
             CountingFilterChain chain = new CountingFilterChain();
             filter.doFilter(request, new MockHttpServletResponse(), chain);
             assertThat(chain.invocations).isEqualTo(1);
+        }
+
+        @Test
+        void validHmac_bodyRemainsReadableDownstream() throws Exception {
+            // Regression guard: the filter reads the (single-pass) body to
+            // verify the HMAC, so it MUST replay those bytes downstream or
+            // every signed POST would reach the controller with an empty
+            // @RequestBody.
+            String body = "{\"hello\":\"world\",\"n\":42}";
+            String ts = String.valueOf(System.currentTimeMillis());
+            String sig = HmacRequestSigner.sign(body, ts, SECRET);
+
+            MockHttpServletRequest request = req("POST", "/api/v1/internal/x");
+            request.setContent(body.getBytes(StandardCharsets.UTF_8));
+            request.addHeader(ServiceAuthFilter.HEADER_SIGNATURE, sig);
+            request.addHeader(ServiceAuthFilter.HEADER_TIMESTAMP, ts);
+            request.addHeader(ServiceAuthFilter.HEADER_SERVICE_ID, "price-service");
+
+            CapturingFilterChain chain = new CapturingFilterChain();
+            filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+            assertThat(chain.captured).isNotNull();
+            byte[] downstream = chain.captured.getInputStream().readAllBytes();
+            assertThat(new String(downstream, StandardCharsets.UTF_8)).isEqualTo(body);
+            // Re-readable: a second read returns the same bytes, not an
+            // exhausted stream.
+            byte[] secondRead = chain.captured.getInputStream().readAllBytes();
+            assertThat(new String(secondRead, StandardCharsets.UTF_8)).isEqualTo(body);
         }
 
         @Test
@@ -335,6 +365,15 @@ class ServiceAuthFilterTest {
         @Override
         public void doFilter(ServletRequest req, ServletResponse res) {
             invocations++;
+        }
+    }
+
+    /** Captures the request handed downstream so the test can re-read its body. */
+    private static final class CapturingFilterChain implements FilterChain {
+        HttpServletRequest captured;
+        @Override
+        public void doFilter(ServletRequest req, ServletResponse res) {
+            captured = (HttpServletRequest) req;
         }
     }
 
