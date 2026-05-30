@@ -1,6 +1,0 @@
-target/
-data/
-*.db
-*.jar
-.idea/
-*.iml
