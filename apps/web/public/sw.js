@@ -39,6 +39,21 @@ const SHELL_PRECACHE = ['/', '/manifest.json', '/icon.svg'];
 // quota with map tiles.
 const TILE_CACHE_MAX_ENTRIES = 800;
 
+// Tile-CDN allow-list. Matched as an exact host OR a dot-anchored
+// subdomain (e.g. `a.tile.openstreetmap.org`). A bare
+// `hostname.endsWith('tile.openstreetmap.org')` would ALSO match a
+// hostile `eviltile.openstreetmap.org`, so we anchor on the leading dot.
+const TILE_HOSTS = [
+  'basemaps.cartocdn.com',
+  'tile.openstreetmap.org',
+  'tile.opentopomap.org',
+  'server.arcgisonline.com',
+];
+
+function isTileHost(hostname) {
+  return TILE_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -84,12 +99,7 @@ self.addEventListener('fetch', (event) => {
   if (req.headers.get('accept') === 'text/event-stream') return;
 
   // Map tiles → cache-first with LRU prune.
-  if (
-    url.hostname.endsWith('basemaps.cartocdn.com') ||
-    url.hostname.endsWith('tile.openstreetmap.org') ||
-    url.hostname.endsWith('tile.opentopomap.org') ||
-    url.hostname === 'server.arcgisonline.com'
-  ) {
+  if (isTileHost(url.hostname)) {
     event.respondWith(cacheFirst(req, TILES_CACHE, { lruCap: TILE_CACHE_MAX_ENTRIES }));
     return;
   }

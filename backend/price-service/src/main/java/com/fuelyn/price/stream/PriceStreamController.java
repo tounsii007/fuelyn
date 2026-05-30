@@ -22,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -157,9 +158,7 @@ public class PriceStreamController {
 
         SseEmitter emitter = new SseEmitter(0L); // never auto-timeout — we handle it via heartbeat
 
-        Set<String> filter = (stations == null || stations.isBlank())
-                ? Set.of()
-                : Set.of(stations.split("\\s*,\\s*"));
+        Set<String> filter = parseStationFilter(stations);
 
         Subscription sub = new Subscription(emitter, filter);
         subscriptions.add(sub);
@@ -287,6 +286,40 @@ public class PriceStreamController {
             subscriptions.remove(sub);
             try { sub.emitter().complete(); } catch (Exception ignored) {}
         }
+    }
+
+    /**
+     * Upper bound on the {@code ?stations=} filter string we will parse.
+     * The split itself is linear, but we still cap the raw length so a
+     * pathologically long query param cannot pin a request thread.
+     */
+    private static final int MAX_STATIONS_FILTER_LEN = 4096;
+
+    /**
+     * Parse the comma-separated {@code stations} filter into a set of IDs.
+     *
+     * <p>Uses a literal-comma split (not a {@code \s*,\s*} regex) to avoid
+     * super-linear backtracking on hostile input, trims each token, and
+     * drops blanks. The result set also deduplicates — the previous
+     * {@code Set.of(...)} would have thrown on a repeated station id.
+     * Over-long inputs are truncated rather than rejected so a legitimate
+     * (tiny) favourites list always works.</p>
+     */
+    private static Set<String> parseStationFilter(String stations) {
+        if (stations == null || stations.isBlank()) {
+            return Set.of();
+        }
+        String bounded = stations.length() > MAX_STATIONS_FILTER_LEN
+                ? stations.substring(0, MAX_STATIONS_FILTER_LEN)
+                : stations;
+        Set<String> ids = new HashSet<>();
+        for (String token : bounded.split(",")) {
+            String id = token.trim();
+            if (!id.isEmpty()) {
+                ids.add(id);
+            }
+        }
+        return Set.copyOf(ids);
     }
 
     @SuppressWarnings("rawtypes")
