@@ -14,6 +14,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { backendFetch, BackendApiError } from '@/lib/api/backend-client';
+import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
+import { enforceSameOrigin } from '@/lib/auth/csrf';
+
+// Per-IP soft cap — the docstring's promised "second layer" (the backend
+// also rate-limits per device fingerprint). Generous enough for genuine
+// corrections, tight enough to neuter trivial spam loops.
+const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 interface ReportPayload {
   stationId: string;
@@ -24,6 +31,21 @@ interface ReportPayload {
 }
 
 export async function POST(request: NextRequest) {
+  // State-changing proxy → enforce same-origin + the custom CSRF header
+  // (the trust boundary the docstring promises), mirroring /api/prices/report.
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
+  // Per-IP soft cap. `await` works whether check() is sync (today) or async
+  // (after the shared-store limiter lands), so this stays correct either way.
+  const rl = await limiter.check(`report:${getClientKey(request)}`);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: 'Zu viele Meldungen — bitte später erneut versuchen.' },
+      { status: 429 },
+    );
+  }
+
   let body: ReportPayload;
   try {
     body = (await request.json()) as ReportPayload;

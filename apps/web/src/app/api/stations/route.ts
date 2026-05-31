@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
   const typeParam = searchParams.get('type') ?? 'e10';
   const sortParam = searchParams.get('sort') ?? 'dist';
   const type = typeParam as FuelType;
-  const sort = sortParam as 'price' | 'dist';
+  // Validate against the allow-list before forwarding upstream (mirrors the
+  // fuel-type check below) — never pass an unvalidated value to the provider.
+  const sort: 'price' | 'dist' = sortParam === 'price' ? 'price' : 'dist';
 
   if (lat == null || lng == null) {
     return NextResponse.json(

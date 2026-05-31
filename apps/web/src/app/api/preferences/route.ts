@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     const result = await backendFetch<{ payload: unknown; updatedAt: string }>(
       '/api/v1/users/me/preferences',
+      { headers: { authorization: auth } },
     );
     return NextResponse.json(result);
   } catch (err) {
@@ -68,7 +69,7 @@ export async function PUT(request: NextRequest) {
   try {
     await backendFetch<{ ok: true; updatedAt: string }>(
       '/api/v1/users/me/preferences',
-      { method: 'PUT', body: payload },
+      { method: 'PUT', body: payload, headers: { authorization: auth } },
     );
     return new NextResponse(null, { status: 204 });
   } catch (err) {

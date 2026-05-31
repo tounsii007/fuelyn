@@ -121,9 +121,11 @@ export function useCloudSync(): void {
     deviceIdRef.current = deviceId;
 
     void (async () => {
-      const result = await pull(deviceId);
-      if (!result) return;
-      for (const r of result.records) {
+      // .catch → null so a failed initial pull doesn't reject the IIFE and
+      // skip the pushedRef enable below (which would otherwise leave pushes
+      // disabled forever — silently breaking cloud sync after one bad pull).
+      const result = await pull(deviceId).catch(() => null);
+      for (const r of result?.records ?? []) {
         try {
           const payload = JSON.parse(r.payload);
           switch (r.kind) {

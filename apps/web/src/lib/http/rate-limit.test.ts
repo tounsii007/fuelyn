@@ -88,12 +88,15 @@ describe('getClientKey', () => {
     expect(getClientKey(req)).toBe('direct');
   });
 
-  it('uses x-forwarded-for when proxy trust is enabled', () => {
+  it('uses the RIGHTMOST x-forwarded-for hop (anti-spoof) when proxy trust is enabled', () => {
     process.env.RATE_LIMIT_TRUST_PROXY = '1';
 
+    // "1.2.3.4" is the client-supplied (spoofable) leftmost value; "10.0.0.1"
+    // is what our trusted proxy appended = the real peer. We must use the
+    // latter, otherwise a client can forge its rate-limit identity.
     const req = fakeRequest({ 'x-forwarded-for': '1.2.3.4, 10.0.0.1' });
 
-    expect(getClientKey(req)).toBe('1.2.3.4');
+    expect(getClientKey(req)).toBe('10.0.0.1');
   });
 
   it('falls back to x-real-ip when x-forwarded-for is missing', () => {

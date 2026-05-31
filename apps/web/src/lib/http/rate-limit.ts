@@ -71,14 +71,18 @@ export function getClientKey(request: NextRequest): string {
   const trustProxy = process.env.RATE_LIMIT_TRUST_PROXY === '1';
 
   if (trustProxy) {
+    // Prefer x-real-ip: a trusted proxy sets it to the real peer it saw.
+    const realIp = request.headers.get('x-real-ip')?.trim();
+    if (realIp) return realIp;
+    // Else take the RIGHTMOST x-forwarded-for entry — the one appended by our
+    // own trusted proxy (= the real peer). The leftmost values are
+    // client-supplied and trivially spoofable, so we never trust them.
     const xff = request.headers.get('x-forwarded-for');
     if (xff) {
-      // First value = original client, per RFC 7239 when proxies are trusted.
-      const first = xff.split(',')[0]?.trim();
-      if (first) return first;
+      const parts = xff.split(',').map((p) => p.trim()).filter(Boolean);
+      const last = parts[parts.length - 1];
+      if (last) return last;
     }
-    const realIp = request.headers.get('x-real-ip');
-    if (realIp) return realIp;
   }
 
   return 'direct';

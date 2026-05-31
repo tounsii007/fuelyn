@@ -52,6 +52,7 @@ export function ReportPriceDialog({
     try {
       await fetchJson<{ id: number; status: string }>('/api/reports', {
         method: 'POST',
+        headers: { 'X-Fuelyn-Csrf': '1' },
         body: {
           stationId,
           fuelType,

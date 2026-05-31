@@ -315,7 +315,7 @@ function computeDayOfWeekPattern(
     count: 0,
   }));
   for (const e of entries) {
-    const dow = new Date(e.date).getDay();
+    const dow = new Date(e.date).getUTCDay();
     const b = buckets[dow]!;
     b.sum += e.pricePerLiter;
     b.count += 1;
@@ -384,7 +384,7 @@ function computeStreaks(entries: ReadonlyArray<FuelLogEntry>): WrappedReport['st
   }
   const monthMap = new Map<number, number>();
   for (const e of entries) {
-    const m = new Date(e.date).getMonth();
+    const m = new Date(e.date).getUTCMonth();
     monthMap.set(m, (monthMap.get(m) ?? 0) + 1);
   }
   let topMonth: { month: number; visits: number } | null = null;
