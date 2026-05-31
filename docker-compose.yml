@@ -152,8 +152,6 @@ services:
       KAFKA_PRICES_TOPIC: fuelyn.prices.v1
       KAFKA_PUBLISHER_ENABLED: ${KAFKA_PUBLISHER_ENABLED:-true}
       HMAC_SECRET: ${HMAC_SECRET:?HMAC_SECRET required}
-      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY required}
-      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY required}
       API_KEY_1: ${API_KEY_1}
       TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY}
       OPENCHARGEMAP_API_KEY: ${OPENCHARGEMAP_API_KEY}
@@ -279,8 +277,6 @@ services:
       SERVER_PORT: "28820"
       MANAGEMENT_PORT: "29820"
       HMAC_SECRET: ${HMAC_SECRET}
-      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       # Tiered AI pipeline: try Ollama first, OpenAI second.
       # Set AI_PROVIDERS=heuristic to disable LLM enrichment entirely.
       AI_ENRICHMENT_ENABLED: ${AI_ENRICHMENT_ENABLED:-true}
@@ -334,8 +330,6 @@ services:
       PRICE_SERVICE_URI: http://price-service:28810
       AI_SERVICE_URI: http://ai-service:28820
       FUELYN_HMAC_SECRET: ${HMAC_SECRET}
-      FUELYN_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      FUELYN_JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       FUELYN_API_KEY: ${API_KEY_1}
       CORS_ORIGINS: https://localhost:49443,https://api.localhost:49443,https://fuelyn.localhost:49443,https://api.fuelyn.localhost:49443
     expose:

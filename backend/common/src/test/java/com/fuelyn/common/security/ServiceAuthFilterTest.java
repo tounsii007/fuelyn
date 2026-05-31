@@ -27,24 +27,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Unit tests for {@link ServiceAuthFilter} — the auth gate every
  * inter-service call passes through.
  *
- * <p>Uses Spring's MockHttp* + manual test doubles (no Mockito for the
- * filter chain or JwtTokenProvider) so the test stays compatible with
- * Java 26 — current Byte Buddy doesn't support 26 yet, and
- * {@code Mockito.mock(JwtTokenProvider.class)} fails to instantiate.
- * Manual stubs keep the suite framework-version-agnostic.</p>
+ * <p>Uses Spring's MockHttp* + a manual {@code FilterChain} test double
+ * (no Mockito) so the test stays compatible with Java 26 — current Byte
+ * Buddy doesn't support 26 yet. Manual stubs keep the suite
+ * framework-version-agnostic.</p>
  */
 class ServiceAuthFilterTest {
 
     private static final String SECRET = "unit-test-secret-that-is-at-least-32-chars";
     private static final int MAX_BODY = 1024;
 
-    private StubJwtTokenProvider jwt;
     private ServiceAuthFilter filter;
 
     @BeforeEach
     void setUp() {
-        jwt = new StubJwtTokenProvider();
-        filter = new ServiceAuthFilter(jwt, SECRET, MAX_BODY);
+        filter = new ServiceAuthFilter(SECRET, MAX_BODY);
     }
 
     private MockHttpServletRequest req(String method, String path) {
@@ -102,58 +99,6 @@ class ServiceAuthFilterTest {
 
             assertThat(chain.invocations).isEqualTo(0);
             assertThat(response.getStatus()).isEqualTo(401);
-        }
-    }
-
-    @Nested
-    @DisplayName("JWT auth path")
-    class JwtAuth {
-
-        @Test
-        void validJwt_passesThrough_andRecordsServiceId() throws Exception {
-            jwt.accept("good-token", "price-service");
-
-            MockHttpServletRequest request = req("GET", "/api/v1/internal/x");
-            request.addHeader(ServiceAuthFilter.HEADER_SERVICE_TOKEN, "good-token");
-            CountingFilterChain chain = new CountingFilterChain();
-
-            filter.doFilter(request, new MockHttpServletResponse(), chain);
-
-            assertThat(chain.invocations).isEqualTo(1);
-            assertThat(request.getAttribute("authenticatedServiceId")).isEqualTo("price-service");
-        }
-
-        @Test
-        void invalidJwt_andNoHmac_returns401() throws Exception {
-            // jwt is empty stub → isValid() returns false for everything.
-            MockHttpServletRequest request = req("GET", "/api/v1/internal/x");
-            request.addHeader(ServiceAuthFilter.HEADER_SERVICE_TOKEN, "bad-token");
-            MockHttpServletResponse response = new MockHttpServletResponse();
-            CountingFilterChain chain = new CountingFilterChain();
-
-            filter.doFilter(request, response, chain);
-
-            assertThat(chain.invocations).isEqualTo(0);
-            assertThat(response.getStatus()).isEqualTo(401);
-        }
-
-        @Test
-        void invalidJwt_butValidHmac_passesViaHmacFallback() throws Exception {
-            String body = "{\"a\":1}";
-            String ts = String.valueOf(System.currentTimeMillis());
-            String sig = HmacRequestSigner.sign(body, ts, SECRET);
-
-            MockHttpServletRequest request = req("POST", "/api/v1/internal/x");
-            request.setContent(body.getBytes());
-            request.addHeader(ServiceAuthFilter.HEADER_SERVICE_TOKEN, "bad-token");
-            request.addHeader(ServiceAuthFilter.HEADER_SIGNATURE, sig);
-            request.addHeader(ServiceAuthFilter.HEADER_TIMESTAMP, ts);
-            request.addHeader(ServiceAuthFilter.HEADER_SERVICE_ID, "price-service");
-
-            CountingFilterChain chain = new CountingFilterChain();
-            filter.doFilter(request, new MockHttpServletResponse(), chain);
-
-            assertThat(chain.invocations).isEqualTo(1);
         }
     }
 
@@ -376,64 +321,4 @@ class ServiceAuthFilterTest {
             captured = (HttpServletRequest) req;
         }
     }
-
-    /**
-     * Manual stub instead of Mockito.mock — Java 26 + Byte Buddy 1.x are
-     * incompatible at the time of writing. Sufficient for our needs because
-     * we only consult {@code isValid} and {@code getServiceId} from the
-     * filter, both of which we drive deterministically.
-     */
-    private static final class StubJwtTokenProvider extends JwtTokenProvider {
-        private String acceptedToken;
-        private String acceptedServiceId;
-
-        StubJwtTokenProvider() {
-            super(buildPropsForStub());
-        }
-
-        void accept(String token, String serviceId) {
-            this.acceptedToken = token;
-            this.acceptedServiceId = serviceId;
-        }
-
-        @Override
-        public boolean isValid(String token) {
-            return acceptedToken != null && acceptedToken.equals(token);
-        }
-
-        @Override
-        public String getServiceId(String token) {
-            return acceptedServiceId;
-        }
-
-        private static com.fuelyn.common.config.SecurityProperties buildPropsForStub() {
-            com.fuelyn.common.config.SecurityProperties p =
-                    new com.fuelyn.common.config.SecurityProperties();
-            p.setHmacSecret("unit-test-secret-that-is-at-least-32-chars-long");
-            // A real RSA public key is required by JwtTokenProvider's
-            // constructor. We use a fixed throwaway 2048-bit key generated
-            // once with `openssl genrsa | openssl rsa -pubout`. The stub
-            // never actually verifies anything — its overrides short-circuit
-            // before the real parser runs.
-            p.setJwtPublicKey(STUB_PUBLIC_KEY_PEM);
-            p.setServiceId("test-service");
-            return p;
-        }
-    }
-
-    /**
-     * Throwaway 2048-bit RSA SPKI for the stub. Fixed so the test is
-     * deterministic; safe because nothing here ever actually signs or
-     * verifies — the stub overrides the relevant methods.
-     */
-    private static final String STUB_PUBLIC_KEY_PEM =
-            "-----BEGIN PUBLIC KEY-----\n"
-            + "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtVTCDbOJxNZN9P5Z2v0J\n"
-            + "RGk8d9Ns2BB4o2H+w0bhzWzkSbW6h0pPEqZxImVZ20S0pXr8sEmXr4r9Iom79hdr\n"
-            + "tZ5J+zE2OIdJ1m5VjukNkjBpvxbIzd2+sP8AeqKxA6N+LD+v3MxHsbo/HvNGm/95\n"
-            + "g5wD/yPq3lFvB1aR0BZL8wkNwkyiqYmxC+YWqZJpVuXaA5ZukExf1ItM8VRwUSWk\n"
-            + "0iKwHYmEm6n/UfSzpyRhVvrNmFlQ6uAv6Z/AeKrNnz2Vhqcu3rjRr7NvN9z+yz0E\n"
-            + "yNcLbFPlPRTRr8EBKD13RGjZkb9phSOSphoVwa9sJjYmpZNX7wXaxVECBdYfYFV+\n"
-            + "0wIDAQAB\n"
-            + "-----END PUBLIC KEY-----\n";
 }

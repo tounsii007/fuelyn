@@ -55,7 +55,6 @@ spring:
               - Authorization
               - Content-Type
               - X-Request-Id
-              - X-Service-Token
               - X-Service-Id
               - X-Signature
               - X-Timestamp
@@ -74,8 +73,6 @@ spring:
 fuelyn:
   security:
     hmac-secret: "${FUELYN_HMAC_SECRET:}"
-    jwt-public-key: "${FUELYN_JWT_PUBLIC_KEY:}"
-    jwt-private-key: "${FUELYN_JWT_PRIVATE_KEY:}"
     service-id: gateway
     api-keys:
       - "${FUELYN_API_KEY:}"
