@@ -71,11 +71,16 @@ jobs:
       # Was non-blocking while price-prediction.test.ts couldn't pass.
       # The root cause was recentTrendSlope using Date.now() instead of
       # the options.now passed in by the test — fixed; re-gated.
-      - name: Vitest — packages/core
-        run: npm test --workspace=@fuelyn/core
+      #
+      # `--coverage` enforces the per-workspace thresholds declared in
+      # each vitest.config.ts (a regression floor, not a vanity target —
+      # core ~78%, web ~14%; see the configs). The plain `npm test` the
+      # pre-push hook runs stays coverage-free so the hook is fast.
+      - name: Vitest + coverage — packages/core
+        run: npm test --workspace=@fuelyn/core -- --coverage
 
-      - name: Vitest — apps/web
-        run: npm test --workspace=@fuelyn/web
+      - name: Vitest + coverage — apps/web
+        run: npm test --workspace=@fuelyn/web -- --coverage
 
   # ─── Java / Backend ─────────────────────────────────────
   java:
