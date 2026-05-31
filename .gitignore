@@ -50,6 +50,13 @@ backend/*/data/
 *.h2.db
 *.mv.db
 *.trace.db
+# Legacy web-BFF SQLite artifacts — persistence is Postgres now, but
+# guard against re-committing a stray dev.db / template if anyone runs
+# an old `prisma db push` against a file: URL.
+apps/web/prisma/*.db
+apps/web/prisma/*.db.template
+*.sqlite
+*.sqlite3
 
 ## ── IDE / Tooling ───────────────────────────
 .idea/

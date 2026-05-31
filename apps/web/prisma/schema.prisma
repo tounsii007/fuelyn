@@ -1,29 +1,31 @@
 // ============================================================
-// Fuelyn — Prisma Schema (SQLite)
+// Fuelyn — Prisma Schema (PostgreSQL)
 // Stores price history snapshots, station metadata, and
 // collection run logs for the price-history backend.
+//
+// Persistence is unified on Postgres across every environment
+// (local dev, docker-compose.dev, and production) — the web BFF
+// owns its OWN logical database (`fuelyn_web`) on the same
+// Postgres server the Java backend uses, kept separate from the
+// backend's Flyway-managed schema to avoid migration-tool /
+// table collisions. See docker-compose.yml + scripts/postgres-init.
 // ============================================================
 
 generator client {
-  provider   = "prisma-client-js"
-  // Prisma 7 default engine "client" requires a runtime adapter
-  // (e.g. @prisma/adapter-pg). For our SQLite dev / Postgres prod
-  // setup we don't want an adapter dependency, so we pin to the
-  // legacy "library" engine which carries its own native binary.
-  // Without this, `next build` page-data collection blows up with:
-  //   PrismaClientConstructorValidationError: engine type "client"
-  //   requires either "adapter" or "accelerateUrl" to be provided.
+  provider = "prisma-client-js"
+  // We drive the connection through the @prisma/adapter-pg driver
+  // adapter (see src/lib/db/client.ts). Pinning the legacy "library"
+  // engine keeps the same proven engine+adapter combo the SQLite
+  // (adapter-libsql) setup used; without the pin, `next build`
+  // page-data collection can trip on engine/adapter validation.
   engineType = "library"
 }
 
-// Iter AH: SQLite is fine for `pnpm dev` but ephemeral on
-// Vercel serverless and contention-bound under concurrent writes.
-// For production, switch this provider to "postgresql" + supply
-// DATABASE_URL via prisma.config.ts (Prisma 7 no longer accepts
-// `url = env(...)` inside the schema itself — see prisma.config.ts
-// in this folder).
+// Connection URL comes from prisma.config.ts (Prisma 7 no longer
+// accepts `url = env(...)` inside the schema itself). At runtime the
+// app reads DATABASE_URL directly via the pg adapter.
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model PriceSnapshot {

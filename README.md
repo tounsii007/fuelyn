@@ -145,9 +145,20 @@ npm install
 # Backend bauen + testen
 cd backend && mvn clean install
 
-# Web-App
+# Web-BFF-Datenbank: eigene `fuelyn_web`-Postgres auf :25432. Der
+# Dev-Compose-Service legt die DB beim ersten Start automatisch an.
+docker compose -f docker-compose.dev.yml up -d postgres
+
+# Web-App (erwartet Postgres auf localhost:25432 — siehe apps/web/.env.example)
 npm run dev:web   # http://localhost:3000
 ```
+
+Die Web-BFF persistiert seit der Postgres-Umstellung in eine **eigene
+logische DB `fuelyn_web`** (Prisma + `@prisma/adapter-pg`) — getrennt
+von der Flyway-verwalteten Backend-DB `fuelyn`, beide auf demselben
+Postgres-Container. `DATABASE_URL` wird in `docker-compose.dev.yml`
+gesetzt; bare-metal liest `npm run dev:web` den localhost-Default aus
+`apps/web/.env.example`. Die Unit-Tests brauchen **keine** laufende DB.
 
 Mindest-ENV für ein Java-Service-Start (Backend verweigert Boot bei
 Placeholders/zu kurz/zu wenig Entropie):

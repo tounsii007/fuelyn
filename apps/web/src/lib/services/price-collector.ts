@@ -1,10 +1,10 @@
 // ============================================================
 // Fuelyn — Price Collection Service
 // Server-side service that fetches prices from Tankerkoenig
-// and persists them to SQLite via Prisma.
+// and persists them to Postgres via Prisma.
 // ============================================================
 
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/lib/db/client';
 import {
   ApiClient,
   StationService,

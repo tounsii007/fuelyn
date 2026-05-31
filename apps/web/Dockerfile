@@ -37,10 +37,9 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 FROM node:26-alpine AS builder
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
-# Prisma 7 default engine "client" requires an adapter (e.g.
-# @prisma/adapter-pg). For our SQLite-dev / Postgres-prod setup we
-# don't want to pull in an adapter, so we pin to the legacy
-# "library" engine via the documented env-var. Both `prisma generate`
+# Pin the legacy "library" Prisma engine (the same engine the previous
+# SQLite/adapter-libsql setup ran). Postgres is driven through the
+# @prisma/adapter-pg driver adapter at runtime. Both `prisma generate`
 # (build-time) and `new PrismaClient()` (runtime) read this — the
 # runner stage below inherits it via the runtime ENV declaration.
 ENV PRISMA_CLIENT_ENGINE_TYPE=library
@@ -52,17 +51,11 @@ COPY . .
 # (otherwise TS sees `any` and strict checks fail in API routes).
 RUN cd apps/web && npx prisma generate
 
-# Pre-create a template SQLite DB with all tables baked in. The runner
-# stage copies this to /app/data/web.db on first boot (idempotent — the
-# entrypoint skips the copy when a real DB already exists). This lets
-# us avoid shipping the Prisma CLI + all its transitive deps (incl.
-# `effect`, which Next.js standalone-tracing doesn't pull in) into the
-# 290 MB runner image.
-RUN cd apps/web \
-    && DATABASE_URL="file:/tmp/web.db.template" npx prisma db push \
-        --accept-data-loss \
-    && cp /tmp/web.db.template /workspace/apps/web/prisma/web.db.template
-
+# The Postgres schema is applied to the live database at deploy time by
+# the `web-migrate` one-shot service (see docker-compose.yml), which
+# reuses THIS builder image's Prisma CLI. That keeps the slim runner
+# below free of the CLI + its `effect` transitive (which Next.js
+# standalone tracing doesn't pull in anyway).
 RUN npm run build --workspace=@fuelyn/web
 
 # ─── Runtime (Next.js standalone) ────────────────────────
@@ -78,12 +71,6 @@ ENV PRISMA_CLIENT_ENGINE_TYPE=library
 # Non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-# Pre-create the SQLite data dir owned by nextjs so the named volume
-# (`web_data:/app/data` in docker-compose) inherits a writable owner.
-# Without this the volume is mounted with root:root from the host docker
-# daemon and the entrypoint's `prisma db push` fails on `EACCES`.
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
-
 # `output: 'standalone'` + `outputFileTracingRoot` produces:
 #   .next/standalone/  <- entry script + minimal node_modules
 #   .next/static/      <- Next-emitted static chunks
@@ -92,30 +79,12 @@ COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/standalone/ 
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/.next/static     ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/public           ./apps/web/public
 
-# Prisma table seeding on container start.
-#
-# The standalone Next.js output traces *runtime* deps only — @prisma/client
-# and @prisma/adapter-libsql get pulled in, but the `prisma` CLI and its
-# transitive `effect` dep do not (they're build-time tools). Without them
-# the User/SyncRecord/Subscription/TelemetryEvent tables would never be
-# created in /app/data/web.db, and /api/sync /api/telemetry /api/auth/*
-# would 500 on every request.
-#
-# Solution: the builder stage already ran `prisma db push` against a
-# disposable /tmp DB and dropped the resulting empty-but-fully-schema'd
-# file at apps/web/prisma/web.db.template. We carry just that template
-# into the runner, and the entrypoint `cp`s it into /app/data/web.db on
-# first boot. Idempotent — subsequent boots see the real DB and skip.
-COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/prisma/web.db.template  ./apps/web/prisma/web.db.template
-
-# Entrypoint copies the template to the runtime DB path on first boot,
-# then execs the Next.js standalone server. `exec` so SIGTERM reaches
-# node directly instead of being trapped by the shell.
-COPY --from=builder --chown=nextjs:nodejs /workspace/apps/web/scripts/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
-
 USER nextjs
 EXPOSE 23700
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+# The schema lives in Postgres and is applied by the `web-migrate`
+# one-shot service before this container starts (see docker-compose.yml),
+# so there is nothing to seed here. The standalone server is the only
+# process — `node` as PID 1 receives SIGTERM directly for graceful
+# shutdown, no entrypoint shim needed.
 CMD ["node", "apps/web/server.js"]
