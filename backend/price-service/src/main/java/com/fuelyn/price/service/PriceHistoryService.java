@@ -110,10 +110,16 @@ public class PriceHistoryService {
             return Map.of("stations", 0, "averagePrice", 0, "fuelType", fuelType, "days", days);
         }
 
-        List<String> ids = stationsInArea.stream().map(StationMeta::getId).toList();
+        // Bound the query: cap the station set so a huge radius can't pull an
+        // unbounded snapshot result into memory. 1 000 stations comfortably
+        // covers any sane area; pathological requests are clamped, not OOM'd.
+        List<String> ids = stationsInArea.stream().map(StationMeta::getId).limit(1000).toList();
         LocalDateTime since = LocalDateTime.now().minusDays(days);
+        // Ordered so PriceStatistics.compute sees chronological snapshots and the
+        // trend is deterministic rather than dependent on arbitrary row order.
         List<PriceSnapshot> snapshots =
-                snapshotRepo.findByStationIdInAndFuelTypeAndTimestampAfter(ids, fuelType, since);
+                snapshotRepo.findByStationIdInAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
+                        ids, fuelType, since);
 
         if (snapshots.isEmpty()) {
             return Map.of(

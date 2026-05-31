@@ -91,6 +91,14 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Lo
     List<PriceSnapshot> findByStationIdInAndFuelTypeAndTimestampAfter(
             List<String> stationIds, String fuelType, LocalDateTime after);
 
+    /**
+     * Same as {@link #findByStationIdInAndFuelTypeAndTimestampAfter} but returned in chronological
+     * order, so a caller computing a trend sees the snapshots time-ordered rather than in arbitrary
+     * row order.
+     */
+    List<PriceSnapshot> findByStationIdInAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
+            List<String> stationIds, String fuelType, LocalDateTime after);
+
     /** Count snapshots recorded after a given timestamp (for monitoring). */
     long countByTimestampAfter(LocalDateTime after);
 

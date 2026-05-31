@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fuelyn.price.model.dto.ChargingStationResponse.*;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 
 /** Resilient OpenChargeMap API client for EV charging station search. */
@@ -51,6 +52,7 @@ public class OpenChargeMapClient implements ChargingStationClient {
 
     /** Searches for EV charging stations near the given coordinates. */
     @CircuitBreaker(name = "openchargemap", fallbackMethod = "searchChargingFallback")
+    @RateLimiter(name = "external-api") // bound outbound calls to the quota'd OCM API
     @Retry(name = "tankerkoenig") // reuse retry config
     public List<ChargingStation> searchChargingStations(double lat, double lng, double radiusKm) {
         StringBuilder urlBuilder =
