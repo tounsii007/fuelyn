@@ -268,6 +268,10 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+      # The model must be pulled + warmed by ollama-init before ai-service
+      # serves traffic — otherwise the first request races the warm-up.
+      ollama-init:
+        condition: service_completed_successfully
       redpanda:
         condition: service_healthy
       # Telemetry write-side: ai-service inserts into
@@ -362,10 +366,13 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://fuelyn:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:25432/fuelyn_web
+    # No --accept-data-loss in the prod stack: a destructive schema change must
+    # FAIL this migrate job (fail-safe) instead of silently dropping data. A
+    # proper `prisma migrate deploy` history is the recommended follow-up.
     command:
       - sh
       - -c
-      - cd apps/web && npx prisma db push --accept-data-loss --skip-generate
+      - cd apps/web && npx prisma db push --skip-generate
 
   web:
     build:
