@@ -8,8 +8,8 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/core/package.json ./packages/core/
 # Only install the web workspace + its transitive @fuelyn/core dep.
-# Skipping `apps/mobile` (Expo) and `apps/api` (Java) keeps the layer small
-# and avoids native-module install failures on Alpine.
+# Skipping `apps/mobile` (Expo) keeps the layer small and avoids
+# native-module install failures on Alpine.
 #
 # Network resilience:
 #   * BuildKit cache mount on /root/.npm — partial downloads survive a
