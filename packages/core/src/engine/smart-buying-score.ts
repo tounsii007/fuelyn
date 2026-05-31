@@ -118,6 +118,38 @@ function statsAroundDay(
     : { mean: 0, min: 0, count: 0 };
 }
 
+/**
+ * Build a per-fuel `{ sortedTs, prices }` market index. Snapshots without a
+ * fuelType match every fuel (the lite shape can't disambiguate). Shared by
+ * computeSmartBuyingScore and classifyFillsVsMarket so both stay in lockstep
+ * — and so callers evaluating many fills build it ONCE instead of re-sorting
+ * the market per fill.
+ */
+function buildMarketIndex(
+  fuels: Iterable<FuelType>,
+  market: readonly PriceSnapshot[],
+): Map<FuelType, { sortedTs: number[]; prices: number[] }> {
+  const marketByFuel = new Map<FuelType, { sortedTs: number[]; prices: number[] }>();
+  type TypedSnap = PriceSnapshot & { fuelType?: FuelType };
+  const all = market as TypedSnap[];
+  for (const ft of fuels) {
+    const buf: { ts: number; price: number }[] = [];
+    for (const s of all) {
+      if (s.fuelType && s.fuelType !== ft) continue;
+      const t = Date.parse(s.timestamp);
+      if (!Number.isFinite(t)) continue;
+      if (!Number.isFinite(s.price) || s.price <= 0) continue;
+      buf.push({ ts: t, price: s.price });
+    }
+    buf.sort((a, b) => a.ts - b.ts);
+    marketByFuel.set(ft, {
+      sortedTs: buf.map((x) => x.ts),
+      prices: buf.map((x) => x.price),
+    });
+  }
+  return marketByFuel;
+}
+
 function bandFromScore(score: number): SmartBuyingScore['band'] {
   if (score >= 90) return 'excellent';
   if (score >= 75) return 'great';
@@ -155,39 +187,13 @@ export function computeSmartBuyingScore(inputs: SmartBuyingInputs): SmartBuyingS
     fillsByFuel.set(e.fuelType, arr);
   }
 
-  // Group market snapshots by fuel as { sortedTs, prices } for
-  // fast windowed stats computation.
-  const marketByFuel = new Map<
-    FuelType,
-    { sortedTs: number[]; prices: number[] }
-  >();
-  // Snapshots arriving without a fuelType in this lite shape
-  // can't be matched — caller is responsible for pre-filtering
-  // OR using the typed PriceSnapshot from the Zustand store
-  // which DOES carry fuelType.
-  type TypedSnap = PriceSnapshot & { fuelType?: FuelType };
-  const all = market as TypedSnap[];
-  for (const ft of fillsByFuel.keys()) {
-    const buf: { ts: number; price: number }[] = [];
-    for (const s of all) {
-      if (s.fuelType && s.fuelType !== ft) continue;
-      const t = Date.parse(s.timestamp);
-      if (!Number.isFinite(t)) continue;
-      if (!Number.isFinite(s.price) || s.price <= 0) continue;
-      buf.push({ ts: t, price: s.price });
-    }
-    buf.sort((a, b) => a.ts - b.ts);
-    marketByFuel.set(ft, {
-      sortedTs: buf.map((x) => x.ts),
-      prices: buf.map((x) => x.price),
-    });
-  }
+  // Build the per-fuel market index ONCE (shared with classifyFillsVsMarket).
+  const marketByFuel = buildMarketIndex(fillsByFuel.keys(), market);
 
   let evaluated = 0;
   let skipped = 0;
   let edgeSumEurPerL = 0; // Σ (market.mean − fill.price)
   let edgeWeightedSum = 0; // edge × liters → for total saved €
-  let weightSum = 0;
   let belowMarketCount = 0;
   let spreadCaptureSum = 0;
 
@@ -218,7 +224,6 @@ export function computeSmartBuyingScore(inputs: SmartBuyingInputs): SmartBuyingS
     const edge = stats.mean - e.pricePerLiter;
     edgeSumEurPerL += edge;
     edgeWeightedSum += edge * e.liters;
-    weightSum += e.liters;
     if (edge > 0) belowMarketCount++;
 
     // Spread capture: 1.0 = bought at the absolute cheapest in
@@ -290,4 +295,61 @@ export function computeSmartBuyingScore(inputs: SmartBuyingInputs): SmartBuyingS
     confidence,
     band: bandFromScore(score),
   };
+}
+
+// ─── Per-fill market classification (shared streak helper) ──────────────
+
+export type FillMarketOutcome = 'below' | 'at-or-above' | 'no-context';
+
+/**
+ * Classify each fill against the windowed market mean for its fuel, sharing
+ * ONE pre-built per-fuel market index instead of re-sorting the market per
+ * fill. Returns an outcome per entry in `log` order, mirroring
+ * computeSmartBuyingScore's single-fill result: 'below' ⟺ evaluated and
+ * under the market mean; 'at-or-above' ⟺ evaluated and not under it;
+ * 'no-context' ⟺ skipped (bad price/date, no market, or <3 samples).
+ *
+ * O(M log M + N·W): one sort of the market, then a windowed scan per fill —
+ * versus O(N·M log M) when computeSmartBuyingScore is called once per fill.
+ */
+export function classifyFillsVsMarket(
+  log: readonly FuelLogEntry[],
+  market: readonly PriceSnapshot[],
+  fuelType?: FuelType,
+): FillMarketOutcome[] {
+  const fuels = new Set<FuelType>();
+  for (const e of log) {
+    if (fuelType && e.fuelType !== fuelType) continue;
+    fuels.add(e.fuelType);
+  }
+  const marketByFuel = buildMarketIndex(fuels, market);
+
+  const out: FillMarketOutcome[] = [];
+  for (const e of log) {
+    if (fuelType && e.fuelType !== fuelType) {
+      out.push('no-context');
+      continue;
+    }
+    if (!Number.isFinite(e.pricePerLiter) || e.pricePerLiter <= 0) {
+      out.push('no-context');
+      continue;
+    }
+    const ts = Date.parse(e.date);
+    if (!Number.isFinite(ts)) {
+      out.push('no-context');
+      continue;
+    }
+    const mkt = marketByFuel.get(e.fuelType);
+    if (!mkt || mkt.sortedTs.length === 0) {
+      out.push('no-context');
+      continue;
+    }
+    const stats = statsAroundDay(mkt.sortedTs, mkt.prices, ts);
+    if (stats.count < 3) {
+      out.push('no-context');
+      continue;
+    }
+    out.push(stats.mean - e.pricePerLiter > 0 ? 'below' : 'at-or-above');
+  }
+  return out;
 }
