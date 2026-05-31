@@ -20,7 +20,7 @@
 
 import type { FuelLogEntry } from '../domain/types';
 import { entryCo2Kg } from './co2-tracking';
-import { computeSmartBuyingScore } from './smart-buying-score';
+import { computeSmartBuyingScore, classifyFillsVsMarket } from './smart-buying-score';
 import type { PriceSnapshot } from './best-time-heatmap';
 
 export type AchievementCategory = 'streak' | 'milestone' | 'co2' | 'time' | 'variety' | 'savings';
@@ -111,22 +111,22 @@ function buildCtx(log: readonly FuelLogEntry[], market: readonly PriceSnapshot[]
     if (!latest || e.date > latest) latest = e.date;
   }
 
-  // Smart-buying score gives us per-fill savings-classification
-  // indirectly. We compute the streak by re-evaluating each fill
-  // individually and counting consecutive "below market" runs.
+  // Smart-buying streak: classify each fill (in date order) against the
+  // windowed market mean for its fuel, counting consecutive "below market"
+  // runs. classifyFillsVsMarket builds the per-fuel market index ONCE
+  // (shared with computeSmartBuyingScore) instead of re-sorting the market
+  // for every fill — identical result, far less work on large logs.
   let smartFills = 0;
   let longestStreak = 0;
   let currentStreak = 0;
-  for (const e of sorted) {
-    const single = computeSmartBuyingScore({ log: [e], market });
-    const beat = single.evaluatedFills > 0 && single.components.consistency === 1;
-    if (beat) {
+  for (const outcome of classifyFillsVsMarket(sorted, market)) {
+    if (outcome === 'below') {
       smartFills++;
       currentStreak++;
       if (currentStreak > longestStreak) longestStreak = currentStreak;
-    } else if (single.evaluatedFills > 0) {
+    } else if (outcome === 'at-or-above') {
       // Only break the streak when we actually had market context;
-      // skipped fills don't count against the user.
+      // skipped fills ('no-context') don't count against the user.
       currentStreak = 0;
     }
   }
