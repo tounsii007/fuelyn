@@ -19,6 +19,9 @@ interface BackendRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
   timeout?: number;
+  /** Extra headers to forward (e.g. the caller's Authorization so the
+   *  gateway can resolve the user). Cannot override the service X-API-Key. */
+  headers?: Record<string, string>;
 }
 
 export class BackendApiError extends Error {
@@ -40,7 +43,7 @@ export async function backendFetch<T>(
   path: string,
   options: BackendRequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', body, timeout = TIMEOUT_MS } = options;
+  const { method = 'GET', body, timeout = TIMEOUT_MS, headers: extraHeaders } = options;
   const url = `${BACKEND_URL}${path}`;
 
   const controller = new AbortController();
@@ -48,8 +51,11 @@ export async function backendFetch<T>(
 
   try {
     const headers: Record<string, string> = {
-      'X-API-Key': API_KEY,
       Accept: 'application/json',
+      ...extraHeaders,
+      // Applied last so a caller-supplied header can't override the
+      // service credential the gateway authenticates us with.
+      'X-API-Key': API_KEY,
     };
 
     if (body != null) {
