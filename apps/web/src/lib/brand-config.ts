@@ -263,10 +263,18 @@ export function getBrandConfig(brand: string): BrandConfig {
   // Direct match
   if (BRAND_MAP[lower]) return BRAND_MAP[lower]!;
 
-  // Partial match (e.g. "ARAL AG" → "aral", "Shell Deutschland" → "shell")
-  for (const [key, config] of Object.entries(BRAND_MAP)) {
-    if (lower.includes(key) || key.includes(lower)) return config;
+  // Partial match (e.g. "ARAL AG" → "aral", "Shell Deutschland" → "shell").
+  // Match in ONE direction only — the brand string must CONTAIN a known key —
+  // and prefer the LONGEST matching key, so a short key can't accidentally
+  // grab an unrelated brand (the old bidirectional `key.includes(lower)` test
+  // mapped unrelated short names onto the wrong colours).
+  let bestKey: string | null = null;
+  for (const key of Object.keys(BRAND_MAP)) {
+    if (lower.includes(key) && (bestKey === null || key.length > bestKey.length)) {
+      bestKey = key;
+    }
   }
+  if (bestKey) return BRAND_MAP[bestKey]!;
 
   // Generate dynamic config from brand name
   const initials = brand.length <= 3

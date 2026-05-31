@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
 import { KNOWN_BRANDS, KNOWN_CHARGING_OPERATORS } from '@fuelyn/core';
@@ -45,6 +45,24 @@ export function FilterPanel() {
   const [connectorTypes, setConnectorTypes] = useState<ConnectorType[]>([...storeConnectorTypes]);
   const [chargingTypes, setChargingTypes] = useState<ChargingSpeed[]>([...storeChargingTypes]);
   const [minPowerKW, setMinPowerKW] = useState<number | null>(storeMinPowerKW);
+
+  // Re-sync the local working copy from the store each time the panel opens,
+  // so edits made elsewhere (BrandQuickFilter / AppShell) aren't clobbered by
+  // a stale draft when the user hits Apply. Only on the open transition — we
+  // don't wipe in-progress edits on every store tick.
+  useEffect(() => {
+    if (!isOpen) return;
+    setSelectedBrands([...filter.brands]);
+    setOnlyOpen(filter.onlyOpen);
+    setPriceMin(filter.priceMin ?? PRICE_MIN);
+    setPriceMax(filter.priceMax ?? PRICE_MAX);
+    setEnergyTypes([...storeEnergyTypes]);
+    setStationTypes([...storeStationTypes]);
+    setConnectorTypes([...storeConnectorTypes]);
+    setChargingTypes([...storeChargingTypes]);
+    setMinPowerKW(storeMinPowerKW);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync only when `isOpen` flips
+  }, [isOpen]);
 
   // Show EV filter section when electric types are selected
   const showEvFilters = useMemo(

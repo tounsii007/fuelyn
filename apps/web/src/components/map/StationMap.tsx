@@ -434,7 +434,16 @@ function MapController({
   const map = useMap();
   const prevCenter = useRef<[number, number] | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const guardTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const isProgrammatic = useRef(false);
+
+  // Clear pending timers on unmount so a late callback can't clear the
+  // programmatic-pan guard after this controller is gone, and so rapid
+  // recenters don't stack orphaned timers.
+  useEffect(() => () => {
+    clearTimeout(guardTimerRef.current);
+    clearTimeout(debounceRef.current);
+  }, []);
 
   useEffect(() => {
     if (!Number.isFinite(center[0]) || !Number.isFinite(center[1])) return;
@@ -452,7 +461,8 @@ function MapController({
 
     if (isFirstRender) {
       map.setView(center, zoom);
-      setTimeout(() => {
+      clearTimeout(guardTimerRef.current);
+      guardTimerRef.current = setTimeout(() => {
         isProgrammatic.current = false;
       }, 100);
       return;
@@ -463,7 +473,8 @@ function MapController({
       easeLinearity: 0.25,
     });
 
-    setTimeout(() => {
+    clearTimeout(guardTimerRef.current);
+    guardTimerRef.current = setTimeout(() => {
       isProgrammatic.current = false;
     }, 1500);
   }, [map, center, zoom]);
