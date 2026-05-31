@@ -387,7 +387,43 @@ public class AdvisorService {
         double rLat = Math.round(lat * 100.0) / 100.0;
         double rLng = Math.round(lng * 100.0) / 100.0;
         String pricesDigest = digestStations(request.prices());
-        return request.fuelType() + ":" + rLat + ":" + rLng + ":" + pricesDigest;
+        return request.fuelType()
+                + ":"
+                + rLat
+                + ":"
+                + rLng
+                + ":"
+                + pricesDigest
+                + ":"
+                + personalizationKey(request);
+    }
+
+    /**
+     * Personalization suffix for the cache key. {@code fillUpLiters}, the vehicle profile, and the
+     * destination all change the recommendation, so two otherwise-identical requests with different
+     * personalization MUST NOT share a cached verdict — that would serve one user's advice to
+     * another within the same geo bucket. Null optionals collapse to a stable token.
+     */
+    private static String personalizationKey(AIAdvisorRequest request) {
+        StringBuilder sb = new StringBuilder(48);
+        sb.append('f').append(request.fillUpLiters() == null ? 50 : request.fillUpLiters());
+        AIAdvisorRequest.VehicleProfile vp = request.vehicleProfile();
+        if (vp != null) {
+            sb.append("|v")
+                    .append(vp.consumptionL100km())
+                    .append(',')
+                    .append(vp.fuelLevel())
+                    .append(',')
+                    .append(vp.tankCapacityL());
+        }
+        AIAdvisorRequest.Destination d = request.destination();
+        if (d != null) {
+            sb.append("|d")
+                    .append(d.lat() == null ? "" : Math.round(d.lat() * 100.0) / 100.0)
+                    .append(',')
+                    .append(d.lng() == null ? "" : Math.round(d.lng() * 100.0) / 100.0);
+        }
+        return sb.toString();
     }
 
     private static String digestStations(java.util.List<AIAdvisorRequest.StationPrice> prices) {

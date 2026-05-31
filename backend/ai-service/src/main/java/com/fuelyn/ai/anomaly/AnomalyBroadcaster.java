@@ -3,6 +3,12 @@ package com.fuelyn.ai.anomaly;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +36,19 @@ public class AnomalyBroadcaster {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
+    // SSE sends run OFF the caller thread (the Kafka consumer) on a small bounded
+    // pool, so one slow or blocked subscriber can't stall price ingestion. The
+    // queue is bounded and overflow is DISCARDED — anomaly notifications are
+    // best-effort and subscriber back-pressure must never gate Kafka.
+    private final ExecutorService sendPool =
+            new ThreadPoolExecutor(
+                    1,
+                    2,
+                    30L,
+                    TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(256),
+                    new ThreadPoolExecutor.DiscardPolicy());
+
     /** Subscribe a fresh SSE emitter. The caller wires lifecycle handlers. */
     public SseEmitter subscribe() {
         // Long timeout — SSE connections are kept open until the client
@@ -52,15 +71,26 @@ public class AnomalyBroadcaster {
         return emitter;
     }
 
-    /** Fan-out the anomaly to every live emitter. Best-effort; failures prune. */
+    /**
+     * Fan-out the anomaly to every live emitter. Best-effort; runs OFF the caller thread so a slow
+     * subscriber can't block the Kafka consumer, and failures prune the dead emitter.
+     */
     public void publish(PriceAnomalyDetector.Anomaly anomaly) {
         for (SseEmitter emitter : emitters) {
-            try {
-                emitter.send(SseEmitter.event().name("anomaly").data(anomaly));
-            } catch (Exception e) {
-                emitters.remove(emitter);
-            }
+            sendPool.execute(
+                    () -> {
+                        try {
+                            emitter.send(SseEmitter.event().name("anomaly").data(anomaly));
+                        } catch (Exception e) {
+                            emitters.remove(emitter);
+                        }
+                    });
         }
+    }
+
+    @PreDestroy
+    void shutdown() {
+        sendPool.shutdownNow();
     }
 
     public int subscriberCount() {

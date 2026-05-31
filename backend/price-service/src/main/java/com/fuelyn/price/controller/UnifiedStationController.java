@@ -44,21 +44,12 @@ public class UnifiedStationController {
 
     private static final Logger log = LoggerFactory.getLogger(UnifiedStationController.class);
 
-    private static final Set<String> FUEL_TYPES = Set.of("diesel", "e5", "e10", "super_plus");
+    // super_plus is NOT served by Tankerkönig — including it made the pickFuelType
+    // fallback silently price it as e10. Dropped from both sets.
+    private static final Set<String> FUEL_TYPES = Set.of("diesel", "e5", "e10");
     private static final Set<String> EV_TYPES = Set.of("ev_ac", "ev_dc", "ev_hpc");
     private static final Set<String> ALL_VALID =
-            Set.of(
-                    "diesel",
-                    "e5",
-                    "e10",
-                    "super_plus",
-                    "lpg",
-                    "cng",
-                    "lng",
-                    "h2",
-                    "ev_ac",
-                    "ev_dc",
-                    "ev_hpc");
+            Set.of("diesel", "e5", "e10", "lpg", "cng", "lng", "h2", "ev_ac", "ev_dc", "ev_hpc");
 
     private final TankerkoenigClient tankerkoenigClient;
     private final OpenChargeMapClient chargeMapClient;
@@ -145,7 +136,14 @@ public class UnifiedStationController {
             allStations.addAll(future.join()); // already complete, returns immediately
         }
 
-        if ("dist".equals(sort)) {
+        if ("price".equals(sort)) {
+            // Cheapest first; stations without a comparable per-unit price (e.g. EV)
+            // sort last so they don't masquerade as the cheapest option.
+            allStations.sort(
+                    Comparator.comparing(
+                            UnifiedStationDto::price,
+                            Comparator.nullsLast(Comparator.naturalOrder())));
+        } else if ("dist".equals(sort)) {
             allStations.sort(Comparator.comparingDouble(s -> s.dist() != null ? s.dist() : 999.0));
         }
 

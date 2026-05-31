@@ -152,13 +152,15 @@ public class PriceEventConsumer {
 
             ack.acknowledge();
         } catch (Exception e) {
-            // envelope itself can be null when the deserialiser handed us
-            // a poison-pill (ErrorHandlingDeserializer drops a null). The
-            // previous code NPE'd on envelope.id() inside the catch and
-            // crashed the listener thread instead of logging cleanly.
+            // envelope itself can be null when the deserialiser handed us a
+            // poison-pill (ErrorHandlingDeserializer drops a null).
             String envelopeId = envelope == null ? "null" : envelope.id();
             log.error("Failed to process price event id={}: {}", envelopeId, e.getMessage(), e);
-            // Don't acknowledge → broker will redeliver on next poll
+            // Rethrow so the container's DefaultErrorHandler performs back-off
+            // retries and routes exhausted records to the dead-letter topic —
+            // instead of crudely not-acking, which redelivered the same poison
+            // record forever, with no back-off and never reaching the DLT.
+            throw new RuntimeException(e);
         }
     }
 
