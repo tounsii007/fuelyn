@@ -85,7 +85,7 @@ export async function getOrCreateSession(
     userId = existing.id;
   } else {
     const ip = getClientKey(request);
-    const rl = userCreationLimiter.check(`user-create:${ip}`);
+    const rl = await userCreationLimiter.check(`user-create:${ip}`);
     if (rl.limited) {
       // Don't even hit the DB — log and reject. The user-creation
       // cap is the line of defence against unbounded User row growth.

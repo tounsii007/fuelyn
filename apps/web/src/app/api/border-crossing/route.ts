@@ -39,7 +39,7 @@ function clampLng(n: number): number {
 
 export async function GET(request: NextRequest) {
   const ip = getClientKey(request);
-  const rl = limiter.check(`border:${ip}`);
+  const rl = await limiter.check(`border:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const sp = request.nextUrl.searchParams;

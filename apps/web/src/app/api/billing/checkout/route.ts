@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`checkout:${ip}`);
+  const rl = await limiter.check(`checkout:${ip}`);
   if (rl.limited) {
     return NextResponse.json(
       { error: 'Too many checkout attempts', retryAfterSeconds: Math.ceil((rl.resetAt - Date.now()) / 1000) },

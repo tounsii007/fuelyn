@@ -21,6 +21,7 @@ import { enforceSameOrigin } from '@/lib/auth/csrf';
 import { parseJson } from '@/lib/http/validate';
 import { createRateLimiter, getClientKey } from '@/lib/http/rate-limit';
 import { isProduction, publicAppOrigin } from '@/lib/config/runtime';
+import { sendMagicLinkEmail } from '@/lib/mail/transport';
 
 const limiter = createRateLimiter({ windowMs: 5 * 60 * 1000, max: 3 });
 
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`magic-link:${ip}`);
+  const rl = await limiter.check(`magic-link:${ip}`);
   if (rl.limited) {
     return NextResponse.json(
       { error: 'Too many requests', retryAfterSeconds: Math.ceil((rl.resetAt - Date.now()) / 1000) },
@@ -82,16 +83,23 @@ export async function POST(request: NextRequest) {
   const origin = publicAppOrigin();
   const link = `${origin}/auth/claim?token=${raw}&email=${encodeURIComponent(parsed.data.email)}`;
 
-  if (!isProduction()) {
-    // Development convenience — print + echo the link in the response
-    // body. Production refused the request earlier if MAIL_TRANSPORT
-    // wasn't set, so this branch only runs in a local dev setup.
-    console.info('[auth/magic-link] dev — would email to:', parsed.data.email, link);
-    return NextResponse.json({ success: true, devLink: link });
+  // A configured SMTP transport (MAIL_TRANSPORT) sends the real email
+  // in any environment. Production additionally REQUIRES one (guarded
+  // above); dev without a transport falls through to the echo stub so
+  // local setups work with no SMTP server.
+  if (process.env.MAIL_TRANSPORT) {
+    try {
+      await sendMagicLinkEmail({ to: parsed.data.email, link });
+    } catch (err) {
+      console.error('[auth/magic-link] email send failed:', err);
+      return NextResponse.json({ error: 'Failed to send email' }, { status: 502 });
+    }
+    return NextResponse.json({ success: true });
   }
 
-  // TODO: wire MAIL_TRANSPORT (postmark/ses/etc.) when picked. The
-  // schema and DB row are already correct; switching this out is a
-  // single-file change.
-  return NextResponse.json({ success: true });
+  // Development-only convenience: no transport configured, so print +
+  // echo the link. Unreachable in production (rejected earlier when
+  // MAIL_TRANSPORT is unset).
+  console.info('[auth/magic-link] dev — would email to:', parsed.data.email, link);
+  return NextResponse.json({ success: true, devLink: link });
 }

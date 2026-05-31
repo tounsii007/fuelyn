@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   // Per-IP rate limit caps brute-force + enumeration attempts even
   // though 32-byte tokens are infeasible to guess by chance.
   const ip = getClientKey(request);
-  const rl = limiter.check(`claim:${ip}`);
+  const rl = await limiter.check(`claim:${ip}`);
   if (rl.limited) {
     return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
   }

@@ -134,6 +134,23 @@ services:
       timeout: 5s
       retries: 10
 
+  # Shared store for the BFF rate limiter (apps/web/src/lib/http/rate-limit.ts).
+  # Counters are ephemeral, so there is no persistence volume: `--save ""` +
+  # `--appendonly no` disable durability, and a bounded maxmemory + LRU stops
+  # a flood of distinct keys from growing the footprint unbounded. If redis
+  # ever goes away the limiter degrades to per-instance in-memory automatically.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   price-service:
     build:
       context: ./backend
@@ -384,6 +401,8 @@ services:
         condition: service_healthy
       web-migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     environment:
       # Persistence is Postgres now (the Iter-AH SQLite caveat is gone),
       # so the container runs in real production mode. The production DB
@@ -401,6 +420,9 @@ services:
       CRON_SECRET: ${CRON_SECRET}
       TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY}
       RATE_LIMIT_TRUST_PROXY: "1"
+      # Shared cross-instance rate-limit store (degrades to in-memory if
+      # unreachable). Points at the in-network redis service above.
+      REDIS_URL: redis://redis:6379
       # ─── Iter AH security-hardening env ────────────────────
       # Without these the web container would crash at import-
       # time in production mode (see lib/auth/jwt.ts +
@@ -408,6 +430,11 @@ services:
       FUELYN_JWT_SECRET: ${FUELYN_JWT_SECRET:?FUELYN_JWT_SECRET required}
       FUELYN_PUBLIC_ORIGIN: ${FUELYN_PUBLIC_ORIGIN:-https://localhost:49443}
       FUELYN_ADMIN_TOKEN: ${FUELYN_ADMIN_TOKEN}
+      # Magic-link email. Optional: unset → POST /api/auth/magic-link returns
+      # 503 (feature unavailable). Set MAIL_TRANSPORT to an SMTP connection
+      # URL to enable it; MAIL_FROM overrides the envelope From.
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       # ─── Cloud-sync persistence (Prisma → Postgres) ────────
       # The web BFF owns its own `fuelyn_web` database on the shared
       # Postgres server; `web-migrate` applies the schema first. User /
