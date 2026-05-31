@@ -197,7 +197,7 @@ GitHub Actions führt bei jedem Push/PR aus:
 - Vitest (core + web)
 - Spotless (Java-Format-Check)
 - Maven test (alle Backend-Module)
-- Docker-Build-Smoke-Test (auf PRs)
+- Docker-Build-Smoke-Test aller Images — web + gateway + price-service + ai-service (auf PRs, Matrix)
 
 ## Sicherheit
 
