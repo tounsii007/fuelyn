@@ -20,7 +20,7 @@ jobs:
     name: TypeScript Lint + Test + Type-Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -82,7 +82,7 @@ jobs:
     name: Java Compile + Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -116,7 +116,7 @@ jobs:
     needs: [typescript, java]
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v4
       - name: Build price-service image
         uses: docker/build-push-action@v7
