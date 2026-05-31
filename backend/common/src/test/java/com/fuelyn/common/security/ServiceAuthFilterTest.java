@@ -1,13 +1,18 @@
 package com.fuelyn.common.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,20 +22,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Unit tests for {@link ServiceAuthFilter} — the auth gate every
- * inter-service call passes through.
+ * Unit tests for {@link ServiceAuthFilter} — the auth gate every inter-service call passes through.
  *
- * <p>Uses Spring's MockHttp* + a manual {@code FilterChain} test double
- * (no Mockito) so the test stays compatible with Java 26 — current Byte
- * Buddy doesn't support 26 yet. Manual stubs keep the suite
- * framework-version-agnostic.</p>
+ * <p>Uses Spring's MockHttp* + a manual {@code FilterChain} test double (no Mockito) so the test
+ * stays compatible with Java 26 — current Byte Buddy doesn't support 26 yet. Manual stubs keep the
+ * suite framework-version-agnostic.
  */
 class ServiceAuthFilterTest {
 
@@ -66,13 +63,19 @@ class ServiceAuthFilterTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "/actuator", "/actuator/health", "/actuator/prometheus",
-                "/health", "/health/liveness",
-                "/swagger-ui", "/swagger-ui/index.html",
-                "/v3/api-docs", "/v3/api-docs/swagger-config",
-                "/error"
-        })
+        @ValueSource(
+                strings = {
+                    "/actuator",
+                    "/actuator/health",
+                    "/actuator/prometheus",
+                    "/health",
+                    "/health/liveness",
+                    "/swagger-ui",
+                    "/swagger-ui/index.html",
+                    "/v3/api-docs",
+                    "/v3/api-docs/swagger-config",
+                    "/error"
+                })
         void allListedPublicPaths_bypassAuth(String path) throws Exception {
             CountingFilterChain chain = new CountingFilterChain();
             filter.doFilter(req("GET", path), new MockHttpServletResponse(), chain);
@@ -80,14 +83,15 @@ class ServiceAuthFilterTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "/actuator-evil",
-                "/healthz-bypass",     // not anchored
-                "/swagger-ui-fake",
-                "/v3/api-docs-evil",
-                "/errorz",
-                "/api/v1/secret"
-        })
+        @ValueSource(
+                strings = {
+                    "/actuator-evil",
+                    "/healthz-bypass", // not anchored
+                    "/swagger-ui-fake",
+                    "/v3/api-docs-evil",
+                    "/errorz",
+                    "/api/v1/secret"
+                })
         void pathsThatLOOK_likePublic_butAreNot_requireAuth(String path) throws Exception {
             // The headline anchor-bug fix: prefix-only matching let
             // /actuator-evil sneak through. Now anchored to a path-segment
@@ -268,25 +272,43 @@ class ServiceAuthFilterTest {
             int hugeSize = 50 * 1024 * 1024;
             MockHttpServletRequest base = req("POST", "/api/v1/internal/x");
             base.addHeader(ServiceAuthFilter.HEADER_SIGNATURE, "any");
-            base.addHeader(ServiceAuthFilter.HEADER_TIMESTAMP,
-                    String.valueOf(System.currentTimeMillis()));
+            base.addHeader(
+                    ServiceAuthFilter.HEADER_TIMESTAMP, String.valueOf(System.currentTimeMillis()));
             base.addHeader(ServiceAuthFilter.HEADER_SERVICE_ID, "price-service");
 
-            HttpServletRequestWrapper wrapped = new HttpServletRequestWrapper(base) {
-                private final ByteArrayInputStream src = new ByteArrayInputStream(new byte[hugeSize]);
-                @Override
-                public ServletInputStream getInputStream() {
-                    return new ServletInputStream() {
-                        @Override public int read() { return src.read(); }
-                        @Override public int read(byte[] b, int off, int len) {
-                            return src.read(b, off, len);
+            HttpServletRequestWrapper wrapped =
+                    new HttpServletRequestWrapper(base) {
+                        private final ByteArrayInputStream src =
+                                new ByteArrayInputStream(new byte[hugeSize]);
+
+                        @Override
+                        public ServletInputStream getInputStream() {
+                            return new ServletInputStream() {
+                                @Override
+                                public int read() {
+                                    return src.read();
+                                }
+
+                                @Override
+                                public int read(byte[] b, int off, int len) {
+                                    return src.read(b, off, len);
+                                }
+
+                                @Override
+                                public boolean isFinished() {
+                                    return src.available() == 0;
+                                }
+
+                                @Override
+                                public boolean isReady() {
+                                    return true;
+                                }
+
+                                @Override
+                                public void setReadListener(ReadListener l) {}
+                            };
                         }
-                        @Override public boolean isFinished() { return src.available() == 0; }
-                        @Override public boolean isReady() { return true; }
-                        @Override public void setReadListener(ReadListener l) {}
                     };
-                }
-            };
 
             MockHttpServletResponse response = new MockHttpServletResponse();
             CountingFilterChain chain = new CountingFilterChain();
@@ -307,6 +329,7 @@ class ServiceAuthFilterTest {
     /** Counts how many times {@link #doFilter} is invoked downstream. */
     private static final class CountingFilterChain implements FilterChain {
         int invocations = 0;
+
         @Override
         public void doFilter(ServletRequest req, ServletResponse res) {
             invocations++;
@@ -316,6 +339,7 @@ class ServiceAuthFilterTest {
     /** Captures the request handed downstream so the test can re-read its body. */
     private static final class CapturingFilterChain implements FilterChain {
         HttpServletRequest captured;
+
         @Override
         public void doFilter(ServletRequest req, ServletResponse res) {
             captured = (HttpServletRequest) req;

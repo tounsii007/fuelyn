@@ -1,8 +1,10 @@
 package com.fuelyn.price.stream;
 
-import com.fuelyn.common.events.EventEnvelope;
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import jakarta.servlet.http.HttpServletResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.time.Instant;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,19 +15,15 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.time.Instant;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.fuelyn.common.events.EventEnvelope;
+import com.fuelyn.common.events.PriceUpdatedEvent;
 
 /**
- * Tests for {@link PriceStreamController} focused on the iter-24 fix:
- * subscription cap + heartbeat dispatch off the scheduler thread.
+ * Tests for {@link PriceStreamController} focused on the iter-24 fix: subscription cap + heartbeat
+ * dispatch off the scheduler thread.
  *
- * <p>Avoids the Kafka listener orchestration entirely (we test the bean
- * methods directly). Uses real {@link SseEmitter}s captured into local
- * lists so we can verify their lifecycle.</p>
+ * <p>Avoids the Kafka listener orchestration entirely (we test the bean methods directly). Uses
+ * real {@link SseEmitter}s captured into local lists so we can verify their lifecycle.
  */
 class PriceStreamControllerTest {
 
@@ -91,12 +89,10 @@ class PriceStreamControllerTest {
             for (int i = 0; i < 3; i++) {
                 controller.streamPrices(null, new MockHttpServletResponse());
             }
-            assertThatThrownBy(() ->
-                    controller.streamPrices(null, new MockHttpServletResponse())
-            ).isInstanceOf(ResponseStatusException.class);
-            assertThatThrownBy(() ->
-                    controller.streamPrices(null, new MockHttpServletResponse())
-            ).isInstanceOf(ResponseStatusException.class);
+            assertThatThrownBy(() -> controller.streamPrices(null, new MockHttpServletResponse()))
+                    .isInstanceOf(ResponseStatusException.class);
+            assertThatThrownBy(() -> controller.streamPrices(null, new MockHttpServletResponse()))
+                    .isInstanceOf(ResponseStatusException.class);
             // Still exactly three subscriptions.
             assertThat(controller.activeSubscriptionsCount()).isEqualTo(3);
         }
@@ -162,13 +158,16 @@ class PriceStreamControllerTest {
             for (int i = 0; i < 3; i++) {
                 controller.streamPrices(null, new MockHttpServletResponse());
             }
-            try { controller.streamPrices(null, new MockHttpServletResponse()); }
-            catch (ResponseStatusException ignored) {}
-            try { controller.streamPrices(null, new MockHttpServletResponse()); }
-            catch (ResponseStatusException ignored) {}
+            try {
+                controller.streamPrices(null, new MockHttpServletResponse());
+            } catch (ResponseStatusException ignored) {
+            }
+            try {
+                controller.streamPrices(null, new MockHttpServletResponse());
+            } catch (ResponseStatusException ignored) {
+            }
 
-            assertThat(controller.health())
-                    .contains("\"subscriptionsRejected\":2");
+            assertThat(controller.health()).contains("\"subscriptionsRejected\":2");
         }
     }
 
@@ -188,8 +187,8 @@ class PriceStreamControllerTest {
         @Test
         void envelopeWithNullData_isAckedAndIgnored() {
             CountingAck ack = new CountingAck();
-            EventEnvelope<Object> envelope = new EventEnvelope<>(
-                    "id", "type", "source", Instant.now(), null, 1, null);
+            EventEnvelope<Object> envelope =
+                    new EventEnvelope<>("id", "type", "source", Instant.now(), null, 1, null);
             controller.onPriceUpdated(envelope, ack);
             assertThat(ack.calls).isEqualTo(1);
             assertThat(controller.eventsFanOut()).isZero();
@@ -199,11 +198,20 @@ class PriceStreamControllerTest {
         void validEvent_dispatchedAndAcked() throws Exception {
             controller.streamPrices(null, new MockHttpServletResponse());
 
-            PriceUpdatedEvent ev = PriceUpdatedEvent.forUpdate(
-                    "s1", "Aral", "aral", "diesel", 1.799, 1.789,
-                    Instant.now(), 52.5, 13.4, "10115");
-            EventEnvelope<PriceUpdatedEvent> envelope = EventEnvelope.of(
-                    PriceUpdatedEvent.TYPE, "test", ev);
+            PriceUpdatedEvent ev =
+                    PriceUpdatedEvent.forUpdate(
+                            "s1",
+                            "Aral",
+                            "aral",
+                            "diesel",
+                            1.799,
+                            1.789,
+                            Instant.now(),
+                            52.5,
+                            13.4,
+                            "10115");
+            EventEnvelope<PriceUpdatedEvent> envelope =
+                    EventEnvelope.of(PriceUpdatedEvent.TYPE, "test", ev);
 
             CountingAck ack = new CountingAck();
             controller.onPriceUpdated(envelope, ack);
@@ -220,11 +228,20 @@ class PriceStreamControllerTest {
             // Subscribe to specific stations only.
             controller.streamPrices("not-this-one", new MockHttpServletResponse());
 
-            PriceUpdatedEvent ev = PriceUpdatedEvent.forUpdate(
-                    "s1", "Aral", "aral", "diesel", 1.799, 1.789,
-                    Instant.now(), 52.5, 13.4, "10115");
-            EventEnvelope<PriceUpdatedEvent> envelope = EventEnvelope.of(
-                    PriceUpdatedEvent.TYPE, "test", ev);
+            PriceUpdatedEvent ev =
+                    PriceUpdatedEvent.forUpdate(
+                            "s1",
+                            "Aral",
+                            "aral",
+                            "diesel",
+                            1.799,
+                            1.789,
+                            Instant.now(),
+                            52.5,
+                            13.4,
+                            "10115");
+            EventEnvelope<PriceUpdatedEvent> envelope =
+                    EventEnvelope.of(PriceUpdatedEvent.TYPE, "test", ev);
 
             CountingAck ack = new CountingAck();
             controller.onPriceUpdated(envelope, ack);
@@ -238,7 +255,9 @@ class PriceStreamControllerTest {
 
     private static final class CountingAck implements Acknowledgment {
         int calls = 0;
-        @Override public void acknowledge() {
+
+        @Override
+        public void acknowledge() {
             calls++;
         }
     }

@@ -1,7 +1,11 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.FuelynProperties;
-import org.reactivestreams.Publisher;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,22 +21,21 @@ import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.fuelyn.gateway.config.FuelynProperties;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
  * Signs outbound requests to downstream services with HMAC-SHA256.
  *
- * <p>Adds the following headers to every proxied request:</p>
+ * <p>Adds the following headers to every proxied request:
+ *
  * <ul>
- *   <li>{@code X-Signature} — HMAC-SHA256(timestamp:body)</li>
- *   <li>{@code X-Timestamp} — epoch millis when signed</li>
- *   <li>{@code X-Service-Id} — "gateway"</li>
+ *   <li>{@code X-Signature} — HMAC-SHA256(timestamp:body)
+ *   <li>{@code X-Timestamp} — epoch millis when signed
+ *   <li>{@code X-Service-Id} — "gateway"
  * </ul>
  */
 @Component
@@ -43,19 +46,18 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
 
     private final String hmacSecret;
     private final String serviceId;
+
     /**
-     * Hard ceiling on the size (bytes) of a request body we will buffer
-     * for HMAC signing. Bodies above this limit are rejected with
-     * 413 Payload Too Large rather than being read into memory — the
-     * old code did an unbounded {@code DataBufferUtils.join}, which is
-     * a soft DoS vector (one large upload pins gateway heap).
+     * Hard ceiling on the size (bytes) of a request body we will buffer for HMAC signing. Bodies
+     * above this limit are rejected with 413 Payload Too Large rather than being read into memory —
+     * the old code did an unbounded {@code DataBufferUtils.join}, which is a soft DoS vector (one
+     * large upload pins gateway heap).
      */
     private final int maxSignedBodyBytes;
 
     public HmacSigningFilter(
             FuelynProperties properties,
-            @Value("${fuelyn.gateway.max-signed-body-bytes:262144}") int maxSignedBodyBytes
-    ) {
+            @Value("${fuelyn.gateway.max-signed-body-bytes:262144}") int maxSignedBodyBytes) {
         this.hmacSecret = properties.getSecurity().getHmacSecret();
         this.serviceId = properties.getSecurity().getServiceId();
         this.maxSignedBodyBytes = maxSignedBodyBytes;
@@ -73,58 +75,70 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
         String timestamp = String.valueOf(System.currentTimeMillis());
 
         // For requests with body (POST/PUT), read and sign the body
-        if (exchange.getRequest().getMethod() != null &&
-                (exchange.getRequest().getMethod().name().equals("POST") ||
-                 exchange.getRequest().getMethod().name().equals("PUT"))) {
+        if (exchange.getRequest().getMethod() != null
+                && (exchange.getRequest().getMethod().name().equals("POST")
+                        || exchange.getRequest().getMethod().name().equals("PUT"))) {
             // Bounded join — DataBufferUtils.join with maxByteCount aborts
             // the merge as soon as the limit is exceeded and emits a
             // DataBufferLimitException. We translate that into a clean
             // 413 instead of letting it bubble as a 500.
             return DataBufferUtils.join(exchange.getRequest().getBody(), maxSignedBodyBytes)
-                    .onErrorMap(DataBufferLimitException.class, e -> {
-                        log.warn("HMAC sign rejected: body exceeded {} bytes ({})",
-                                maxSignedBodyBytes, e.getMessage());
-                        return new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
-                                "Request body too large for signing");
-                    })
+                    .onErrorMap(
+                            DataBufferLimitException.class,
+                            e -> {
+                                log.warn(
+                                        "HMAC sign rejected: body exceeded {} bytes ({})",
+                                        maxSignedBodyBytes,
+                                        e.getMessage());
+                                return new ResponseStatusException(
+                                        HttpStatus.PAYLOAD_TOO_LARGE,
+                                        "Request body too large for signing");
+                            })
                     .defaultIfEmpty(exchange.getResponse().bufferFactory().wrap(new byte[0]))
-                    .flatMap(dataBuffer -> {
-                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                        dataBuffer.read(bytes);
-                        DataBufferUtils.release(dataBuffer);
-                        String body = new String(bytes, StandardCharsets.UTF_8);
+                    .flatMap(
+                            dataBuffer -> {
+                                byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                                dataBuffer.read(bytes);
+                                DataBufferUtils.release(dataBuffer);
+                                String body = new String(bytes, StandardCharsets.UTF_8);
 
-                        String signature = sign(body, timestamp);
+                                String signature = sign(body, timestamp);
 
-                        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                                .header("X-Signature", signature)
-                                .header("X-Timestamp", timestamp)
-                                .header("X-Service-Id", serviceId)
-                                .build();
+                                ServerHttpRequest mutatedRequest =
+                                        exchange.getRequest()
+                                                .mutate()
+                                                .header("X-Signature", signature)
+                                                .header("X-Timestamp", timestamp)
+                                                .header("X-Service-Id", serviceId)
+                                                .build();
 
-                        // Re-wrap body since we consumed it
-                        DataBuffer newBuffer = exchange.getResponse().bufferFactory()
-                                .wrap(bytes);
-                        Flux<DataBuffer> newBody = Flux.just(newBuffer);
+                                // Re-wrap body since we consumed it
+                                DataBuffer newBuffer =
+                                        exchange.getResponse().bufferFactory().wrap(bytes);
+                                Flux<DataBuffer> newBody = Flux.just(newBuffer);
 
-                        ServerHttpRequest decoratedRequest = new ServerHttpRequestDecorator(mutatedRequest) {
-                            @Override
-                            public Flux<DataBuffer> getBody() {
-                                return newBody;
-                            }
-                        };
+                                ServerHttpRequest decoratedRequest =
+                                        new ServerHttpRequestDecorator(mutatedRequest) {
+                                            @Override
+                                            public Flux<DataBuffer> getBody() {
+                                                return newBody;
+                                            }
+                                        };
 
-                        return chain.filter(exchange.mutate().request(decoratedRequest).build());
-                    });
+                                return chain.filter(
+                                        exchange.mutate().request(decoratedRequest).build());
+                            });
         }
 
         // For GET/DELETE — sign with empty body
         String signature = sign("", timestamp);
-        ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                .header("X-Signature", signature)
-                .header("X-Timestamp", timestamp)
-                .header("X-Service-Id", serviceId)
-                .build();
+        ServerHttpRequest mutatedRequest =
+                exchange.getRequest()
+                        .mutate()
+                        .header("X-Signature", signature)
+                        .header("X-Timestamp", timestamp)
+                        .header("X-Service-Id", serviceId)
+                        .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
@@ -133,8 +147,8 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
         try {
             String payload = timestamp + ":" + body;
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(
-                    hmacSecret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
+            SecretKeySpec keySpec =
+                    new SecretKeySpec(hmacSecret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
             mac.init(keySpec);
             byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);

@@ -1,9 +1,9 @@
 package com.fuelyn.common.security;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
 
 class SecretPolicyTest {
 
@@ -31,8 +31,9 @@ class SecretPolicyTest {
     void rejects_dictionaryWordPlaceholder() {
         // "production" is a 10-char letter run → caught by the run heuristic.
         assertThatThrownBy(
-                        () -> SecretPolicy.requireStrong(
-                                "secret", "change-me-in-production-32chars!"))
+                        () ->
+                                SecretPolicy.requireStrong(
+                                        "secret", "change-me-in-production-32chars!"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("letter run");
     }
@@ -42,8 +43,7 @@ class SecretPolicyTest {
         assertThat(SecretPolicy.longestLetterRun("abc-1234-defghi")).isEqualTo(6);
         // Every letter sits between digits → longest run is 1.
         assertThat(SecretPolicy.longestLetterRun("9f3b1c7e2d4a8e")).isEqualTo(1);
-        assertThat(SecretPolicy.longestLetterRun("change-me-in-production"))
-                .isEqualTo(10);
+        assertThat(SecretPolicy.longestLetterRun("change-me-in-production")).isEqualTo(10);
         assertThat(SecretPolicy.longestLetterRun("")).isZero();
     }
 

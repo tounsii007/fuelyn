@@ -1,6 +1,9 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.FuelynProperties;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,22 +11,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.fuelyn.gateway.config.FuelynProperties;
+
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Tests for {@link HmacSigningFilter} — the gateway-side body cap from
- * iter 7 + the existing path/method routing.
+ * Tests for {@link HmacSigningFilter} — the gateway-side body cap from iter 7 + the existing
+ * path/method routing.
  */
 class HmacSigningFilterTest {
 
@@ -55,7 +56,8 @@ class HmacSigningFilterTest {
         @ValueSource(strings = {"/actuator/health", "/fallback/x", "/swagger-ui/index.html", "/"})
         void nonApiPaths_areNotSigned(String path) {
             HmacSigningFilter f = filter(1024);
-            ServerWebExchange ex = MockServerWebExchange.from(MockServerHttpRequest.get(path).build());
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(MockServerHttpRequest.get(path).build());
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
@@ -67,16 +69,18 @@ class HmacSigningFilterTest {
         @Test
         void apiPaths_areSigned() {
             HmacSigningFilter f = filter(1024);
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.get("/api/v1/x").build());
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(MockServerHttpRequest.get("/api/v1/x").build());
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
 
             assertThat(downstream.get().getRequest().getHeaders().getFirst("X-Signature"))
-                    .isNotNull().isNotBlank();
+                    .isNotNull()
+                    .isNotBlank();
             assertThat(downstream.get().getRequest().getHeaders().getFirst("X-Timestamp"))
-                    .isNotNull().matches("[0-9]+");
+                    .isNotNull()
+                    .matches("[0-9]+");
             assertThat(downstream.get().getRequest().getHeaders().getFirst("X-Service-Id"))
                     .isEqualTo("gateway-test");
         }
@@ -90,8 +94,9 @@ class HmacSigningFilterTest {
         void postBody_underCap_isSigned() {
             HmacSigningFilter f = filter(1024);
             byte[] body = "{\"hello\":\"world\"}".getBytes();
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.post("/api/v1/x").body(new String(body)));
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(
+                            MockServerHttpRequest.post("/api/v1/x").body(new String(body)));
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
@@ -107,17 +112,20 @@ class HmacSigningFilterTest {
             byte[] body = new byte[65];
             for (int i = 0; i < body.length; i++) body[i] = 'a';
 
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.post("/api/v1/x").body(new String(body)));
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(
+                            MockServerHttpRequest.post("/api/v1/x").body(new String(body)));
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             // The filter signals 413 via ResponseStatusException reactive error.
             StepVerifier.create(f.filter(ex, capturingChain(downstream)))
-                    .expectErrorSatisfies(t -> {
-                        assertThat(t).isInstanceOf(ResponseStatusException.class);
-                        ResponseStatusException rse = (ResponseStatusException) t;
-                        assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
-                    })
+                    .expectErrorSatisfies(
+                            t -> {
+                                assertThat(t).isInstanceOf(ResponseStatusException.class);
+                                ResponseStatusException rse = (ResponseStatusException) t;
+                                assertThat(rse.getStatusCode())
+                                        .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+                            })
                     .verify();
 
             // Downstream chain MUST NOT have been called.
@@ -127,8 +135,8 @@ class HmacSigningFilterTest {
         @Test
         void emptyPostBody_isSignedWithEmptyPayload() {
             HmacSigningFilter f = filter(1024);
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.post("/api/v1/x").body(""));
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(MockServerHttpRequest.post("/api/v1/x").body(""));
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
@@ -145,21 +153,22 @@ class HmacSigningFilterTest {
         @Test
         void getRequest_signedWithEmptyBody() {
             HmacSigningFilter f = filter(1024);
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.get("/api/v1/x").build());
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(MockServerHttpRequest.get("/api/v1/x").build());
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
 
             assertThat(downstream.get().getRequest().getHeaders().getFirst("X-Signature"))
-                    .isNotNull().isNotBlank();
+                    .isNotNull()
+                    .isNotBlank();
         }
 
         @Test
         void deleteRequest_signedWithEmptyBody() {
             HmacSigningFilter f = filter(1024);
-            ServerWebExchange ex = MockServerWebExchange.from(
-                    MockServerHttpRequest.delete("/api/v1/x").build());
+            ServerWebExchange ex =
+                    MockServerWebExchange.from(MockServerHttpRequest.delete("/api/v1/x").build());
             AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
 
             StepVerifier.create(f.filter(ex, capturingChain(downstream))).verifyComplete();
@@ -178,8 +187,7 @@ class HmacSigningFilterTest {
             // Higher precedence (smaller number) than the default. Critical
             // because we need the body to be signed BEFORE any retry filter
             // potentially replays it.
-            assertThat(filter(1024).getOrder())
-                    .isLessThan(0);
+            assertThat(filter(1024).getOrder()).isLessThan(0);
         }
     }
 }

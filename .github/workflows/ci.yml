@@ -94,18 +94,17 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
 
-      # Spotless drift on the backend modules — format-only failure, not
-      # a compile/behaviour break. Disabled until a `mvn spotless:apply`
-      # sweep lands.
+      # Strict: a `spotless:apply` sweep has landed, so any new formatting
+      # drift now fails the build (google-java-format AOSP, import ordering,
+      # unused-import removal). Run `mvn -f backend/pom.xml spotless:apply`
+      # locally to fix.
       - name: Spotless format check
         run: mvn -B -ntp -f backend/pom.xml spotless:check
-        continue-on-error: true
 
-      - name: Compile
-        run: mvn -B -ntp -f backend/pom.xml -DskipTests install
-
-      - name: Test
-        run: mvn -B -ntp -f backend/pom.xml test
+      # `verify` compiles, runs the module tests, emits the JaCoCo per-module
+      # reports, and enforces the coverage floor (jacoco:check) — one gate.
+      - name: Build, test + JaCoCo coverage gate
+        run: mvn -B -ntp -f backend/pom.xml verify
 
       - name: Upload Surefire reports on failure
         if: failure()

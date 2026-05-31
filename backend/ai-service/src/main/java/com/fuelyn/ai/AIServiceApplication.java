@@ -7,8 +7,8 @@ import org.springframework.cache.annotation.EnableCaching;
 /**
  * Fuelyn AI Service &mdash; GPT-4o-mini powered fuel recommendations.
  *
- * <p>Provides intelligent refueling advice with automatic fallback
- * to local heuristics when the OpenAI API is unavailable.</p>
+ * <p>Provides intelligent refueling advice with automatic fallback to local heuristics when the
+ * OpenAI API is unavailable.
  */
 @SpringBootApplication(scanBasePackages = {"com.fuelyn.ai", "com.fuelyn.common"})
 @EnableCaching

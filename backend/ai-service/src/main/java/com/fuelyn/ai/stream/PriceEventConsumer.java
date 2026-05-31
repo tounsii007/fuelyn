@@ -1,12 +1,7 @@
 package com.fuelyn.ai.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fuelyn.ai.anomaly.AnomalyBroadcaster;
-import com.fuelyn.ai.anomaly.PriceAnomalyDetector;
-import com.fuelyn.ai.service.AdvisorService;
-import com.fuelyn.common.events.EventEnvelope;
-import com.fuelyn.common.events.PriceUpdatedEvent;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,53 +10,66 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fuelyn.ai.anomaly.AnomalyBroadcaster;
+import com.fuelyn.ai.anomaly.PriceAnomalyDetector;
+import com.fuelyn.ai.service.AdvisorService;
+import com.fuelyn.common.events.EventEnvelope;
+import com.fuelyn.common.events.PriceUpdatedEvent;
 
 /**
- * Listens for {@link PriceUpdatedEvent} on the streaming bus and
- * invalidates the advisor's response cache so the next request
- * recomputes against fresh prices instead of serving a stale verdict.
+ * Listens for {@link PriceUpdatedEvent} on the streaming bus and invalidates the advisor's response
+ * cache so the next request recomputes against fresh prices instead of serving a stale verdict.
  *
- * <p>The advisor cache key is derived from the user's geo-bucket
- * (lat/lng rounded to 0.01°) and the cheapest station in that bucket.
- * A safe over-approximation is to invalidate the entire cache on any
- * price event — at our throughput (a handful of polls per minute)
- * the cost is negligible and the correctness gain is real.</p>
+ * <p>The advisor cache key is derived from the user's geo-bucket (lat/lng rounded to 0.01°) and the
+ * cheapest station in that bucket. A safe over-approximation is to invalidate the entire cache on
+ * any price event — at our throughput (a handful of polls per minute) the cost is negligible and
+ * the correctness gain is real.
  *
- * <p>Acknowledgement is manual: we ack only after invalidation
- * succeeds. If the consumer crashes mid-handler the broker will
- * redeliver the event, and the second invalidation is idempotent.</p>
+ * <p>Acknowledgement is manual: we ack only after invalidation succeeds. If the consumer crashes
+ * mid-handler the broker will redeliver the event, and the second invalidation is idempotent.
  */
 @Component
-@ConditionalOnProperty(prefix = "fuelyn.kafka.consumer", name = "enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(
+        prefix = "fuelyn.kafka.consumer",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false)
 public class PriceEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(PriceEventConsumer.class);
 
     /**
-     * Shared, thread-safe Jackson mapper for the {@link #unwrap} hot path.
-     * Constructing an ObjectMapper and registering JavaTimeModule per
-     * event was wasteful — module registration walks reflection metadata
-     * and ObjectMapper allocation triggers a non-trivial graph of
-     * deserializer caches. Sharing one immutable, post-configuration
-     * mapper is the documented best practice (see jackson-databind
-     * "Reusable" section).
+     * Shared, thread-safe Jackson mapper for the {@link #unwrap} hot path. Constructing an
+     * ObjectMapper and registering JavaTimeModule per event was wasteful — module registration
+     * walks reflection metadata and ObjectMapper allocation triggers a non-trivial graph of
+     * deserializer caches. Sharing one immutable, post-configuration mapper is the documented best
+     * practice (see jackson-databind "Reusable" section).
      */
     private static final ObjectMapper SHARED_MAPPER =
             new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final AdvisorService advisorService;
     private final PriceHistoryBuffer historyBuffer;
-    /** Phase C1 — anomaly detection. Optional so tests + minimal profiles
-     *  can run without the bean wired. */
+
+    /**
+     * Phase C1 — anomaly detection. Optional so tests + minimal profiles can run without the bean
+     * wired.
+     */
     private final PriceAnomalyDetector anomalyDetector;
+
     private final AnomalyBroadcaster anomalyBroadcaster;
+
     /** Total events received since startup (exposed for /actuator/metrics). */
     private final AtomicLong eventsReceived = new AtomicLong();
+
     /** Cache invalidations performed since startup. */
     private final AtomicLong cacheInvalidations = new AtomicLong();
+
     /** Events successfully recorded into the rolling history buffer. */
     private final AtomicLong eventsBuffered = new AtomicLong();
+
     /** Anomalies detected and broadcast since startup. */
     private final AtomicLong anomaliesEmitted = new AtomicLong();
 
@@ -69,8 +77,7 @@ public class PriceEventConsumer {
             AdvisorService advisorService,
             PriceHistoryBuffer historyBuffer,
             @Autowired(required = false) PriceAnomalyDetector anomalyDetector,
-            @Autowired(required = false) AnomalyBroadcaster anomalyBroadcaster
-    ) {
+            @Autowired(required = false) AnomalyBroadcaster anomalyBroadcaster) {
         this.advisorService = advisorService;
         this.historyBuffer = historyBuffer;
         this.anomalyDetector = anomalyDetector;
@@ -79,8 +86,7 @@ public class PriceEventConsumer {
 
     @KafkaListener(
             topics = "${fuelyn.kafka.prices-topic:fuelyn.prices.v1}",
-            containerFactory = "priceListenerFactory"
-    )
+            containerFactory = "priceListenerFactory")
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void onPriceUpdated(EventEnvelope envelope, Acknowledgment ack) {
         long received = eventsReceived.incrementAndGet();
@@ -94,9 +100,14 @@ public class PriceEventConsumer {
                 ack.acknowledge();
                 return;
             }
-            log.debug("Price event #{} for {}/{}: {} -> {} EUR (Δ {})",
-                    received, ev.stationId(), ev.fuelType(),
-                    ev.previousPrice(), ev.newPrice(), ev.deltaPrice());
+            log.debug(
+                    "Price event #{} for {}/{}: {} -> {} EUR (Δ {})",
+                    received,
+                    ev.stationId(),
+                    ev.fuelType(),
+                    ev.previousPrice(),
+                    ev.newPrice(),
+                    ev.deltaPrice());
 
             // Persist into the per-station rolling window so the next
             // advisor request sees real history (EWMA, change-point,
@@ -107,8 +118,10 @@ public class PriceEventConsumer {
                 historyBuffer.record(ev);
                 eventsBuffered.incrementAndGet();
             } catch (Exception bufferEx) {
-                log.warn("History buffer rejected event for {}: {}",
-                        ev.stationId(), bufferEx.getMessage());
+                log.warn(
+                        "History buffer rejected event for {}: {}",
+                        ev.stationId(),
+                        bufferEx.getMessage());
             }
 
             // Cache-invalidation: drop everything once a price moved.
@@ -121,15 +134,20 @@ public class PriceEventConsumer {
             // calculation. Broadcast best-effort; a failed publish never
             // blocks the consumer.
             if (anomalyDetector != null && anomalyBroadcaster != null) {
-                anomalyDetector.detect(ev).ifPresent(anomaly -> {
-                    try {
-                        anomalyBroadcaster.publish(anomaly);
-                        anomaliesEmitted.incrementAndGet();
-                    } catch (Exception ex) {
-                        log.warn("Anomaly broadcast failed for {}: {}",
-                                anomaly.stationId(), ex.getMessage());
-                    }
-                });
+                anomalyDetector
+                        .detect(ev)
+                        .ifPresent(
+                                anomaly -> {
+                                    try {
+                                        anomalyBroadcaster.publish(anomaly);
+                                        anomaliesEmitted.incrementAndGet();
+                                    } catch (Exception ex) {
+                                        log.warn(
+                                                "Anomaly broadcast failed for {}: {}",
+                                                anomaly.stationId(),
+                                                ex.getMessage());
+                                    }
+                                });
             }
 
             ack.acknowledge();
@@ -144,16 +162,23 @@ public class PriceEventConsumer {
         }
     }
 
-    public long getEventsReceived()      { return eventsReceived.get(); }
-    public long getCacheInvalidations()  { return cacheInvalidations.get(); }
-    public long getEventsBuffered()      { return eventsBuffered.get(); }
+    public long getEventsReceived() {
+        return eventsReceived.get();
+    }
+
+    public long getCacheInvalidations() {
+        return cacheInvalidations.get();
+    }
+
+    public long getEventsBuffered() {
+        return eventsBuffered.get();
+    }
 
     /**
-     * Best-effort coercion from the loosely-typed envelope.data()
-     * back into a {@link PriceUpdatedEvent}. The JsonDeserializer in
-     * KafkaConsumerConfig uses raw {@code EventEnvelope} for type
-     * stability, so the inner data is a {@code LinkedHashMap} — we
-     * use Jackson to coerce it back to the strong type.
+     * Best-effort coercion from the loosely-typed envelope.data() back into a {@link
+     * PriceUpdatedEvent}. The JsonDeserializer in KafkaConsumerConfig uses raw {@code
+     * EventEnvelope} for type stability, so the inner data is a {@code LinkedHashMap} — we use
+     * Jackson to coerce it back to the strong type.
      */
     @SuppressWarnings("rawtypes")
     private PriceUpdatedEvent unwrap(EventEnvelope envelope) {

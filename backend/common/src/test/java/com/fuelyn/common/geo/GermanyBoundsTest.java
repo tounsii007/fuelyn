@@ -1,20 +1,18 @@
 package com.fuelyn.common.geo;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Tests for {@link GermanyBounds} — the iter-27 centralisation. Three
- * independent inline copies of these constants used to live in
- * TankerkoenigClient, PriceCollectorService.resolveCities, and the
- * controller @Min/@Max annotations. The risk this test guards against
- * is one of those copies drifting; the constants are documented as the
- * single source of truth.
+ * Tests for {@link GermanyBounds} — the iter-27 centralisation. Three independent inline copies of
+ * these constants used to live in TankerkoenigClient, PriceCollectorService.resolveCities, and the
+ * controller @Min/@Max annotations. The risk this test guards against is one of those copies
+ * drifting; the constants are documented as the single source of truth.
  */
 class GermanyBoundsTest {
 
@@ -49,24 +47,27 @@ class GermanyBoundsTest {
 
         @ParameterizedTest
         @CsvSource({
-                // City                , lat   , lng   , inside
-                "Berlin                 , 52.5200, 13.4050, true",
-                "Hamburg                , 53.5511, 9.9937 , true",
-                "Muenchen               , 48.1351, 11.5820, true",
-                "Aachen-near-border     , 50.78  , 6.08   , true",
-                "Goerlitz-near-border   , 51.15  , 14.99  , true",
-                "Sylt-northtip          , 55.0   , 8.4    , true",   // exact boundary
-                "Oberstdorf-southtip    , 47.0   , 10.3   , true",   // exact boundary
-                // Just outside
-                "Innsbruck-AT           , 47.27  , 11.39  , true",   // wider lat-clamp picks Innsbruck up; documented slack
-                "Salzburg-AT            , 47.81  , 13.05  , true",   // same; tolerance for border stations
-                "Kopenhagen-DK          , 55.68  , 12.57  , false",  // beyond MAX_LAT
-                "Gibraltar              , 36.14  , -5.35  , false",  // way out, negative lng
-                "Liechtenstein          , 47.14  , 9.55   , true",   // by design — within slack
-                "Paris                  , 48.85  , 2.35   , false",  // west of MIN_LNG
-                "Warschau               , 52.23  , 21.01  , false",  // east of MAX_LNG
+            // City                , lat   , lng   , inside
+            "Berlin                 , 52.5200, 13.4050, true",
+            "Hamburg                , 53.5511, 9.9937 , true",
+            "Muenchen               , 48.1351, 11.5820, true",
+            "Aachen-near-border     , 50.78  , 6.08   , true",
+            "Goerlitz-near-border   , 51.15  , 14.99  , true",
+            "Sylt-northtip          , 55.0   , 8.4    , true", // exact boundary
+            "Oberstdorf-southtip    , 47.0   , 10.3   , true", // exact boundary
+            // Just outside
+            "Innsbruck-AT           , 47.27  , 11.39  , true", // wider lat-clamp picks Innsbruck
+            // up; documented slack
+            "Salzburg-AT            , 47.81  , 13.05  , true", // same; tolerance for border
+            // stations
+            "Kopenhagen-DK          , 55.68  , 12.57  , false", // beyond MAX_LAT
+            "Gibraltar              , 36.14  , -5.35  , false", // way out, negative lng
+            "Liechtenstein          , 47.14  , 9.55   , true", // by design — within slack
+            "Paris                  , 48.85  , 2.35   , false", // west of MIN_LNG
+            "Warschau               , 52.23  , 21.01  , false", // east of MAX_LNG
         })
-        void cityCoordinates_classifyCorrectly(String city, double lat, double lng, boolean inside) {
+        void cityCoordinates_classifyCorrectly(
+                String city, double lat, double lng, boolean inside) {
             assertThat(GermanyBounds.contains(lat, lng))
                     .as("%s (%s, %s)", city, lat, lng)
                     .isEqualTo(inside);

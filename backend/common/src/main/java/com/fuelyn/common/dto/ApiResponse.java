@@ -1,17 +1,19 @@
 package com.fuelyn.common.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Standardized API response wrapper used across all Fuelyn microservices.
  *
- * <p>Provides a consistent response envelope containing:</p>
+ * <p>Provides a consistent response envelope containing:
+ *
  * <ul>
- *   <li>{@code success} - whether the request completed without error</li>
- *   <li>{@code data} - the response payload (omitted when null)</li>
- *   <li>{@code error} - an error message (omitted on success)</li>
- *   <li>{@code timestamp} - the server-side response time</li>
+ *   <li>{@code success} - whether the request completed without error
+ *   <li>{@code data} - the response payload (omitted when null)
+ *   <li>{@code error} - an error message (omitted on success)
+ *   <li>{@code timestamp} - the server-side response time
  * </ul>
  *
  * @param <T> the type of the response payload
@@ -35,7 +37,7 @@ public class ApiResponse<T> {
      * Creates a successful response containing the given payload.
      *
      * @param data the response payload
-     * @param <T>  the payload type
+     * @param <T> the payload type
      * @return a success response wrapping the data
      */
     public static <T> ApiResponse<T> success(T data) {
@@ -46,7 +48,7 @@ public class ApiResponse<T> {
      * Creates an error response with the given message and no payload.
      *
      * @param error the error description
-     * @param <T>   the (absent) payload type
+     * @param <T> the (absent) payload type
      * @return an error response
      */
     public static <T> ApiResponse<T> error(String error) {

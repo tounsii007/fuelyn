@@ -1,26 +1,26 @@
 package com.fuelyn.common.events;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.time.Instant;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Generic CloudEvents-style envelope for everything we put on Kafka.
  *
- * <p>The envelope adds versioning, tracing, and provenance metadata
- * around the actual payload, so consumers can:</p>
+ * <p>The envelope adds versioning, tracing, and provenance metadata around the actual payload, so
+ * consumers can:
+ *
  * <ul>
- *   <li>De-duplicate by {@code id} (idempotent processing)</li>
- *   <li>Filter by {@code type} (one topic can carry multiple types)</li>
- *   <li>Trace via {@code traceId} (W3C trace-context propagation)</li>
- *   <li>Tolerate forward-compatible schema changes via {@code schemaVersion}</li>
+ *   <li>De-duplicate by {@code id} (idempotent processing)
+ *   <li>Filter by {@code type} (one topic can carry multiple types)
+ *   <li>Trace via {@code traceId} (W3C trace-context propagation)
+ *   <li>Tolerate forward-compatible schema changes via {@code schemaVersion}
  * </ul>
  *
- * <p>Format roughly follows the
- * <a href="https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md">CloudEvents spec</a>
- * — close enough that we can drop in the official Java SDK later
- * without migrating consumers.</p>
+ * <p>Format roughly follows the <a
+ * href="https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md">CloudEvents spec</a> —
+ * close enough that we can drop in the official Java SDK later without migrating consumers.
  *
  * @param <T> the event payload type
  */
@@ -39,19 +39,12 @@ public record EventEnvelope<T>(
         /** Bumped only on incompatible schema changes within a `type`. */
         int schemaVersion,
         /** The actual payload. */
-        T data
-) {
+        T data) {
 
     /** Convenience factory with safe defaults for {@code id}/{@code time}. */
     public static <T> EventEnvelope<T> of(String type, String source, T data) {
         return new EventEnvelope<>(
-                UUID.randomUUID().toString(),
-                type,
-                source,
-                Instant.now(),
-                null,
-                1,
-                data);
+                UUID.randomUUID().toString(), type, source, Instant.now(), null, 1, data);
     }
 
     public EventEnvelope<T> withTraceId(String traceId) {

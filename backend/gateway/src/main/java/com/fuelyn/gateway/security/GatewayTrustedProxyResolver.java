@@ -1,25 +1,23 @@
 package com.fuelyn.gateway.security;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Local sibling of {@code com.fuelyn.common.security.TrustedProxyResolver}.
  *
- * <p>The gateway runs on Spring WebFlux, while {@code fuelyn-common} pulls
- * in {@code spring-boot-starter-web} (servlet) — both starters on the same
- * classpath would refuse to boot. Until / unless the resolver is extracted
- * into a Spring-free utility module, this gateway-local copy keeps the
- * X-Forwarded-For trust logic identical to the servlet-stack version.</p>
+ * <p>The gateway runs on Spring WebFlux, while {@code fuelyn-common} pulls in {@code
+ * spring-boot-starter-web} (servlet) — both starters on the same classpath would refuse to boot.
+ * Until / unless the resolver is extracted into a Spring-free utility module, this gateway-local
+ * copy keeps the X-Forwarded-For trust logic identical to the servlet-stack version.
  *
- * <p><b>Drift discipline:</b> any change here MUST mirror the commit in
- * {@code TrustedProxyResolver.java}. The class is intentionally tiny so
- * the diff stays trivial.</p>
+ * <p><b>Drift discipline:</b> any change here MUST mirror the commit in {@code
+ * TrustedProxyResolver.java}. The class is intentionally tiny so the diff stays trivial.
  */
 public final class GatewayTrustedProxyResolver {
 
@@ -28,12 +26,13 @@ public final class GatewayTrustedProxyResolver {
     private final List<Cidr> trustedCidrs;
 
     public GatewayTrustedProxyResolver(List<String> trustedProxyCidrs) {
-        this.trustedCidrs = (trustedProxyCidrs == null || trustedProxyCidrs.isEmpty())
-                ? Collections.emptyList()
-                : trustedProxyCidrs.stream()
-                        .map(GatewayTrustedProxyResolver::parseCidr)
-                        .filter(java.util.Objects::nonNull)
-                        .toList();
+        this.trustedCidrs =
+                (trustedProxyCidrs == null || trustedProxyCidrs.isEmpty())
+                        ? Collections.emptyList()
+                        : trustedProxyCidrs.stream()
+                                .map(GatewayTrustedProxyResolver::parseCidr)
+                                .filter(java.util.Objects::nonNull)
+                                .toList();
     }
 
     public String resolve(String remoteAddr, String xForwardedFor) {

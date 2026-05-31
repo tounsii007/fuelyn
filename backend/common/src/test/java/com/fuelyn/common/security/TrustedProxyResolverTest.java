@@ -1,5 +1,9 @@
 package com.fuelyn.common.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -7,23 +11,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Coverage of {@link TrustedProxyResolver} — the central X-Forwarded-For
- * trust gate. Every branch tested because a wrong call in this class
- * silently downgrades the rate-limiter's per-IP cap to per-XFF-claim.
+ * Coverage of {@link TrustedProxyResolver} — the central X-Forwarded-For trust gate. Every branch
+ * tested because a wrong call in this class silently downgrades the rate-limiter's per-IP cap to
+ * per-XFF-claim.
  *
- * <p>Test-class structure mirrors the resolver's branches:</p>
+ * <p>Test-class structure mirrors the resolver's branches:
+ *
  * <ul>
- *   <li>direct connection (no XFF) → remoteAddr</li>
- *   <li>XFF present + remote NOT trusted → remoteAddr (the spoof case)</li>
- *   <li>XFF present + remote trusted → first XFF hop</li>
- *   <li>malformed CIDR / addresses → ignored, never crashes</li>
- *   <li>IPv6 vs IPv4 — explicit, since the byte-length mismatch logic
- *       has historically been a source of subtle CIDR bugs</li>
+ *   <li>direct connection (no XFF) → remoteAddr
+ *   <li>XFF present + remote NOT trusted → remoteAddr (the spoof case)
+ *   <li>XFF present + remote trusted → first XFF hop
+ *   <li>malformed CIDR / addresses → ignored, never crashes
+ *   <li>IPv6 vs IPv4 — explicit, since the byte-length mismatch logic has historically been a
+ *       source of subtle CIDR bugs
  * </ul>
  */
 class TrustedProxyResolverTest {
@@ -74,8 +75,7 @@ class TrustedProxyResolverTest {
         @Test
         void resolve_trimsWhitespace_aroundFirstHop() {
             TrustedProxyResolver r = TrustedProxyResolver.of("10.0.0.0/8");
-            assertThat(r.resolve("10.1.2.3", "  203.0.113.5  , 1.2.3.4"))
-                    .isEqualTo("203.0.113.5");
+            assertThat(r.resolve("10.1.2.3", "  203.0.113.5  , 1.2.3.4")).isEqualTo("203.0.113.5");
         }
 
         @Test
@@ -102,45 +102,50 @@ class TrustedProxyResolverTest {
 
         @ParameterizedTest
         @CsvSource({
-                // CIDR             , candidate     , expected (true=trusted)
-                "10.0.0.0/8          , 10.255.255.255, true",
-                "10.0.0.0/8          , 10.0.0.0      , true",
-                "10.0.0.0/8          , 11.0.0.0      , false",
-                "10.0.0.0/8          , 9.255.255.255 , false",
-                "192.168.0.0/16      , 192.168.255.1 , true",
-                "192.168.0.0/16      , 192.169.0.0   , false",
-                "172.16.0.0/12       , 172.16.0.0    , true",
-                "172.16.0.0/12       , 172.31.255.255, true",
-                "172.16.0.0/12       , 172.32.0.0    , false",
-                "172.16.0.0/12       , 172.15.255.255, false",
-                // /31 link-local (point-to-point)
-                "192.0.2.4/31        , 192.0.2.4     , true",
-                "192.0.2.4/31        , 192.0.2.5     , true",
-                "192.0.2.4/31        , 192.0.2.6     , false",
-                // /32 single host
-                "203.0.113.5/32      , 203.0.113.5   , true",
-                "203.0.113.5/32      , 203.0.113.4   , false",
-                // /0 matches everything
-                "0.0.0.0/0           , 1.2.3.4       , true",
-                "0.0.0.0/0           , 255.255.255.255, true",
+            // CIDR             , candidate     , expected (true=trusted)
+            "10.0.0.0/8          , 10.255.255.255, true",
+            "10.0.0.0/8          , 10.0.0.0      , true",
+            "10.0.0.0/8          , 11.0.0.0      , false",
+            "10.0.0.0/8          , 9.255.255.255 , false",
+            "192.168.0.0/16      , 192.168.255.1 , true",
+            "192.168.0.0/16      , 192.169.0.0   , false",
+            "172.16.0.0/12       , 172.16.0.0    , true",
+            "172.16.0.0/12       , 172.31.255.255, true",
+            "172.16.0.0/12       , 172.32.0.0    , false",
+            "172.16.0.0/12       , 172.15.255.255, false",
+            // /31 link-local (point-to-point)
+            "192.0.2.4/31        , 192.0.2.4     , true",
+            "192.0.2.4/31        , 192.0.2.5     , true",
+            "192.0.2.4/31        , 192.0.2.6     , false",
+            // /32 single host
+            "203.0.113.5/32      , 203.0.113.5   , true",
+            "203.0.113.5/32      , 203.0.113.4   , false",
+            // /0 matches everything
+            "0.0.0.0/0           , 1.2.3.4       , true",
+            "0.0.0.0/0           , 255.255.255.255, true",
         })
         void resolve_matchesIpv4Cidrs(String cidr, String candidate, boolean expected) {
             TrustedProxyResolver r = TrustedProxyResolver.of(cidr);
             String resolved = r.resolve(candidate, "9.9.9.9");
             if (expected) {
-                assertThat(resolved).as("trusted %s should honour XFF", candidate).isEqualTo("9.9.9.9");
+                assertThat(resolved)
+                        .as("trusted %s should honour XFF", candidate)
+                        .isEqualTo("9.9.9.9");
             } else {
-                assertThat(resolved).as("untrusted %s should not honour XFF", candidate).isEqualTo(candidate);
+                assertThat(resolved)
+                        .as("untrusted %s should not honour XFF", candidate)
+                        .isEqualTo(candidate);
             }
         }
 
         @Test
         void resolve_combinesMultipleCidrs() {
-            TrustedProxyResolver r = TrustedProxyResolver.of("10.0.0.0/8", "192.168.0.0/16", "127.0.0.1");
-            assertThat(r.resolve("10.5.5.5",      "1.1.1.1")).isEqualTo("1.1.1.1");
+            TrustedProxyResolver r =
+                    TrustedProxyResolver.of("10.0.0.0/8", "192.168.0.0/16", "127.0.0.1");
+            assertThat(r.resolve("10.5.5.5", "1.1.1.1")).isEqualTo("1.1.1.1");
             assertThat(r.resolve("192.168.50.50", "1.1.1.1")).isEqualTo("1.1.1.1");
-            assertThat(r.resolve("127.0.0.1",     "1.1.1.1")).isEqualTo("1.1.1.1");
-            assertThat(r.resolve("8.8.8.8",       "1.1.1.1")).isEqualTo("8.8.8.8");
+            assertThat(r.resolve("127.0.0.1", "1.1.1.1")).isEqualTo("1.1.1.1");
+            assertThat(r.resolve("8.8.8.8", "1.1.1.1")).isEqualTo("8.8.8.8");
         }
     }
 
@@ -151,8 +156,7 @@ class TrustedProxyResolverTest {
         @Test
         void resolve_matchesIpv6Cidr() {
             TrustedProxyResolver r = TrustedProxyResolver.of("2001:db8::/32");
-            assertThat(r.resolve("2001:db8::1", "203.0.113.5"))
-                    .isEqualTo("203.0.113.5");
+            assertThat(r.resolve("2001:db8::1", "203.0.113.5")).isEqualTo("203.0.113.5");
             assertThat(r.resolve("2001:db9::1", "203.0.113.5"))
                     .isEqualTo("2001:db9::1"); // outside, fall through
         }
@@ -186,16 +190,17 @@ class TrustedProxyResolverTest {
     class MalformedConfig {
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "not-an-ip",
-                "999.999.999.999",
-                "10.0.0.0/abc",
-                "10.0.0.0/-5",
-                "10.0.0.0/64",       // valid only for IPv6, invalid for v4
-                "10.0.0.0/",
-                "/8",
-                ""
-        })
+        @ValueSource(
+                strings = {
+                    "not-an-ip",
+                    "999.999.999.999",
+                    "10.0.0.0/abc",
+                    "10.0.0.0/-5",
+                    "10.0.0.0/64", // valid only for IPv6, invalid for v4
+                    "10.0.0.0/",
+                    "/8",
+                    ""
+                })
         void resolve_ignoresBrokenCidr_butStillResolvesGoodOnes(String broken) {
             // Broken first, good second — broken must be silently dropped,
             // good one must still match.

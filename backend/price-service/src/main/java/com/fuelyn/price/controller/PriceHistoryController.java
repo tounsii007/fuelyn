@@ -23,9 +23,8 @@ import com.fuelyn.price.model.dto.PriceHistoryResponse;
 import com.fuelyn.price.service.PriceHistoryService;
 
 /**
- * Thin HTTP layer over {@link PriceHistoryService}. All math/aggregation lives
- * in the service so the controller stays focused on validation, mapping, and
- * response envelopes.
+ * Thin HTTP layer over {@link PriceHistoryService}. All math/aggregation lives in the service so
+ * the controller stays focused on validation, mapping, and response envelopes.
  */
 @RestController
 @RequestMapping("/api/v1/prices")
@@ -56,14 +55,20 @@ public class PriceHistoryController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAreaStats(
             @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double lat,
             @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double lng,
-            @RequestParam(defaultValue = "10") @DecimalMin("1.0") @DecimalMax("25.0") double radiusKm,
+            @RequestParam(defaultValue = "10") @DecimalMin("1.0") @DecimalMax("25.0")
+                    double radiusKm,
             @RequestParam(defaultValue = "e10") @Pattern(regexp = "diesel|e5|e10") String fuelType,
             @RequestParam(defaultValue = "7") @Min(1) @Max(90) int days) {
         log.info(
                 "Area stats: lat={}, lng={}, radius={}km, fuel={}, days={}",
-                lat, lng, radiusKm, fuelType, days);
+                lat,
+                lng,
+                radiusKm,
+                fuelType,
+                days);
         return ResponseEntity.ok(
-                ApiResponse.success(historyService.getAreaStats(lat, lng, radiusKm, fuelType, days)));
+                ApiResponse.success(
+                        historyService.getAreaStats(lat, lng, radiusKm, fuelType, days)));
     }
 
     /** GET /api/v1/prices/health */

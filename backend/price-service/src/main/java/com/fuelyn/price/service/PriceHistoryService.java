@@ -20,16 +20,14 @@ import com.fuelyn.price.repository.StationMetaRepository;
 /**
  * Provides price history analysis and area statistics.
  *
- * <p>Pure analysis lives in {@link PriceStatistics}; this class is the
- * Spring-aware wrapper that handles caching, repository access, and DTO
- * assembly. All math is in-Java (no DB-dialect-specific SQL) so the same
- * code works against H2 and Postgres.
+ * <p>Pure analysis lives in {@link PriceStatistics}; this class is the Spring-aware wrapper that
+ * handles caching, repository access, and DTO assembly. All math is in-Java (no DB-dialect-specific
+ * SQL) so the same code works against H2 and Postgres.
  *
- * <p>{@code @Transactional(readOnly = true)} at the class level: every
- * public method is a pure read aggregation. Hibernate uses this hint to
- * skip the dirty-check sweep before query execution and to disable auto
- * flush — measurable savings on a hot endpoint that runs against the
- * shared connection pool.
+ * <p>{@code @Transactional(readOnly = true)} at the class level: every public method is a pure read
+ * aggregation. Hibernate uses this hint to skip the dirty-check sweep before query execution and to
+ * disable auto flush — measurable savings on a hot endpoint that runs against the shared connection
+ * pool.
  */
 @Service
 @Transactional(readOnly = true)
@@ -62,10 +60,13 @@ public class PriceHistoryService {
                     new PriceHistoryResponse.PriceStats(0, 0, 0, 0, "N/A", "N/A", Map.of()));
         }
 
-        List<PriceHistoryResponse.PricePoint> history = snapshots.stream()
-                .map(s -> new PriceHistoryResponse.PricePoint(
-                        s.getPrice(), s.getTimestamp().toString()))
-                .toList();
+        List<PriceHistoryResponse.PricePoint> history =
+                snapshots.stream()
+                        .map(
+                                s ->
+                                        new PriceHistoryResponse.PricePoint(
+                                                s.getPrice(), s.getTimestamp().toString()))
+                        .toList();
 
         PriceStatistics.Stats stats = PriceStatistics.compute(snapshots);
 
@@ -92,9 +93,8 @@ public class PriceHistoryService {
     /**
      * Aggregated statistics for all stations within a circular area.
      *
-     * <p>Result includes per-station averages, the cheapest and most expensive
-     * stations (with their meta), day-of-week pattern across the area, and a
-     * trend label.
+     * <p>Result includes per-station averages, the cheapest and most expensive stations (with their
+     * meta), day-of-week pattern across the area, and a trend label.
      */
     @Cacheable(
             value = "areaStats",
@@ -102,15 +102,12 @@ public class PriceHistoryService {
     public Map<String, Object> getAreaStats(
             double lat, double lng, double radiusKm, String fuelType, int days) {
         PriceStatistics.BoundingBox bbox = PriceStatistics.boundingBox(lat, lng, radiusKm);
-        List<StationMeta> stationsInArea = stationMetaRepo.findByLatBetweenAndLngBetween(
-                bbox.minLat(), bbox.maxLat(), bbox.minLng(), bbox.maxLng());
+        List<StationMeta> stationsInArea =
+                stationMetaRepo.findByLatBetweenAndLngBetween(
+                        bbox.minLat(), bbox.maxLat(), bbox.minLng(), bbox.maxLng());
 
         if (stationsInArea.isEmpty()) {
-            return Map.of(
-                    "stations", 0,
-                    "averagePrice", 0,
-                    "fuelType", fuelType,
-                    "days", days);
+            return Map.of("stations", 0, "averagePrice", 0, "fuelType", fuelType, "days", days);
         }
 
         List<String> ids = stationsInArea.stream().map(StationMeta::getId).toList();
@@ -120,10 +117,14 @@ public class PriceHistoryService {
 
         if (snapshots.isEmpty()) {
             return Map.of(
-                    "stations", stationsInArea.size(),
-                    "dataPoints", 0,
-                    "fuelType", fuelType,
-                    "days", days);
+                    "stations",
+                    stationsInArea.size(),
+                    "dataPoints",
+                    0,
+                    "fuelType",
+                    fuelType,
+                    "days",
+                    days);
         }
 
         PriceStatistics.Stats overall = PriceStatistics.compute(snapshots);
@@ -143,10 +144,12 @@ public class PriceHistoryService {
         result.put("days", days);
 
         // Single-pass min/max — used to be a sort + index-0/index-N read.
-        PriceStatistics.cheapestAndMostExpensive(snapshots).ifPresent(mm -> {
-            result.put("minStation", stationSummary(mm.cheapest(), metaById));
-            result.put("maxStation", stationSummary(mm.mostExpensive(), metaById));
-        });
+        PriceStatistics.cheapestAndMostExpensive(snapshots)
+                .ifPresent(
+                        mm -> {
+                            result.put("minStation", stationSummary(mm.cheapest(), metaById));
+                            result.put("maxStation", stationSummary(mm.mostExpensive(), metaById));
+                        });
 
         return result;
     }

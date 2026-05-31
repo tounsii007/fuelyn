@@ -1,43 +1,46 @@
 package com.fuelyn.ai.anomaly;
 
-import com.fuelyn.ai.stream.PriceHistoryBuffer;
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.fuelyn.ai.stream.PriceHistoryBuffer;
+import com.fuelyn.common.events.PriceUpdatedEvent;
+
 /**
  * Price-anomaly detector — Phase C1.
  *
- * <p>Consumes the same Kafka stream as {@link PriceHistoryBuffer} and
- * flags observations that diverge meaningfully from the station's own
- * recent baseline. The signal is consumed by:
+ * <p>Consumes the same Kafka stream as {@link PriceHistoryBuffer} and flags observations that
+ * diverge meaningfully from the station's own recent baseline. The signal is consumed by:
+ *
  * <ul>
- *   <li>{@code AdvisorService} — boost confidence on cheap-spike
- *       recommendations, downgrade on anomalous expensive moves.</li>
- *   <li>Push-notification dispatcher (future) — alert subscribers when
- *       their watched station drops below a price floor.</li>
- *   <li>Prometheus — counter `fuelyn.ai.anomalies_total{kind=*}`.</li>
+ *   <li>{@code AdvisorService} — boost confidence on cheap-spike recommendations, downgrade on
+ *       anomalous expensive moves.
+ *   <li>Push-notification dispatcher (future) — alert subscribers when their watched station drops
+ *       below a price floor.
+ *   <li>Prometheus — counter `fuelyn.ai.anomalies_total{kind=*}`.
  * </ul>
  *
  * <h3>Algorithm</h3>
+ *
  * Lightweight z-score on the rolling 96-point window:
+ *
  * <pre>
  *   z = (latestPrice − μ) / σ
  *   |z| ≥ Z_THRESHOLD  →  anomaly
  * </pre>
- * We require ≥ 12 points before emitting (otherwise σ is unstable),
- * and we suppress duplicate alerts for the same (stationId, fuelType)
- * within {@link #SUPPRESS_WINDOW}. The detector is stateless beyond
- * that — restart wipes the suppress map and emits a one-time burst
- * during reboot, which is acceptable.
+ *
+ * We require ≥ 12 points before emitting (otherwise σ is unstable), and we suppress duplicate
+ * alerts for the same (stationId, fuelType) within {@link #SUPPRESS_WINDOW}. The detector is
+ * stateless beyond that — restart wipes the suppress map and emits a one-time burst during reboot,
+ * which is acceptable.
  */
 @Component
 public class PriceAnomalyDetector {
@@ -45,8 +48,8 @@ public class PriceAnomalyDetector {
     private static final Logger log = LoggerFactory.getLogger(PriceAnomalyDetector.class);
 
     /**
-     * Minimum sample size before z-scoring is meaningful. Below this
-     * we still record the event but skip the anomaly check.
+     * Minimum sample size before z-scoring is meaningful. Below this we still record the event but
+     * skip the anomaly check.
      */
     private static final int MIN_SAMPLES = 12;
 
@@ -62,8 +65,8 @@ public class PriceAnomalyDetector {
 
     public PriceAnomalyDetector(
             PriceHistoryBuffer buffer,
-            @Value("${fuelyn.ai.anomaly.z-threshold:" + DEFAULT_Z_THRESHOLD + "}") double zThreshold
-    ) {
+            @Value("${fuelyn.ai.anomaly.z-threshold:" + DEFAULT_Z_THRESHOLD + "}")
+                    double zThreshold) {
         this.buffer = buffer;
         this.zThreshold = zThreshold;
     }
@@ -71,8 +74,8 @@ public class PriceAnomalyDetector {
     /**
      * Inspect a freshly observed event.
      *
-     * @return an {@link Anomaly} when the event crosses the threshold and is
-     *         not suppressed; empty otherwise.
+     * @return an {@link Anomaly} when the event crosses the threshold and is not suppressed; empty
+     *     otherwise.
      */
     public Optional<Anomaly> detect(PriceUpdatedEvent event) {
         if (event == null || event.fuelType() == null || !Double.isFinite(event.newPrice())) {
@@ -102,19 +105,22 @@ public class PriceAnomalyDetector {
         Kind kind = z < 0 ? Kind.CHEAP_SPIKE : Kind.EXPENSIVE_SPIKE;
         lastAlertAt.put(key, Instant.now());
 
-        Anomaly anomaly = new Anomaly(
-                event.stationId(),
-                event.stationName(),
-                event.fuelType(),
-                event.newPrice(),
-                agg.meanPrice(),
-                z,
-                kind,
-                Instant.now()
-        );
-        log.info("Price anomaly: station={} fuel={} z={} kind={} latest={} mean={}",
-                anomaly.stationId(), anomaly.fuelType(),
-                String.format("%.2f", anomaly.z()), anomaly.kind(),
+        Anomaly anomaly =
+                new Anomaly(
+                        event.stationId(),
+                        event.stationName(),
+                        event.fuelType(),
+                        event.newPrice(),
+                        agg.meanPrice(),
+                        z,
+                        kind,
+                        Instant.now());
+        log.info(
+                "Price anomaly: station={} fuel={} z={} kind={} latest={} mean={}",
+                anomaly.stationId(),
+                anomaly.fuelType(),
+                String.format("%.2f", anomaly.z()),
+                anomaly.kind(),
                 String.format("%.3f", anomaly.latestPrice()),
                 String.format("%.3f", anomaly.meanPrice()));
         return Optional.of(anomaly);
@@ -125,10 +131,13 @@ public class PriceAnomalyDetector {
     }
 
     /**
-     * Anomaly classification. {@code CHEAP_SPIKE} is a buy signal,
-     * {@code EXPENSIVE_SPIKE} is the opposite.
+     * Anomaly classification. {@code CHEAP_SPIKE} is a buy signal, {@code EXPENSIVE_SPIKE} is the
+     * opposite.
      */
-    public enum Kind { CHEAP_SPIKE, EXPENSIVE_SPIKE }
+    public enum Kind {
+        CHEAP_SPIKE,
+        EXPENSIVE_SPIKE
+    }
 
     /** Immutable anomaly record. */
     public record Anomaly(
@@ -139,6 +148,5 @@ public class PriceAnomalyDetector {
             double meanPrice,
             double z,
             Kind kind,
-            Instant detectedAt
-    ) {}
+            Instant detectedAt) {}
 }

@@ -1,24 +1,5 @@
 package com.fuelyn.price.controller;
 
-import com.fuelyn.common.dto.ApiResponse;
-import com.fuelyn.price.model.dto.ChargingStationResponse.ChargingStation;
-import com.fuelyn.price.model.dto.TankerkoenigResponse;
-import com.fuelyn.price.model.dto.UnifiedStationDto;
-import com.fuelyn.price.service.OpenChargeMapClient;
-import com.fuelyn.price.service.TankerkoenigClient;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,11 +10,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fuelyn.common.dto.ApiResponse;
+import com.fuelyn.price.model.dto.ChargingStationResponse.ChargingStation;
+import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.model.dto.UnifiedStationDto;
+import com.fuelyn.price.service.OpenChargeMapClient;
+import com.fuelyn.price.service.TankerkoenigClient;
+
 /**
- * Unified station endpoint — queries Tankerkoenig + OpenChargeMap in parallel,
- * returns combined results as a flat list.
+ * Unified station endpoint — queries Tankerkoenig + OpenChargeMap in parallel, returns combined
+ * results as a flat list.
  *
- * <p>Supported energy types: diesel, e5, e10, ev_ac, ev_dc, ev_hpc, h2, lpg, cng, lng</p>
+ * <p>Supported energy types: diesel, e5, e10, ev_ac, ev_dc, ev_hpc, h2, lpg, cng, lng
  */
 @RestController
 @RequestMapping("/api/v1/prices")
@@ -44,38 +46,47 @@ public class UnifiedStationController {
 
     private static final Set<String> FUEL_TYPES = Set.of("diesel", "e5", "e10", "super_plus");
     private static final Set<String> EV_TYPES = Set.of("ev_ac", "ev_dc", "ev_hpc");
-    private static final Set<String> ALL_VALID = Set.of(
-            "diesel", "e5", "e10", "super_plus", "lpg", "cng", "lng", "h2",
-            "ev_ac", "ev_dc", "ev_hpc"
-    );
+    private static final Set<String> ALL_VALID =
+            Set.of(
+                    "diesel",
+                    "e5",
+                    "e10",
+                    "super_plus",
+                    "lpg",
+                    "cng",
+                    "lng",
+                    "h2",
+                    "ev_ac",
+                    "ev_dc",
+                    "ev_hpc");
 
     private final TankerkoenigClient tankerkoenigClient;
     private final OpenChargeMapClient chargeMapClient;
 
-    public UnifiedStationController(TankerkoenigClient tankerkoenigClient,
-                                     OpenChargeMapClient chargeMapClient) {
+    public UnifiedStationController(
+            TankerkoenigClient tankerkoenigClient, OpenChargeMapClient chargeMapClient) {
         this.tankerkoenigClient = tankerkoenigClient;
         this.chargeMapClient = chargeMapClient;
     }
 
-    /**
-     * GET /api/v1/prices/unified?lat=...&lng=...&rad=10&types=diesel,e10,ev_ac&sort=dist
-     */
+    /** GET /api/v1/prices/unified?lat=...&lng=...&rad=10&types=diesel,e10,ev_ac&sort=dist */
     @GetMapping("/unified")
     public ResponseEntity<ApiResponse<Map<String, Object>>> unified(
             @RequestParam @Min(-90) @Max(90) double lat,
             @RequestParam @Min(-180) @Max(180) double lng,
             @RequestParam(defaultValue = "10") @Min(1) @Max(50) double rad,
             @RequestParam(defaultValue = "diesel,e5,e10")
-                @Size(max = 120)
-                @Pattern(regexp = "[a-z_0-9,\\s]+", message = "types must be a comma-separated list of energy types") String types,
-            @RequestParam(defaultValue = "dist")
-                @Pattern(regexp = "dist|price") String sort
-    ) {
-        List<String> energyTypes = Arrays.stream(types.split(","))
-                .map(String::trim)
-                .filter(ALL_VALID::contains)
-                .toList();
+                    @Size(max = 120)
+                    @Pattern(
+                            regexp = "[a-z_0-9,\\s]+",
+                            message = "types must be a comma-separated list of energy types")
+                    String types,
+            @RequestParam(defaultValue = "dist") @Pattern(regexp = "dist|price") String sort) {
+        List<String> energyTypes =
+                Arrays.stream(types.split(","))
+                        .map(String::trim)
+                        .filter(ALL_VALID::contains)
+                        .toList();
 
         if (energyTypes.isEmpty()) {
             energyTypes = List.of("diesel", "e5", "e10");
@@ -90,29 +101,37 @@ public class UnifiedStationController {
 
         if (needsFuel) {
             String fuelType = pickFuelType(energyTypes);
-            futures.add(CompletableFuture.supplyAsync(() -> {
-                try {
-                    List<TankerkoenigResponse.Station> stations =
-                            tankerkoenigClient.searchStations(lat, lng, Math.min(rad, 25));
-                    return stations.stream().map(s -> mapFuelStation(s, fuelType)).toList();
-                } catch (Exception e) {
-                    log.error("Fuel station fetch failed: {}", e.getMessage());
-                    return Collections.<UnifiedStationDto>emptyList();
-                }
-            }));
+            futures.add(
+                    CompletableFuture.supplyAsync(
+                            () -> {
+                                try {
+                                    List<TankerkoenigResponse.Station> stations =
+                                            tankerkoenigClient.searchStations(
+                                                    lat, lng, Math.min(rad, 25));
+                                    return stations.stream()
+                                            .map(s -> mapFuelStation(s, fuelType))
+                                            .toList();
+                                } catch (Exception e) {
+                                    log.error("Fuel station fetch failed: {}", e.getMessage());
+                                    return Collections.<UnifiedStationDto>emptyList();
+                                }
+                            }));
         }
 
         if (needsCharging) {
-            futures.add(CompletableFuture.supplyAsync(() -> {
-                try {
-                    List<ChargingStation> stations =
-                            chargeMapClient.searchChargingStations(lat, lng, Math.min(rad, 50));
-                    return stations.stream().map(this::mapChargingStation).toList();
-                } catch (Exception e) {
-                    log.error("Charging station fetch failed: {}", e.getMessage());
-                    return Collections.<UnifiedStationDto>emptyList();
-                }
-            }));
+            futures.add(
+                    CompletableFuture.supplyAsync(
+                            () -> {
+                                try {
+                                    List<ChargingStation> stations =
+                                            chargeMapClient.searchChargingStations(
+                                                    lat, lng, Math.min(rad, 50));
+                                    return stations.stream().map(this::mapChargingStation).toList();
+                                } catch (Exception e) {
+                                    log.error("Charging station fetch failed: {}", e.getMessage());
+                                    return Collections.<UnifiedStationDto>emptyList();
+                                }
+                            }));
         }
 
         // Each lambda already catches its own Exception and returns empty;
@@ -127,8 +146,7 @@ public class UnifiedStationController {
         }
 
         if ("dist".equals(sort)) {
-            allStations.sort(Comparator.comparingDouble(
-                    s -> s.dist() != null ? s.dist() : 999.0));
+            allStations.sort(Comparator.comparingDouble(s -> s.dist() != null ? s.dist() : 999.0));
         }
 
         return ResponseEntity.ok(ApiResponse.success(Map.of("stations", allStations)));
@@ -146,11 +164,12 @@ public class UnifiedStationController {
         if (s.e5() != null) available.add("e5");
         if (s.e10() != null) available.add("e10");
 
-        Double price = switch (fuelType) {
-            case "diesel" -> s.diesel();
-            case "e5" -> s.e5();
-            default -> s.e10();
-        };
+        Double price =
+                switch (fuelType) {
+                    case "diesel" -> s.diesel();
+                    case "e5" -> s.e5();
+                    default -> s.e10();
+                };
 
         return new UnifiedStationDto(
                 s.id(),
@@ -166,14 +185,19 @@ public class UnifiedStationController {
                         s.street() != null ? s.street() : "",
                         s.houseNumber() != null ? s.houseNumber() : "",
                         s.postCode() != null ? s.postCode() : "",
-                        s.place() != null ? s.place() : ""
-                ),
+                        s.place() != null ? s.place() : ""),
                 available,
                 new UnifiedStationDto.PricesDto(s.diesel(), s.e5(), s.e10()),
                 price,
                 // EV-only fields below
-                null, null, null, null, null, null, null, null
-        );
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     private UnifiedStationDto mapChargingStation(ChargingStation s) {
@@ -192,13 +216,13 @@ public class UnifiedStationController {
                 }
                 chargingSpeeds.add(speed);
                 totalPoints += conn.quantity();
-                mappedConnections.add(new UnifiedStationDto.ConnectionDto(
-                        conn.type() != null ? conn.type() : "unknown",
-                        conn.type() != null ? conn.type() : "Unbekannt",
-                        conn.powerKW(),
-                        conn.quantity(),
-                        speed
-                ));
+                mappedConnections.add(
+                        new UnifiedStationDto.ConnectionDto(
+                                conn.type() != null ? conn.type() : "unknown",
+                                conn.type() != null ? conn.type() : "Unbekannt",
+                                conn.powerKW(),
+                                conn.quantity(),
+                                speed));
             }
         }
 
@@ -228,11 +252,11 @@ public class UnifiedStationController {
                         s.address() != null ? s.address() : "",
                         "",
                         s.postCode() != null ? s.postCode() : "",
-                        s.city() != null ? s.city() : ""
-                ),
+                        s.city() != null ? s.city() : ""),
                 energyTypes,
                 // Fuel-only fields
-                null, null,
+                null,
+                null,
                 operator,
                 s.isOperational(),
                 mappedConnections,
@@ -240,7 +264,6 @@ public class UnifiedStationController {
                 maxPower > 0 ? maxPower : null,
                 totalPoints,
                 s.usageCost(),
-                s.accessType()
-        );
+                s.accessType());
     }
 }

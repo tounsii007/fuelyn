@@ -1,13 +1,15 @@
 package com.fuelyn.price.controller;
 
-import com.fuelyn.common.dto.ApiResponse;
-import com.fuelyn.price.model.dto.TankerkoenigResponse;
-import com.fuelyn.price.service.TankerkoenigClient;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +20,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.fuelyn.common.dto.ApiResponse;
+import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.service.TankerkoenigClient;
 
 /**
- * Proxy endpoints for Tankerkoenig API — stations search, detail, and batch prices.
- * Keeps API keys server-side and adds circuit breaker / rate limiting.
+ * Proxy endpoints for Tankerkoenig API — stations search, detail, and batch prices. Keeps API keys
+ * server-side and adds circuit breaker / rate limiting.
  */
 @RestController
 @RequestMapping("/api/v1/prices")
@@ -40,8 +42,8 @@ public class StationProxyController {
     }
 
     /**
-     * GET /api/v1/prices/stations?lat=...&lng=...&rad=5&type=e10&sort=dist
-     * Proxies Tankerkoenig list.php — searches stations by location.
+     * GET /api/v1/prices/stations?lat=...&lng=...&rad=5&type=e10&sort=dist Proxies Tankerkoenig
+     * list.php — searches stations by location.
      */
     @GetMapping("/stations")
     public ResponseEntity<ApiResponse<Map<String, Object>>> searchStations(
@@ -49,51 +51,58 @@ public class StationProxyController {
             @RequestParam @Min(-180) @Max(180) double lng,
             @RequestParam(defaultValue = "5") @Min(1) @Max(25) double rad,
             @RequestParam(defaultValue = "e10") @Pattern(regexp = "diesel|e5|e10") String type,
-            @RequestParam(defaultValue = "dist") @Pattern(regexp = "price|dist") String sort
-    ) {
-        log.info("Station search: lat={}, lng={}, rad={}, type={}, sort={}", lat, lng, rad, type, sort);
+            @RequestParam(defaultValue = "dist") @Pattern(regexp = "price|dist") String sort) {
+        log.info(
+                "Station search: lat={}, lng={}, rad={}, type={}, sort={}",
+                lat,
+                lng,
+                rad,
+                type,
+                sort);
 
-        List<TankerkoenigResponse.Station> stations = tankerkoenigClient.searchStations(lat, lng, rad);
+        List<TankerkoenigResponse.Station> stations =
+                tankerkoenigClient.searchStations(lat, lng, rad);
 
         // Filter by fuel type and sort
-        List<TankerkoenigResponse.Station> filtered = stations.stream()
-                .filter(s -> {
-                    Double price = switch (type) {
-                        case "diesel" -> s.diesel();
-                        case "e5" -> s.e5();
-                        case "e10" -> s.e10();
-                        default -> s.e10();
-                    };
-                    return price != null && price > 0;
-                })
-                .sorted((a, b) -> {
-                    if ("price".equals(sort)) {
-                        Double priceA = getPrice(a, type);
-                        Double priceB = getPrice(b, type);
-                        return Double.compare(
-                                priceA != null ? priceA : Double.MAX_VALUE,
-                                priceB != null ? priceB : Double.MAX_VALUE
-                        );
-                    }
-                    return Double.compare(a.dist(), b.dist());
-                })
-                .toList();
+        List<TankerkoenigResponse.Station> filtered =
+                stations.stream()
+                        .filter(
+                                s -> {
+                                    Double price =
+                                            switch (type) {
+                                                case "diesel" -> s.diesel();
+                                                case "e5" -> s.e5();
+                                                case "e10" -> s.e10();
+                                                default -> s.e10();
+                                            };
+                                    return price != null && price > 0;
+                                })
+                        .sorted(
+                                (a, b) -> {
+                                    if ("price".equals(sort)) {
+                                        Double priceA = getPrice(a, type);
+                                        Double priceB = getPrice(b, type);
+                                        return Double.compare(
+                                                priceA != null ? priceA : Double.MAX_VALUE,
+                                                priceB != null ? priceB : Double.MAX_VALUE);
+                                    }
+                                    return Double.compare(a.dist(), b.dist());
+                                })
+                        .toList();
 
-        List<Map<String, Object>> mapped = filtered.stream()
-                .map(StationProxyController::mapStationWithPrices)
-                .toList();
+        List<Map<String, Object>> mapped =
+                filtered.stream().map(StationProxyController::mapStationWithPrices).toList();
 
         return ResponseEntity.ok(ApiResponse.success(Map.of("stations", mapped)));
     }
 
     /**
-     * GET /api/v1/prices/stations/{id}
-     * Proxies Tankerkoenig detail.php — fetches a single station's details.
+     * GET /api/v1/prices/stations/{id} Proxies Tankerkoenig detail.php — fetches a single station's
+     * details.
      */
     @GetMapping("/stations/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getStationDetail(
-            @PathVariable @NotBlank String id
-    ) {
+            @PathVariable @NotBlank String id) {
         log.info("Station detail: id={}", id);
 
         TankerkoenigResponse.Station station = tankerkoenigClient.fetchStationDetail(id);
@@ -102,24 +111,26 @@ public class StationProxyController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(ApiResponse.success(Map.of("station", mapStationWithPrices(station))));
+        return ResponseEntity.ok(
+                ApiResponse.success(Map.of("station", mapStationWithPrices(station))));
     }
 
     /**
-     * GET /api/v1/prices/batch?ids=id1,id2,...
-     * Proxies Tankerkoenig prices.php — batch price fetch for up to 10 stations.
+     * GET /api/v1/prices/batch?ids=id1,id2,... Proxies Tankerkoenig prices.php — batch price fetch
+     * for up to 10 stations.
      */
     @GetMapping("/batch")
     public ResponseEntity<ApiResponse<Map<String, Object>>> batchPrices(
-            @RequestParam @NotBlank @Size(max = 400, message = "ids parameter too long") String ids
-    ) {
+            @RequestParam @NotBlank @Size(max = 400, message = "ids parameter too long")
+                    String ids) {
         // Trim + drop empties so "a,,b" becomes ["a","b"] and an empty
         // segment is never sent upstream to Tankerkönig (it would be
         // interpreted as a wildcard or rejected as malformed).
-        List<String> idList = java.util.Arrays.stream(ids.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+        List<String> idList =
+                java.util.Arrays.stream(ids.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
         if (idList.isEmpty() || idList.size() > 10) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Provide 1-10 non-empty station IDs"));
@@ -127,7 +138,8 @@ public class StationProxyController {
 
         log.info("Batch price fetch: {} stations", idList.size());
 
-        Map<String, TankerkoenigResponse.PriceEntry> prices = tankerkoenigClient.fetchPrices(idList);
+        Map<String, TankerkoenigResponse.PriceEntry> prices =
+                tankerkoenigClient.fetchPrices(idList);
         return ResponseEntity.ok(ApiResponse.success(Map.of("prices", prices)));
     }
 
@@ -141,8 +153,8 @@ public class StationProxyController {
     }
 
     /**
-     * Maps a Tankerkoenig Station to a frontend-compatible structure
-     * with nested prices and address objects.
+     * Maps a Tankerkoenig Station to a frontend-compatible structure with nested prices and address
+     * objects.
      */
     private static Map<String, Object> mapStationWithPrices(TankerkoenigResponse.Station s) {
         Map<String, Object> map = new HashMap<>();

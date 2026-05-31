@@ -2,9 +2,7 @@ package com.fuelyn.common.exception;
 
 import org.springframework.http.HttpStatus;
 
-/**
- * Exception thrown when a call to an external or inter-service API fails.
- */
+/** Exception thrown when a call to an external or inter-service API fails. */
 public class ExternalApiException extends ServiceException {
 
     public ExternalApiException(String message) {

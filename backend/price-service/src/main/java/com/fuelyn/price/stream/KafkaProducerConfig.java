@@ -1,6 +1,8 @@
 package com.fuelyn.price.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,30 +14,33 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Kafka producer configuration for price-service.
  *
- * <p>The bean is only created when {@code fuelyn.kafka.publisher.enabled=true}
- * (default). Switching it off in dev or in environments without a
- * broker leaves the rest of the service running cleanly — the
- * publisher is wrapped in an Optional in {@link PriceEventPublisher}.</p>
+ * <p>The bean is only created when {@code fuelyn.kafka.publisher.enabled=true} (default). Switching
+ * it off in dev or in environments without a broker leaves the rest of the service running cleanly
+ * — the publisher is wrapped in an Optional in {@link PriceEventPublisher}.
  *
  * <h3>Producer properties</h3>
+ *
  * <ul>
- *   <li>{@code acks=all} — wait for all in-sync replicas (durability)</li>
- *   <li>{@code enable.idempotence=true} — exactly-once produce semantics</li>
- *   <li>{@code compression.type=zstd} — small JSON payloads compress
- *       very well, ~70 % size reduction over the wire</li>
- *   <li>{@code linger.ms=20} — micro-batches at modest cost in latency</li>
- *   <li>{@code max.in.flight.requests.per.connection=5} — Spring's default;
- *       safe with idempotence on</li>
+ *   <li>{@code acks=all} — wait for all in-sync replicas (durability)
+ *   <li>{@code enable.idempotence=true} — exactly-once produce semantics
+ *   <li>{@code compression.type=zstd} — small JSON payloads compress very well, ~70 % size
+ *       reduction over the wire
+ *   <li>{@code linger.ms=20} — micro-batches at modest cost in latency
+ *   <li>{@code max.in.flight.requests.per.connection=5} — Spring's default; safe with idempotence
+ *       on
  * </ul>
  */
 @Configuration
-@ConditionalOnProperty(prefix = "fuelyn.kafka.publisher", name = "enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(
+        prefix = "fuelyn.kafka.publisher",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false)
 public class KafkaProducerConfig {
 
     @Value("${fuelyn.kafka.bootstrap-servers:redpanda:29092}")

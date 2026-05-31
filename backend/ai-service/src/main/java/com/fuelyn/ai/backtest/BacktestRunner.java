@@ -1,11 +1,5 @@
 package com.fuelyn.ai.backtest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fuelyn.ai.fallback.LocalHeuristicFallback;
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorResponse;
-
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,24 +9,28 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fuelyn.ai.fallback.LocalHeuristicFallback;
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorResponse;
+
 /**
  * Standalone backtest harness for the heuristic.
  *
- * <p>Reads a price-history fixture (JSON), replays it hour-by-hour,
- * and at every step runs {@link LocalHeuristicFallback#analyze} as if
- * only the data <i>up to that moment</i> were known. The decision is
- * then evaluated against the truth that the rest of the dataset
- * carries: did waiting actually save money?</p>
+ * <p>Reads a price-history fixture (JSON), replays it hour-by-hour, and at every step runs {@link
+ * LocalHeuristicFallback#analyze} as if only the data <i>up to that moment</i> were known. The
+ * decision is then evaluated against the truth that the rest of the dataset carries: did waiting
+ * actually save money?
  *
  * <h3>Fixture schema</h3>
+ *
  * <pre>
  * {
  *   "fuelType": "e10",
@@ -53,21 +51,24 @@ import java.util.Map;
  * </pre>
  *
  * <h3>Output</h3>
- * <p>Per-decision regret in cents and aggregate metrics:</p>
+ *
+ * <p>Per-decision regret in cents and aggregate metrics:
+ *
  * <ul>
- *   <li>Total decisions, buy / wait split</li>
- *   <li>Mean regret per decision (lower is better)</li>
- *   <li>Win rate vs. "always buy now" baseline</li>
- *   <li>Win rate vs. "always wait until Tue 19:00" baseline</li>
+ *   <li>Total decisions, buy / wait split
+ *   <li>Mean regret per decision (lower is better)
+ *   <li>Win rate vs. "always buy now" baseline
+ *   <li>Win rate vs. "always wait until Tue 19:00" baseline
  * </ul>
  *
  * <h3>Usage</h3>
+ *
  * <pre>
  *   java -cp ... com.fuelyn.ai.backtest.BacktestRunner path/to/fixture.json
  * </pre>
  *
- * <p>The fixture path can be a local file or a classpath resource
- * (resolved via the system classloader if it doesn't exist on disk).</p>
+ * <p>The fixture path can be a local file or a classpath resource (resolved via the system
+ * classloader if it doesn't exist on disk).
  */
 public final class BacktestRunner {
 
@@ -77,8 +78,8 @@ public final class BacktestRunner {
             double recommendedPrice,
             double observedMin24h,
             double observedMax24h,
-            double regretCt        // signed: positive = we paid more than the 24-h min
-    ) {}
+            double regretCt // signed: positive = we paid more than the 24-h min
+            ) {}
 
     public record Report(
             int decisions,
@@ -89,8 +90,7 @@ public final class BacktestRunner {
             double meanRegretBuyOnly,
             double meanRegretWaitOnly,
             double winRateVsAlwaysBuyNow,
-            double winRateVsAlwaysWaitTue
-    ) {}
+            double winRateVsAlwaysWaitTue) {}
 
     private BacktestRunner() {}
 
@@ -121,9 +121,9 @@ public final class BacktestRunner {
         // Build per-station price-time series
         List<StationSeries> stations = new ArrayList<>();
         for (JsonNode s : root.path("stations")) {
-            String name  = s.path("name").asText();
+            String name = s.path("name").asText();
             String brand = s.path("brand").asText("");
-            double dist  = s.path("distance").asDouble(0);
+            double dist = s.path("distance").asDouble(0);
             List<TimedPrice> series = new ArrayList<>();
             for (JsonNode pt : s.path("history")) {
                 Instant ts = parseTs(pt.path("ts").asText());
@@ -140,30 +140,47 @@ public final class BacktestRunner {
         }
 
         // The replay schedule: every hour from earliest to latest-24h
-        Instant earliest = stations.stream().map(s -> s.series().get(0).ts()).min(Instant::compareTo).orElseThrow();
-        Instant latest   = stations.stream().map(s -> s.series().get(s.series().size() - 1).ts()).max(Instant::compareTo).orElseThrow();
-        Instant cutoff   = latest.minus(Duration.ofHours(24));
+        Instant earliest =
+                stations.stream()
+                        .map(s -> s.series().get(0).ts())
+                        .min(Instant::compareTo)
+                        .orElseThrow();
+        Instant latest =
+                stations.stream()
+                        .map(s -> s.series().get(s.series().size() - 1).ts())
+                        .max(Instant::compareTo)
+                        .orElseThrow();
+        Instant cutoff = latest.minus(Duration.ofHours(24));
 
         ZoneId zone = ZoneId.of("Europe/Berlin");
         List<Decision> decisions = new ArrayList<>();
         List<Double> regretAlwaysBuy = new ArrayList<>();
         List<Double> regretAlwaysWaitTue = new ArrayList<>();
 
-        for (Instant t = earliest.plus(Duration.ofHours(24)); !t.isAfter(cutoff); t = t.plus(Duration.ofHours(1))) {
+        for (Instant t = earliest.plus(Duration.ofHours(24));
+                !t.isAfter(cutoff);
+                t = t.plus(Duration.ofHours(1))) {
             // Build a request reflecting only the data up to t.
             List<AIAdvisorRequest.StationPrice> currentPrices = new ArrayList<>();
-            List<AIAdvisorRequest.PricePoint> historyPoints  = new ArrayList<>();
+            List<AIAdvisorRequest.PricePoint> historyPoints = new ArrayList<>();
 
             for (var s : stations) {
                 Double currentPrice = priceAtOrBefore(s.series(), t);
                 if (currentPrice == null) continue;
-                currentPrices.add(new AIAdvisorRequest.StationPrice(
-                        s.name(), s.brand(), currentPrice, s.distance(),
-                        t.toString(), null, null
-                ));
+                currentPrices.add(
+                        new AIAdvisorRequest.StationPrice(
+                                s.name(),
+                                s.brand(),
+                                currentPrice,
+                                s.distance(),
+                                t.toString(),
+                                null,
+                                null));
             }
             // Collect raw history (cheapest station each hour) over the trailing 24 h
-            for (Instant h = t.minus(Duration.ofHours(23)); !h.isAfter(t); h = h.plus(Duration.ofHours(1))) {
+            for (Instant h = t.minus(Duration.ofHours(23));
+                    !h.isAfter(t);
+                    h = h.plus(Duration.ofHours(1))) {
                 Double cheapestNow = cheapestAt(stations, h);
                 if (cheapestNow != null) {
                     historyPoints.add(new AIAdvisorRequest.PricePoint(cheapestNow, h.toString()));
@@ -171,28 +188,39 @@ public final class BacktestRunner {
             }
             if (currentPrices.isEmpty()) continue;
 
-            AIAdvisorRequest req = new AIAdvisorRequest(
-                    currentPrices, fuelType, historyPoints, 52.5, 13.4, 50);
-            AIAdvisorResponse resp = LocalHeuristicFallback.analyze(req,
-                    Clock.fixed(t, zone));
+            AIAdvisorRequest req =
+                    new AIAdvisorRequest(currentPrices, fuelType, historyPoints, 52.5, 13.4, 50);
+            AIAdvisorResponse resp = LocalHeuristicFallback.analyze(req, Clock.fixed(t, zone));
 
             // Truth: cheapest price among all stations within next 24 h.
-            double recommendedPrice = currentPrices.stream()
-                    .mapToDouble(AIAdvisorRequest.StationPrice::price).min().orElse(Double.NaN);
+            double recommendedPrice =
+                    currentPrices.stream()
+                            .mapToDouble(AIAdvisorRequest.StationPrice::price)
+                            .min()
+                            .orElse(Double.NaN);
             double observedMin = minBetween(stations, t, t.plus(Duration.ofHours(24)));
             double observedMax = maxBetween(stations, t, t.plus(Duration.ofHours(24)));
             double regretCt;
             if ("buy_now".equals(resp.action())) {
-                // We paid recommendedPrice now. Regret = how much cheaper we could have got within 24h.
+                // We paid recommendedPrice now. Regret = how much cheaper we could have got within
+                // 24h.
                 regretCt = (recommendedPrice - observedMin) * 100.0;
             } else {
                 // We waited. Regret = how much MORE we paid by waiting (price might have RISEN).
-                // Pessimistic interpretation: assume we ended up paying observedMax (worst case wait).
+                // Pessimistic interpretation: assume we ended up paying observedMax (worst case
+                // wait).
                 regretCt = (observedMax - recommendedPrice) * 100.0;
                 // Clamp at 0 because waiting and getting min24h is the optimist case
                 regretCt = Math.max(0, regretCt);
             }
-            decisions.add(new Decision(t, resp.action(), recommendedPrice, observedMin, observedMax, regretCt));
+            decisions.add(
+                    new Decision(
+                            t,
+                            resp.action(),
+                            recommendedPrice,
+                            observedMin,
+                            observedMax,
+                            regretCt));
 
             // Baselines
             regretAlwaysBuy.add((recommendedPrice - observedMin) * 100.0);
@@ -211,14 +239,20 @@ public final class BacktestRunner {
     // ─── helpers ─────────────────────────────────────────────────
 
     private record TimedPrice(Instant ts, double price) {}
-    private record StationSeries(String name, String brand, double distance, List<TimedPrice> series) {}
+
+    private record StationSeries(
+            String name, String brand, double distance, List<TimedPrice> series) {}
 
     private static Instant parseTs(String iso) {
         if (iso == null || iso.isBlank()) return null;
-        try { return OffsetDateTime.parse(iso).toInstant(); }
-        catch (Exception ignored) {}
-        try { return Instant.parse(iso); }
-        catch (Exception ignored) {}
+        try {
+            return OffsetDateTime.parse(iso).toInstant();
+        } catch (Exception ignored) {
+        }
+        try {
+            return Instant.parse(iso);
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
@@ -245,7 +279,7 @@ public final class BacktestRunner {
         for (var s : stations) {
             for (var pt : s.series()) {
                 if (pt.ts().isBefore(from)) continue;
-                if (pt.ts().isAfter(to))    break;
+                if (pt.ts().isAfter(to)) break;
                 if (pt.price() < best) best = pt.price();
             }
         }
@@ -257,16 +291,17 @@ public final class BacktestRunner {
         for (var s : stations) {
             for (var pt : s.series()) {
                 if (pt.ts().isBefore(from)) continue;
-                if (pt.ts().isAfter(to))    break;
+                if (pt.ts().isAfter(to)) break;
                 if (pt.price() > best) best = pt.price();
             }
         }
         return Double.isInfinite(best) ? Double.NaN : best;
     }
 
-    private static Report summarize(List<Decision> decisions,
-                                    List<Double> regretAlwaysBuy,
-                                    List<Double> regretAlwaysWaitTue) {
+    private static Report summarize(
+            List<Decision> decisions,
+            List<Double> regretAlwaysBuy,
+            List<Double> regretAlwaysWaitTue) {
         int buy = 0, waitN = 0;
         double sumRegret = 0;
         double sumRegretBuy = 0, sumRegretWait = 0;
@@ -276,29 +311,36 @@ public final class BacktestRunner {
             sumRegret += d.regretCt();
             regrets.add(d.regretCt());
             if ("buy_now".equals(d.action())) {
-                buy++; sumRegretBuy += d.regretCt(); buyCount++;
+                buy++;
+                sumRegretBuy += d.regretCt();
+                buyCount++;
             } else {
-                waitN++; sumRegretWait += d.regretCt(); waitCount++;
+                waitN++;
+                sumRegretWait += d.regretCt();
+                waitCount++;
             }
         }
         regrets.sort(Double::compareTo);
         double median = regrets.isEmpty() ? 0 : regrets.get(regrets.size() / 2);
 
         int n = decisions.size();
-        double meanOurs   = n == 0 ? 0 : sumRegret / n;
-        double meanAlwaysBuy   = mean(regretAlwaysBuy);
+        double meanOurs = n == 0 ? 0 : sumRegret / n;
+        double meanAlwaysBuy = mean(regretAlwaysBuy);
         double meanAlwaysWaitTue = mean(regretAlwaysWaitTue);
 
-        double winVsBuy  = compareWinRate(decisions, regretAlwaysBuy);
+        double winVsBuy = compareWinRate(decisions, regretAlwaysBuy);
         double winVsWait = compareWinRate(decisions, regretAlwaysWaitTue);
 
         return new Report(
-                n, buy, waitN,
-                meanOurs, median,
-                buyCount  == 0 ? 0 : sumRegretBuy / buyCount,
+                n,
+                buy,
+                waitN,
+                meanOurs,
+                median,
+                buyCount == 0 ? 0 : sumRegretBuy / buyCount,
                 waitCount == 0 ? 0 : sumRegretWait / waitCount,
-                winVsBuy, winVsWait
-        );
+                winVsBuy,
+                winVsWait);
     }
 
     private static double mean(List<Double> values) {
@@ -336,6 +378,11 @@ public final class BacktestRunner {
         out.println("───────────────────────────────────");
     }
 
-    private static String round(double v)   { return String.format(Locale.GERMANY, "%.2f", v); }
-    private static String percent(double v) { return String.format(Locale.GERMANY, "%.1f %%", v * 100); }
+    private static String round(double v) {
+        return String.format(Locale.GERMANY, "%.2f", v);
+    }
+
+    private static String percent(double v) {
+        return String.format(Locale.GERMANY, "%.1f %%", v * 100);
+    }
 }

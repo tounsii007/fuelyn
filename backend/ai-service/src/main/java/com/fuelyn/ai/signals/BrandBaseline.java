@@ -1,23 +1,21 @@
 package com.fuelyn.ai.signals;
 
-import com.fuelyn.ai.model.AIAdvisorRequest;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fuelyn.ai.model.AIAdvisorRequest;
+
 /**
  * Brand-relative price baseline.
  *
- * <p>German fuel brands have systemic level differences:
- * Aral/Shell/Esso typically run 2–4 ct above Star/JET/HEM. Plain
- * z-score over the whole sample treats every Aral station as
- * "expensive" when it's just normal Aral. We compute a brand-level
- * mean and surface a station's deviation <i>within its brand cluster</i>
- * — that catches the truly cheap stations in either tier.</p>
+ * <p>German fuel brands have systemic level differences: Aral/Shell/Esso typically run 2–4 ct above
+ * Star/JET/HEM. Plain z-score over the whole sample treats every Aral station as "expensive" when
+ * it's just normal Aral. We compute a brand-level mean and surface a station's deviation <i>within
+ * its brand cluster</i> — that catches the truly cheap stations in either tier.
  *
- * <p>Edge case: brands with only one station can't have a meaningful
- * brand-z-score. We fall back to the global z-score for those.</p>
+ * <p>Edge case: brands with only one station can't have a meaningful brand-z-score. We fall back to
+ * the global z-score for those.
  */
 public final class BrandBaseline {
 
@@ -29,8 +27,7 @@ public final class BrandBaseline {
             double globalMean,
             double globalStdDev,
             /** Brand-relative z-score of the cheapest station; clamped ±1.5. */
-            double cheapestBrandZ
-    ) {}
+            double cheapestBrandZ) {}
 
     private BrandBaseline() {}
 
@@ -39,13 +36,23 @@ public final class BrandBaseline {
             return new Result(Map.of(), 0, 0, 0);
         }
         // Global stats
-        double globalMean = prices.stream().mapToDouble(AIAdvisorRequest.StationPrice::price).average().orElse(0);
-        double globalStd  = stdDev(prices.stream().mapToDouble(AIAdvisorRequest.StationPrice::price).toArray(), globalMean);
+        double globalMean =
+                prices.stream()
+                        .mapToDouble(AIAdvisorRequest.StationPrice::price)
+                        .average()
+                        .orElse(0);
+        double globalStd =
+                stdDev(
+                        prices.stream().mapToDouble(AIAdvisorRequest.StationPrice::price).toArray(),
+                        globalMean);
 
         // Group by brand (case-insensitive, trimmed; null → "_unknown")
         Map<String, java.util.List<Double>> byBrand = new HashMap<>();
         for (var p : prices) {
-            String key = (p.brand() == null || p.brand().isBlank()) ? "_unknown" : p.brand().trim().toLowerCase();
+            String key =
+                    (p.brand() == null || p.brand().isBlank())
+                            ? "_unknown"
+                            : p.brand().trim().toLowerCase();
             byBrand.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(p.price());
         }
 
@@ -58,10 +65,16 @@ public final class BrandBaseline {
         }
 
         // Cheapest station's brand-relative z-score
-        AIAdvisorRequest.StationPrice cheap = prices.stream()
-                .min(java.util.Comparator.comparingDouble(AIAdvisorRequest.StationPrice::price))
-                .orElseThrow();
-        String cheapBrand = (cheap.brand() == null || cheap.brand().isBlank()) ? "_unknown" : cheap.brand().trim().toLowerCase();
+        AIAdvisorRequest.StationPrice cheap =
+                prices.stream()
+                        .min(
+                                java.util.Comparator.comparingDouble(
+                                        AIAdvisorRequest.StationPrice::price))
+                        .orElseThrow();
+        String cheapBrand =
+                (cheap.brand() == null || cheap.brand().isBlank())
+                        ? "_unknown"
+                        : cheap.brand().trim().toLowerCase();
         BrandStats brandStats = stats.get(cheapBrand);
 
         double brandZ;

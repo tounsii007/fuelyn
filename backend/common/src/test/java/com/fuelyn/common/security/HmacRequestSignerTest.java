@@ -1,5 +1,12 @@
 package com.fuelyn.common.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -7,20 +14,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 /**
- * Heavy test coverage for {@link HmacRequestSigner}, the lynchpin of all
- * inter-service authentication. Every branch including null/empty inputs,
- * timestamp skew, tamper detection, and consistency with HMAC-SHA256
- * reference vectors. Each method's failure mode has at least one test that
- * proves it cannot leak as a 500 / NPE — the auth filter relies on a
- * deterministic boolean.
+ * Heavy test coverage for {@link HmacRequestSigner}, the lynchpin of all inter-service
+ * authentication. Every branch including null/empty inputs, timestamp skew, tamper detection, and
+ * consistency with HMAC-SHA256 reference vectors. Each method's failure mode has at least one test
+ * that proves it cannot leak as a 500 / NPE — the auth filter relies on a deterministic boolean.
  */
 class HmacRequestSignerTest {
 
@@ -208,7 +206,7 @@ class HmacRequestSignerTest {
             // logical request.
             String ts = "1700000000000";
             String s1 = HmacRequestSigner.sign(null, ts, SECRET);
-            String s2 = HmacRequestSigner.sign("",   ts, SECRET);
+            String s2 = HmacRequestSigner.sign("", ts, SECRET);
             assertThat(s1).isEqualTo(s2);
         }
 
@@ -244,11 +242,9 @@ class HmacRequestSignerTest {
         void verify_handlesGarbageSignature_returnsFalseWithoutException() {
             String ts = String.valueOf(System.currentTimeMillis());
             // Not even valid base64 — must still be a clean false, never a 500.
-            assertThatCode(() ->
-                    HmacRequestSigner.verify("body", ts, "!!!not-base64!!!", SECRET)
-            ).doesNotThrowAnyException();
-            assertThat(HmacRequestSigner.verify("body", ts, "!!!not-base64!!!", SECRET))
-                    .isFalse();
+            assertThatCode(() -> HmacRequestSigner.verify("body", ts, "!!!not-base64!!!", SECRET))
+                    .doesNotThrowAnyException();
+            assertThat(HmacRequestSigner.verify("body", ts, "!!!not-base64!!!", SECRET)).isFalse();
         }
     }
 

@@ -1,12 +1,11 @@
 package com.fuelyn.price.service;
 
-import com.fuelyn.price.config.CollectionProperties;
-import com.fuelyn.price.model.dto.TankerkoenigResponse;
-import com.fuelyn.price.model.entity.PriceSnapshot;
-import com.fuelyn.price.repository.CollectionRunRepository;
-import com.fuelyn.price.repository.PriceSnapshotRepository;
-import com.fuelyn.price.repository.StationMetaRepository;
-import com.fuelyn.price.stream.PriceEventPublisher;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,34 +16,35 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fuelyn.price.config.CollectionProperties;
+import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.model.entity.PriceSnapshot;
+import com.fuelyn.price.repository.CollectionRunRepository;
+import com.fuelyn.price.repository.PriceSnapshotRepository;
+import com.fuelyn.price.repository.StationMetaRepository;
+import com.fuelyn.price.stream.PriceEventPublisher;
 
 /**
- * Tests for {@link PriceCollectorService#cleanupOldData} — the iter-5
- * chunked-purge fix. Goals:
+ * Tests for {@link PriceCollectorService#cleanupOldData} — the iter-5 chunked-purge fix. Goals:
  *
  * <ul>
- *   <li>Rows older than the retention boundary are deleted.</li>
- *   <li>Rows newer than the retention boundary are kept.</li>
- *   <li>The chunked loop terminates when no more rows match — even when
- *       the dataset is much larger than the chunk size.</li>
- *   <li>Deletion happens in chunks: a 12k-row dataset triggers more than
- *       one DELETE round-trip.</li>
+ *   <li>Rows older than the retention boundary are deleted.
+ *   <li>Rows newer than the retention boundary are kept.
+ *   <li>The chunked loop terminates when no more rows match — even when the dataset is much larger
+ *       than the chunk size.
+ *   <li>Deletion happens in chunks: a 12k-row dataset triggers more than one DELETE round-trip.
  * </ul>
  */
 @DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:price-cleanup-it;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        "spring.jpa.hibernate.ddl-auto=validate",
-        "spring.main.web-application-type=none"
-})
+@TestPropertySource(
+        properties = {
+            "spring.datasource.url=jdbc:h2:mem:price-cleanup-it;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+            "spring.flyway.enabled=true",
+            "spring.flyway.locations=classpath:db/migration",
+            "spring.jpa.hibernate.ddl-auto=validate",
+            "spring.main.web-application-type=none"
+        })
 class PriceCollectorCleanupTest {
 
     @Autowired private StationMetaRepository stationRepo;
@@ -61,15 +61,20 @@ class PriceCollectorCleanupTest {
         runRepo.deleteAllInBatch();
 
         AtomicReference<PriceCollectorService> ref = new AtomicReference<>();
-        PriceCollectorService s = new PriceCollectorService(
-                new EmptyClient(),
-                snapshotRepo, stationRepo, runRepo,
-                new NoopPublisher(),
-                10.0, 7, 4,
-                new SelfRef(ref),
-                null, null,
-                new CollectionProperties()
-        );
+        PriceCollectorService s =
+                new PriceCollectorService(
+                        new EmptyClient(),
+                        snapshotRepo,
+                        stationRepo,
+                        runRepo,
+                        new NoopPublisher(),
+                        10.0,
+                        7,
+                        4,
+                        new SelfRef(ref),
+                        null,
+                        null,
+                        new CollectionProperties());
         ref.set(s);
         this.service = s;
     }
@@ -108,8 +113,8 @@ class PriceCollectorCleanupTest {
         void mixedAges_keepsOnlyRecent() {
             LocalDateTime now = LocalDateTime.now();
             snapshotRepo.save(new PriceSnapshot("s1", "diesel", 1.799, now.minusDays(30)));
-            snapshotRepo.save(new PriceSnapshot("s1", "e5",     1.689, now.minusDays(3)));
-            snapshotRepo.save(new PriceSnapshot("s1", "e10",    1.629, now.minusDays(60)));
+            snapshotRepo.save(new PriceSnapshot("s1", "e5", 1.689, now.minusDays(3)));
+            snapshotRepo.save(new PriceSnapshot("s1", "e10", 1.629, now.minusDays(60)));
             em.flush();
 
             int deleted = service.cleanupOldData();
@@ -136,9 +141,7 @@ class PriceCollectorCleanupTest {
             int n = 12_000;
             List<PriceSnapshot> bulk = new java.util.ArrayList<>(n);
             for (int i = 0; i < n; i++) {
-                bulk.add(new PriceSnapshot(
-                        "stale-" + i, "diesel", 1.799,
-                        old.plusSeconds(i)));
+                bulk.add(new PriceSnapshot("stale-" + i, "diesel", 1.799, old.plusSeconds(i)));
             }
             snapshotRepo.saveAll(bulk);
             em.flush();
@@ -160,23 +163,54 @@ class PriceCollectorCleanupTest {
     // ─── stubs ────────────────────────────────────────────────
 
     static class EmptyClient implements FuelStationClient {
-        @Override public List<TankerkoenigResponse.Station> searchStations(double a, double b, double c) { return List.of(); }
-        @Override public TankerkoenigResponse.Station fetchStationDetail(String id) { return null; }
-        @Override public java.util.Map<String, TankerkoenigResponse.PriceEntry> fetchPrices(List<String> ids) { return java.util.Map.of(); }
+        @Override
+        public List<TankerkoenigResponse.Station> searchStations(double a, double b, double c) {
+            return List.of();
+        }
+
+        @Override
+        public TankerkoenigResponse.Station fetchStationDetail(String id) {
+            return null;
+        }
+
+        @Override
+        public java.util.Map<String, TankerkoenigResponse.PriceEntry> fetchPrices(
+                List<String> ids) {
+            return java.util.Map.of();
+        }
     }
 
     static class NoopPublisher extends PriceEventPublisher {
-        NoopPublisher() { super(null, "test"); }
-        @Override public void publish(com.fuelyn.common.events.PriceUpdatedEvent event) {}
+        NoopPublisher() {
+            super(null, "test");
+        }
+
+        @Override
+        public void publish(com.fuelyn.common.events.PriceUpdatedEvent event) {}
     }
 
     static class SelfRef extends PriceCollectorService {
         private final AtomicReference<PriceCollectorService> target;
+
         SelfRef(AtomicReference<PriceCollectorService> target) {
-            super(null, null, null, null, null, 0, 0, 0, null, null, null, new CollectionProperties());
+            super(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null,
+                    new CollectionProperties());
             this.target = target;
         }
-        @Override public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
+
+        @Override
+        public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
             return target.get().deleteRetentionChunk(cutoff, chunkSize);
         }
     }

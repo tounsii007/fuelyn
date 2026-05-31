@@ -1,7 +1,8 @@
 package com.fuelyn.price.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fuelyn.common.events.EventEnvelope;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,24 +16,26 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fuelyn.common.events.EventEnvelope;
 
 /**
  * Consumer configuration for price-service's SSE bridge.
  *
- * <p>Same pattern as ai-service's consumer config but with a separate
- * group-id so each service has independent offsets — that's why
- * {@link com.fuelyn.price.stream.PriceStreamController} sees
- * <em>every</em> event, not just the ones the ai-service hasn't taken.</p>
+ * <p>Same pattern as ai-service's consumer config but with a separate group-id so each service has
+ * independent offsets — that's why {@link com.fuelyn.price.stream.PriceStreamController} sees
+ * <em>every</em> event, not just the ones the ai-service hasn't taken.
  *
- * <p>The bean is conditional on
- * {@code fuelyn.kafka.consumer.enabled=true} (default) so unit
- * tests and dev environments without a broker keep working.</p>
+ * <p>The bean is conditional on {@code fuelyn.kafka.consumer.enabled=true} (default) so unit tests
+ * and dev environments without a broker keep working.
  */
 @Configuration
 @EnableKafka
-@ConditionalOnProperty(prefix = "fuelyn.kafka.consumer", name = "enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(
+        prefix = "fuelyn.kafka.consumer",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false)
 public class KafkaConsumerConfig {
 
     @Value("${fuelyn.kafka.bootstrap-servers:redpanda:29092}")
@@ -57,18 +60,20 @@ public class KafkaConsumerConfig {
         ErrorHandlingDeserializer<EventEnvelope> safeValueDes =
                 new ErrorHandlingDeserializer<>(inner);
 
-        return new DefaultKafkaConsumerFactory<>(
-                props, new StringDeserializer(), safeValueDes);
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), safeValueDes);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, EventEnvelope> priceStreamListenerFactory(
-            ConsumerFactory<String, EventEnvelope> priceStreamConsumerFactory) {
+    public ConcurrentKafkaListenerContainerFactory<String, EventEnvelope>
+            priceStreamListenerFactory(
+                    ConsumerFactory<String, EventEnvelope> priceStreamConsumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, EventEnvelope> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(priceStreamConsumerFactory);
-        factory.getContainerProperties().setAckMode(
-                org.springframework.kafka.listener.ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        factory.getContainerProperties()
+                .setAckMode(
+                        org.springframework.kafka.listener.ContainerProperties.AckMode
+                                .MANUAL_IMMEDIATE);
         return factory;
     }
 }

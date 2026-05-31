@@ -1,9 +1,14 @@
 package com.fuelyn.common.exception;
 
-import com.fuelyn.common.dto.ApiResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,20 +18,14 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.fuelyn.common.dto.ApiResponse;
 
 /**
- * Tests for {@link GlobalExceptionHandler} — verifies the iter-21 fixes
- * (ResponseStatusException honoured first, Error not suppressed) plus
- * the existing translation contract for ServiceException, validation,
- * and missing parameters.
+ * Tests for {@link GlobalExceptionHandler} — verifies the iter-21 fixes (ResponseStatusException
+ * honoured first, Error not suppressed) plus the existing translation contract for
+ * ServiceException, validation, and missing parameters.
  */
 class GlobalExceptionHandlerTest {
 
@@ -61,12 +60,14 @@ class GlobalExceptionHandlerTest {
 
         @Test
         void methodArgumentNotValid_includesFieldNamesInMessage() {
-            BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(
-                    new Object(), "request");
+            BeanPropertyBindingResult bindingResult =
+                    new BeanPropertyBindingResult(new Object(), "request");
             bindingResult.addError(new FieldError("request", "lat", "must not be null"));
-            bindingResult.addError(new FieldError("request", "lng", "must be between -180 and 180"));
+            bindingResult.addError(
+                    new FieldError("request", "lng", "must be between -180 and 180"));
 
-            MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+            MethodArgumentNotValidException ex =
+                    new MethodArgumentNotValidException(null, bindingResult);
 
             ResponseEntity<ApiResponse<Void>> response = handler.handleValidation(ex);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -74,7 +75,8 @@ class GlobalExceptionHandlerTest {
 
         @Test
         void emptyValidationErrors_stillReturns400() {
-            BeanPropertyBindingResult empty = new BeanPropertyBindingResult(new Object(), "request");
+            BeanPropertyBindingResult empty =
+                    new BeanPropertyBindingResult(new Object(), "request");
             MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, empty);
             ResponseEntity<ApiResponse<Void>> response = handler.handleValidation(ex);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -82,9 +84,10 @@ class GlobalExceptionHandlerTest {
 
         @Test
         void constraintViolation_translatesTo400() {
-            ConstraintViolation<?> violation = new StubViolation("lat", "must be between -90 and 90");
-            ConstraintViolationException ex = new ConstraintViolationException(
-                    "validation failed", Set.of(violation));
+            ConstraintViolation<?> violation =
+                    new StubViolation("lat", "must be between -90 and 90");
+            ConstraintViolationException ex =
+                    new ConstraintViolationException("validation failed", Set.of(violation));
 
             ResponseEntity<ApiResponse<Void>> response = handler.handleConstraintViolation(ex);
 
@@ -93,8 +96,8 @@ class GlobalExceptionHandlerTest {
 
         @Test
         void emptyConstraintViolations_stillReturns400() {
-            ConstraintViolationException ex = new ConstraintViolationException(
-                    "no violations", new HashSet<>());
+            ConstraintViolationException ex =
+                    new ConstraintViolationException("no violations", new HashSet<>());
             ResponseEntity<ApiResponse<Void>> response = handler.handleConstraintViolation(ex);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
@@ -117,8 +120,8 @@ class GlobalExceptionHandlerTest {
         void responseStatusException_keepsItsExplicitStatus() {
             // The headline iter-21 fix: 413 from HmacSigningFilter must
             // not be shadowed by the catch-all 500.
-            ResponseStatusException ex = new ResponseStatusException(
-                    HttpStatus.PAYLOAD_TOO_LARGE, "body too large");
+            ResponseStatusException ex =
+                    new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "body too large");
 
             ResponseEntity<ApiResponse<Void>> response = handler.handleResponseStatus(ex);
 
@@ -127,15 +130,16 @@ class GlobalExceptionHandlerTest {
 
         @Test
         void responseStatusException_with404_returnsNotFound() {
-            ResponseStatusException ex = new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "station unknown");
+            ResponseStatusException ex =
+                    new ResponseStatusException(HttpStatus.NOT_FOUND, "station unknown");
             ResponseEntity<ApiResponse<Void>> response = handler.handleResponseStatus(ex);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
 
         @Test
         void responseStatusException_withNullReason_returnsRequestFailed() {
-            ResponseStatusException ex = new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+            ResponseStatusException ex =
+                    new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
             ResponseEntity<ApiResponse<Void>> response = handler.handleResponseStatus(ex);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
             assertThat(response.getBody()).isNotNull();
@@ -184,7 +188,8 @@ class GlobalExceptionHandlerTest {
                 java.lang.reflect.Method m =
                         GlobalExceptionHandler.class.getMethod("handleGeneric", Exception.class);
                 org.springframework.web.bind.annotation.ExceptionHandler ann =
-                        m.getAnnotation(org.springframework.web.bind.annotation.ExceptionHandler.class);
+                        m.getAnnotation(
+                                org.springframework.web.bind.annotation.ExceptionHandler.class);
                 assertThat(ann).isNotNull();
                 Class<?>[] handled = ann.value();
                 assertThat(handled).containsExactly(Exception.class);
@@ -222,29 +227,77 @@ class GlobalExceptionHandlerTest {
     }
 
     /**
-     * Minimal stub so we can build a {@link ConstraintViolationException}
-     * without instantiating a full Validator. Avoids Mockito (Java 26
-     * incompat) and keeps the test framework-agnostic.
+     * Minimal stub so we can build a {@link ConstraintViolationException} without instantiating a
+     * full Validator. Avoids Mockito (Java 26 incompat) and keeps the test framework-agnostic.
      */
-    private record StubViolation(String fieldName, String message) implements ConstraintViolation<Object> {
-        @Override public String getMessage() { return message; }
-        @Override public String getMessageTemplate() { return "{" + fieldName + "}"; }
-        @Override public Object getRootBean() { return null; }
-        @Override public Class<Object> getRootBeanClass() { return Object.class; }
-        @Override public Object getLeafBean() { return null; }
-        @Override public Object[] getExecutableParameters() { return new Object[0]; }
-        @Override public Object getExecutableReturnValue() { return null; }
-        @Override public Path getPropertyPath() {
+    private record StubViolation(String fieldName, String message)
+            implements ConstraintViolation<Object> {
+        @Override
+        public String getMessage() {
+            return message;
+        }
+
+        @Override
+        public String getMessageTemplate() {
+            return "{" + fieldName + "}";
+        }
+
+        @Override
+        public Object getRootBean() {
+            return null;
+        }
+
+        @Override
+        public Class<Object> getRootBeanClass() {
+            return Object.class;
+        }
+
+        @Override
+        public Object getLeafBean() {
+            return null;
+        }
+
+        @Override
+        public Object[] getExecutableParameters() {
+            return new Object[0];
+        }
+
+        @Override
+        public Object getExecutableReturnValue() {
+            return null;
+        }
+
+        @Override
+        public Path getPropertyPath() {
             // Return an iterable that toString()s to the field name.
             return new StubPath(fieldName);
         }
-        @Override public Object getInvalidValue() { return null; }
-        @Override public jakarta.validation.metadata.ConstraintDescriptor<?> getConstraintDescriptor() { return null; }
-        @Override public <U> U unwrap(Class<U> type) { return null; }
+
+        @Override
+        public Object getInvalidValue() {
+            return null;
+        }
+
+        @Override
+        public jakarta.validation.metadata.ConstraintDescriptor<?> getConstraintDescriptor() {
+            return null;
+        }
+
+        @Override
+        public <U> U unwrap(Class<U> type) {
+            return null;
+        }
     }
 
     private record StubPath(String name) implements Path {
-        @Override public java.util.Iterator<Node> iterator() { return java.util.Collections.emptyIterator(); }
-        @Override public String toString() { return name; }
+        @Override
+        public java.util.Iterator<Node> iterator() {
+            return java.util.Collections.emptyIterator();
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }

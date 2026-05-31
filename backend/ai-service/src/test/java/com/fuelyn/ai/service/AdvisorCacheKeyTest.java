@@ -1,36 +1,37 @@
 package com.fuelyn.ai.service;
 
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorRequest.StationPrice;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorRequest.StationPrice;
 
 /**
- * Tests {@link AdvisorService#buildCacheKey} — the cache-key fix from
- * iter 25. The previous key was {@code fuelType:lat:lng:count} which
- * collided across users in the same geo-bucket and across refreshes
- * with the same station-count but different prices. The new key folds
- * in a SHA-256 digest of the sorted station list.
+ * Tests {@link AdvisorService#buildCacheKey} — the cache-key fix from iter 25. The previous key was
+ * {@code fuelType:lat:lng:count} which collided across users in the same geo-bucket and across
+ * refreshes with the same station-count but different prices. The new key folds in a SHA-256 digest
+ * of the sorted station list.
  *
- * <p>Behavioural guarantees verified here:</p>
+ * <p>Behavioural guarantees verified here:
+ *
  * <ul>
- *   <li>Identical requests → identical key (caching works at all)</li>
- *   <li>Different stations / prices / distances → different keys
- *       (collision-resistance — the headline fix)</li>
- *   <li>Reordering the upstream's station list does NOT change the key
- *       (Tankerkönig sometimes returns the same set in shuffled order)</li>
- *   <li>Bucket-level lat/lng → same key inside the bucket, different
- *       across buckets (privacy / aggregation contract)</li>
- *   <li>Null fields don't NPE</li>
+ *   <li>Identical requests → identical key (caching works at all)
+ *   <li>Different stations / prices / distances → different keys (collision-resistance — the
+ *       headline fix)
+ *   <li>Reordering the upstream's station list does NOT change the key (Tankerkönig sometimes
+ *       returns the same set in shuffled order)
+ *   <li>Bucket-level lat/lng → same key inside the bucket, different across buckets (privacy /
+ *       aggregation contract)
+ *   <li>Null fields don't NPE
  * </ul>
  */
 class AdvisorCacheKeyTest {
@@ -59,8 +60,10 @@ class AdvisorCacheKeyTest {
         void shuffledStationOrder_yieldsSameKey() {
             // Tankerkönig's response order is undefined; the cache key
             // MUST canonicalise (sorted) before hashing.
-            List<StationPrice> a = List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819), sp("Esso B", 1.789));
-            List<StationPrice> b = List.of(sp("Esso B", 1.789), sp("Aral 1", 1.799), sp("Shell A", 1.819));
+            List<StationPrice> a =
+                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819), sp("Esso B", 1.789));
+            List<StationPrice> b =
+                    List.of(sp("Esso B", 1.789), sp("Aral 1", 1.799), sp("Shell A", 1.819));
 
             String ka = AdvisorService.buildCacheKey(request(52.5, 13.4, a));
             String kb = AdvisorService.buildCacheKey(request(52.5, 13.4, b));
@@ -86,47 +89,73 @@ class AdvisorCacheKeyTest {
 
         @Test
         void differentStationCount_givesDifferentKey() {
-            String k1 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("A", 1.799))));
-            String k2 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("A", 1.799), sp("B", 1.819))));
+            String k1 = AdvisorService.buildCacheKey(request(52.5, 13.4, List.of(sp("A", 1.799))));
+            String k2 =
+                    AdvisorService.buildCacheKey(
+                            request(52.5, 13.4, List.of(sp("A", 1.799), sp("B", 1.819))));
             assertThat(k1).isNotEqualTo(k2);
         }
 
         @Test
         void sameCountDifferentNames_givesDifferentKey() {
             // The headline collision the old key produced.
-            String k1 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819))));
-            String k2 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("Esso X", 1.799), sp("Total Y", 1.819))));
+            String k1 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819))));
+            String k2 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(sp("Esso X", 1.799), sp("Total Y", 1.819))));
             assertThat(k1).isNotEqualTo(k2);
         }
 
         @Test
         void onePriceMoved_givesDifferentKey() {
             // Same station, same name, only one price differs.
-            String k1 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819))));
-            String k2 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.829))));
+            String k1 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.819))));
+            String k2 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(sp("Aral 1", 1.799), sp("Shell A", 1.829))));
             assertThat(k1).isNotEqualTo(k2);
         }
 
         @Test
         void distanceChanged_givesDifferentKey() {
-            String k1 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(new StationPrice("Aral 1", "brand", 1.799, 0.5))));
-            String k2 = AdvisorService.buildCacheKey(request(52.5, 13.4,
-                    List.of(new StationPrice("Aral 1", "brand", 1.799, 1.2))));
+            String k1 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(new StationPrice("Aral 1", "brand", 1.799, 0.5))));
+            String k2 =
+                    AdvisorService.buildCacheKey(
+                            request(
+                                    52.5,
+                                    13.4,
+                                    List.of(new StationPrice("Aral 1", "brand", 1.799, 1.2))));
             assertThat(k1).isNotEqualTo(k2);
         }
 
         @Test
         void differentFuelType_givesDifferentKey() {
             List<StationPrice> stations = List.of(sp("Aral 1", 1.799));
-            AIAdvisorRequest e10 = new AIAdvisorRequest(stations, "e10", null, 52.5, 13.4, 50, null, null);
-            AIAdvisorRequest diesel = new AIAdvisorRequest(stations, "diesel", null, 52.5, 13.4, 50, null, null);
+            AIAdvisorRequest e10 =
+                    new AIAdvisorRequest(stations, "e10", null, 52.5, 13.4, 50, null, null);
+            AIAdvisorRequest diesel =
+                    new AIAdvisorRequest(stations, "diesel", null, 52.5, 13.4, 50, null, null);
             assertThat(AdvisorService.buildCacheKey(e10))
                     .isNotEqualTo(AdvisorService.buildCacheKey(diesel));
         }
@@ -157,7 +186,8 @@ class AdvisorCacheKeyTest {
         @Test
         void nullCoords_yieldDeterministicKey() {
             List<StationPrice> stations = List.of(sp("Aral 1", 1.799));
-            AIAdvisorRequest req = new AIAdvisorRequest(stations, "e10", null, null, null, 50, null, null);
+            AIAdvisorRequest req =
+                    new AIAdvisorRequest(stations, "e10", null, null, null, 50, null, null);
             // Must not NPE.
             String key = AdvisorService.buildCacheKey(req);
             assertThat(key).isNotBlank();
@@ -208,7 +238,7 @@ class AdvisorCacheKeyTest {
             // buckets. Across 1000 distinct random requests we should
             // see zero collisions with overwhelming probability.
             java.util.Set<String> keys = new java.util.HashSet<>();
-            java.util.Random rng = new java.util.Random(42);  // deterministic
+            java.util.Random rng = new java.util.Random(42); // deterministic
             for (int i = 0; i < 1000; i++) {
                 int n = 1 + rng.nextInt(10);
                 List<StationPrice> stations = new ArrayList<>();

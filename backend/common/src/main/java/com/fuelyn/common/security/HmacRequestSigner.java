@@ -1,27 +1,29 @@
 package com.fuelyn.common.security;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 /**
  * Signs and verifies HTTP requests between microservices using HMAC-SHA256.
  *
- * <p>Each service shares a secret key. When Service A calls Service B:</p>
+ * <p>Each service shares a secret key. When Service A calls Service B:
+ *
  * <ol>
- *   <li>Service A signs the request body + timestamp with HMAC</li>
- *   <li>Adds headers: {@code X-Signature}, {@code X-Timestamp}, {@code X-Service-Id}</li>
- *   <li>Service B verifies the signature before processing</li>
- *   <li>Rejects requests older than 5 minutes (replay attack prevention)</li>
+ *   <li>Service A signs the request body + timestamp with HMAC
+ *   <li>Adds headers: {@code X-Signature}, {@code X-Timestamp}, {@code X-Service-Id}
+ *   <li>Service B verifies the signature before processing
+ *   <li>Rejects requests older than 5 minutes (replay attack prevention)
  * </ol>
  *
- * <p>The signing payload format is {@code timestamp:body}, ensuring that both
- * the request body and the time of signing are bound to the signature. This
- * prevents an attacker from replaying a captured request at a later time.</p>
+ * <p>The signing payload format is {@code timestamp:body}, ensuring that both the request body and
+ * the time of signing are bound to the signature. This prevents an attacker from replaying a
+ * captured request at a later time.
  *
  * @see ServiceAuthFilter
  */
@@ -40,12 +42,12 @@ public final class HmacRequestSigner {
     /**
      * Signs a request payload using HMAC-SHA256.
      *
-     * <p>The signature is computed over {@code timestamp:body} to bind the request
-     * content and the time of signing together. The result is Base64-encoded.</p>
+     * <p>The signature is computed over {@code timestamp:body} to bind the request content and the
+     * time of signing together. The result is Base64-encoded.
      *
-     * @param body      the HTTP request body (use empty string for bodyless requests)
+     * @param body the HTTP request body (use empty string for bodyless requests)
      * @param timestamp the epoch millisecond timestamp as a string
-     * @param secret    the shared HMAC secret key
+     * @param secret the shared HMAC secret key
      * @return Base64-encoded HMAC-SHA256 signature
      * @throws HmacSigningException if the HMAC computation fails
      */
@@ -64,9 +66,8 @@ public final class HmacRequestSigner {
         try {
             String payload = timestamp + ":" + safeBody;
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(
-                    secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM
-            );
+            SecretKeySpec keySpec =
+                    new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
             mac.init(keySpec);
             byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
@@ -78,18 +79,19 @@ public final class HmacRequestSigner {
     /**
      * Verifies an HMAC-SHA256 signature against a request payload.
      *
-     * <p>Performs two checks:</p>
+     * <p>Performs two checks:
+     *
      * <ol>
-     *   <li><strong>Timestamp freshness</strong> - rejects requests older than 5 minutes
-     *       to prevent replay attacks.</li>
-     *   <li><strong>Signature validity</strong> - uses constant-time comparison via
-     *       {@link MessageDigest#isEqual} to prevent timing attacks.</li>
+     *   <li><strong>Timestamp freshness</strong> - rejects requests older than 5 minutes to prevent
+     *       replay attacks.
+     *   <li><strong>Signature validity</strong> - uses constant-time comparison via {@link
+     *       MessageDigest#isEqual} to prevent timing attacks.
      * </ol>
      *
-     * @param body      the HTTP request body
+     * @param body the HTTP request body
      * @param timestamp the epoch millisecond timestamp as a string
      * @param signature the Base64-encoded HMAC signature to verify
-     * @param secret    the shared HMAC secret key
+     * @param secret the shared HMAC secret key
      * @return {@code true} if the signature is valid and the request is fresh
      */
     public static boolean verify(String body, String timestamp, String signature, String secret) {
@@ -97,9 +99,12 @@ public final class HmacRequestSigner {
         // The previous code NPE'd on signature.getBytes() and bubbled to the
         // catch-all 500 instead of the deterministic "401 unauthorized" the
         // caller expects.
-        if (timestamp == null || timestamp.isEmpty()
-                || signature == null || signature.isEmpty()
-                || secret == null || secret.isEmpty()) {
+        if (timestamp == null
+                || timestamp.isEmpty()
+                || signature == null
+                || signature.isEmpty()
+                || secret == null
+                || secret.isEmpty()) {
             return false;
         }
 
@@ -137,8 +142,8 @@ public final class HmacRequestSigner {
     }
 
     /**
-     * Runtime exception indicating HMAC signature computation failure.
-     * This typically means the JVM does not support HmacSHA256 or the key is invalid.
+     * Runtime exception indicating HMAC signature computation failure. This typically means the JVM
+     * does not support HmacSHA256 or the key is invalid.
      */
     public static class HmacSigningException extends RuntimeException {
         public HmacSigningException(String message, Throwable cause) {

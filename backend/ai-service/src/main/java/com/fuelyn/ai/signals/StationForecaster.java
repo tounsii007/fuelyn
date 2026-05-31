@@ -1,23 +1,22 @@
 package com.fuelyn.ai.signals;
 
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorResponse;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorResponse;
+
 /**
  * Quantile forecast (p10 / p50 / p90) for the next 24 h per station.
  *
- * <p>Approach: combine the EWMA-trend slope with the {@link BayesianPrior}
- * day-×-hour discount table to project a most-likely path; widen with
- * the historical bucket σ to produce p10 and p90 envelopes.</p>
+ * <p>Approach: combine the EWMA-trend slope with the {@link BayesianPrior} day-×-hour discount
+ * table to project a most-likely path; widen with the historical bucket σ to produce p10 and p90
+ * envelopes.
  *
- * <p>This is intentionally simple — a real production model would use
- * per-station regression. As a transparency feature it's already very
- * useful: the response can show "Aral now 1.79; expected 1.74–1.78
- * within 24 h" so the user can reason about the suggestion.</p>
+ * <p>This is intentionally simple — a real production model would use per-station regression. As a
+ * transparency feature it's already very useful: the response can show "Aral now 1.79; expected
+ * 1.74–1.78 within 24 h" so the user can reason about the suggestion.
  */
 public final class StationForecaster {
 
@@ -26,8 +25,7 @@ public final class StationForecaster {
     public static List<AIAdvisorResponse.StationForecast> forecast(
             List<AIAdvisorRequest.StationPrice> prices,
             EwmaChangePoint.Result trend,
-            LocalDateTime now
-    ) {
+            LocalDateTime now) {
         if (prices == null || prices.isEmpty()) return List.of();
 
         List<AIAdvisorResponse.StationForecast> out = new ArrayList<>(prices.size());
@@ -55,18 +53,16 @@ public final class StationForecaster {
             p10 = Math.max(0.5, p10);
             p90 = Math.min(cur + 0.30, p90);
 
-            out.add(new AIAdvisorResponse.StationForecast(
-                    p.stationName(), cur,
-                    round3(p10), round3(p50), round3(p90)
-            ));
+            out.add(
+                    new AIAdvisorResponse.StationForecast(
+                            p.stationName(), cur, round3(p10), round3(p50), round3(p90)));
         }
         return out;
     }
 
     /**
-     * Returns the deepest discount (in ct, negative) the prior table
-     * predicts in the next 24 h. We scan the next 24 hour-buckets
-     * starting from now+1.
+     * Returns the deepest discount (in ct, negative) the prior table predicts in the next 24 h. We
+     * scan the next 24 hour-buckets starting from now+1.
      */
     private static double lookupNextDayBestBucket(LocalDateTime now) {
         double best = 0;

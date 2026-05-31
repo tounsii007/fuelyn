@@ -1,15 +1,13 @@
 package com.fuelyn.price.service;
 
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import com.fuelyn.price.config.CollectionProperties;
-import com.fuelyn.price.model.dto.CollectionResult;
-import com.fuelyn.price.model.dto.TankerkoenigResponse;
-import com.fuelyn.price.model.entity.PriceSnapshot;
-import com.fuelyn.price.model.entity.StationMeta;
-import com.fuelyn.price.repository.CollectionRunRepository;
-import com.fuelyn.price.repository.PriceSnapshotRepository;
-import com.fuelyn.price.repository.StationMetaRepository;
-import com.fuelyn.price.stream.PriceEventPublisher;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,56 +17,54 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fuelyn.common.events.PriceUpdatedEvent;
+import com.fuelyn.price.config.CollectionProperties;
+import com.fuelyn.price.model.dto.CollectionResult;
+import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.model.entity.PriceSnapshot;
+import com.fuelyn.price.repository.CollectionRunRepository;
+import com.fuelyn.price.repository.PriceSnapshotRepository;
+import com.fuelyn.price.repository.StationMetaRepository;
+import com.fuelyn.price.stream.PriceEventPublisher;
 
 /**
- * Integration test for {@link PriceCollectorService} backed by H2 +
- * the real Flyway migrations. Avoids the full {@code @SpringBootTest}
- * context (which on Windows hits a JDK loopback-Selector bug while
- * constructing {@code OpenChargeMapClient}'s RestTemplate) by booting
- * just JPA + the entities and wiring the service manually with stubs
- * for Tankerkönig and the Kafka publisher.
+ * Integration test for {@link PriceCollectorService} backed by H2 + the real Flyway migrations.
+ * Avoids the full {@code @SpringBootTest} context (which on Windows hits a JDK loopback-Selector
+ * bug while constructing {@code OpenChargeMapClient}'s RestTemplate) by booting just JPA + the
+ * entities and wiring the service manually with stubs for Tankerkönig and the Kafka publisher.
  *
- * <p>Verifies behaviours the iter-1 .. iter-14 fixes added:</p>
+ * <p>Verifies behaviours the iter-1 .. iter-14 fixes added:
+ *
  * <ul>
- *   <li>iter 1: {@code @Transactional} actually engages — proven
- *       indirectly because {@code @DataJpaTest}'s rollback boundary
- *       is at the test method, not the inner call.</li>
- *   <li>iter 2: same-minute re-run does not duplicate snapshots.</li>
- *   <li>iter 3: 25 stations → 25 station rows + 75 snapshot rows in one
- *       cycle without amplifying repo calls.</li>
- *   <li>iter 9: cache eviction fires after a successful cycle.</li>
- *   <li>iter 14: lastSeen NOT bumped when nothing else changed within
- *       the freshness window.</li>
+ *   <li>iter 1: {@code @Transactional} actually engages — proven indirectly because
+ *       {@code @DataJpaTest}'s rollback boundary is at the test method, not the inner call.
+ *   <li>iter 2: same-minute re-run does not duplicate snapshots.
+ *   <li>iter 3: 25 stations → 25 station rows + 75 snapshot rows in one cycle without amplifying
+ *       repo calls.
+ *   <li>iter 9: cache eviction fires after a successful cycle.
+ *   <li>iter 14: lastSeen NOT bumped when nothing else changed within the freshness window.
  * </ul>
  */
 @DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestPropertySource(properties = {
-        // Force a fresh, isolated H2 per test class. NONE-replace keeps
-        // the application-yml-driven jdbc URL so Flyway runs over the
-        // same schema the production service uses.
-        "spring.datasource.url=jdbc:h2:mem:price-collector-it;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        "spring.jpa.hibernate.ddl-auto=validate",
-        // Disable the management-port's loopback bind so the test JVM
-        // doesn't try to open a Selector (the same Windows quirk that
-        // breaks the full SpringBootTest path).
-        "spring.main.web-application-type=none"
-})
+@TestPropertySource(
+        properties = {
+            // Force a fresh, isolated H2 per test class. NONE-replace keeps
+            // the application-yml-driven jdbc URL so Flyway runs over the
+            // same schema the production service uses.
+            "spring.datasource.url=jdbc:h2:mem:price-collector-it;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+            "spring.flyway.enabled=true",
+            "spring.flyway.locations=classpath:db/migration",
+            "spring.jpa.hibernate.ddl-auto=validate",
+            // Disable the management-port's loopback bind so the test JVM
+            // doesn't try to open a Selector (the same Windows quirk that
+            // breaks the full SpringBootTest path).
+            "spring.main.web-application-type=none"
+        })
 @ComponentScan(basePackageClasses = StationMetaRepository.class)
 class PriceCollectorServiceIntegrationTest {
 
@@ -97,39 +93,58 @@ class PriceCollectorServiceIntegrationTest {
         // helper; we pass the same builder twice so collectAll → self.collectForArea
         // routes through this instance, replicating the production proxy.
         AtomicReference<PriceCollectorService> ref = new AtomicReference<>();
-        PriceCollectorService s = new PriceCollectorService(
-                tankerkoenig,
-                snapshotRepo, stationRepo, runRepo,
-                publisher,
-                10.0,                       // radius
-                90,                         // maxHistoryDays
-                4,                          // parallelism
-                new SelfRefProxy(ref),      // satisfies @Lazy
-                cacheManager,
-                null,                       // meterRegistry
-                new CollectionProperties()  // empty → defaults
-        );
+        PriceCollectorService s =
+                new PriceCollectorService(
+                        tankerkoenig,
+                        snapshotRepo,
+                        stationRepo,
+                        runRepo,
+                        publisher,
+                        10.0, // radius
+                        90, // maxHistoryDays
+                        4, // parallelism
+                        new SelfRefProxy(ref), // satisfies @Lazy
+                        cacheManager,
+                        null, // meterRegistry
+                        new CollectionProperties() // empty → defaults
+                        );
         ref.set(s);
         this.service = s;
     }
 
     /**
-     * Tiny indirection so the constructor's @Lazy self-reference can be
-     * pointed at the very service we're building. Not used as a real
-     * proxy — the test directly invokes service.collectForArea, which is
-     * fine because we don't need the JDBC-batch correctness in unit tests
-     * (Hibernate is happy to flush on the surrounding @DataJpaTest tx).
+     * Tiny indirection so the constructor's @Lazy self-reference can be pointed at the very service
+     * we're building. Not used as a real proxy — the test directly invokes service.collectForArea,
+     * which is fine because we don't need the JDBC-batch correctness in unit tests (Hibernate is
+     * happy to flush on the surrounding @DataJpaTest tx).
      */
     private static final class SelfRefProxy extends PriceCollectorService {
         private final AtomicReference<PriceCollectorService> target;
+
         SelfRefProxy(AtomicReference<PriceCollectorService> target) {
-            super(null, null, null, null, null, 0, 0, 0, null, null, null, new CollectionProperties());
+            super(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    0,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null,
+                    new CollectionProperties());
             this.target = target;
         }
-        @Override public CollectionResult collectForArea(double lat, double lng, String name) {
+
+        @Override
+        public CollectionResult collectForArea(double lat, double lng, String name) {
             return target.get().collectForArea(lat, lng, name);
         }
-        @Override public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
+
+        @Override
+        public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
             return target.get().deleteRetentionChunk(cutoff, chunkSize);
         }
     }
@@ -157,10 +172,15 @@ class PriceCollectorServiceIntegrationTest {
 
         @Test
         void firstCycle_persistsStationsAndSnapshots() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, 1.689, 1.629),
-                    station("s2", "Shell A", "Shell", 52.51, 13.41, 1.819, 1.699, 1.639)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, 1.689,
+                                            1.629),
+                                    station(
+                                            "s2", "Shell A", "Shell", 52.51, 13.41, 1.819, 1.699,
+                                            1.639)));
 
             CollectionResult result = service.collectForArea(52.5, 13.4, "Berlin");
             em.flush();
@@ -170,19 +190,25 @@ class PriceCollectorServiceIntegrationTest {
             assertThat(stationRepo.count()).isEqualTo(2);
             assertThat(snapshotRepo.count()).isEqualTo(6);
 
-            snapshotRepo.findAll().forEach(snap -> {
-                assertThat(snap.getPrice()).isPositive();
-                assertThat(snap.getTimestamp()).isNotNull();
-                assertThat(snap.getStationId()).isIn("s1", "s2");
-                assertThat(snap.getFuelType()).isIn("diesel", "e5", "e10");
-            });
+            snapshotRepo
+                    .findAll()
+                    .forEach(
+                            snap -> {
+                                assertThat(snap.getPrice()).isPositive();
+                                assertThat(snap.getTimestamp()).isNotNull();
+                                assertThat(snap.getStationId()).isIn("s1", "s2");
+                                assertThat(snap.getFuelType()).isIn("diesel", "e5", "e10");
+                            });
         }
 
         @Test
         void firstCycle_emitsOneEventPerSnapshot() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null,
+                                            null)));
 
             service.collectForArea(52.5, 13.4, "Berlin");
 
@@ -194,9 +220,8 @@ class PriceCollectorServiceIntegrationTest {
 
         @Test
         void emptyOrNullPrice_isSkipped() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, null, 0.0, -1.0)
-            ));
+            tankerkoenig.respondWith(
+                    area -> List.of(station("s1", "Aral 1", "Aral", 52.5, 13.4, null, 0.0, -1.0)));
 
             CollectionResult result = service.collectForArea(52.5, 13.4, "Berlin");
 
@@ -215,9 +240,16 @@ class PriceCollectorServiceIntegrationTest {
         void manyStations_inOneCycle_persistsAllAtOnce() {
             List<TankerkoenigResponse.Station> bulk = new ArrayList<>();
             for (int i = 0; i < 25; i++) {
-                bulk.add(station("s" + i, "Name " + i, "Brand " + (i % 3),
-                        52.5 + i * 0.001, 13.4 + i * 0.001,
-                        1.7 + i * 0.001, 1.6 + i * 0.001, 1.5 + i * 0.001));
+                bulk.add(
+                        station(
+                                "s" + i,
+                                "Name " + i,
+                                "Brand " + (i % 3),
+                                52.5 + i * 0.001,
+                                13.4 + i * 0.001,
+                                1.7 + i * 0.001,
+                                1.6 + i * 0.001,
+                                1.5 + i * 0.001));
             }
             tankerkoenig.respondWith(area -> bulk);
 
@@ -236,9 +268,12 @@ class PriceCollectorServiceIntegrationTest {
 
         @Test
         void rerunningSameMinute_doesNotCreateDuplicateSnapshots() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null,
+                                            null)));
 
             service.collectForArea(52.5, 13.4, "Berlin");
             long afterFirst = snapshotRepo.count();
@@ -257,16 +292,23 @@ class PriceCollectorServiceIntegrationTest {
             // Insert a duplicate manually and verify the underlying DB
             // would reject it. Catch DataIntegrityViolation and assert it
             // happened — H2 surfaces the constraint name in the message.
-            PriceSnapshot a = new PriceSnapshot("dup-sid", "diesel", 1.799,
-                    java.time.LocalDateTime.of(2026, 1, 1, 12, 0));
+            PriceSnapshot a =
+                    new PriceSnapshot(
+                            "dup-sid",
+                            "diesel",
+                            1.799,
+                            java.time.LocalDateTime.of(2026, 1, 1, 12, 0));
             snapshotRepo.saveAndFlush(a);
 
-            PriceSnapshot b = new PriceSnapshot("dup-sid", "diesel", 1.799,
-                    java.time.LocalDateTime.of(2026, 1, 1, 12, 0));
+            PriceSnapshot b =
+                    new PriceSnapshot(
+                            "dup-sid",
+                            "diesel",
+                            1.799,
+                            java.time.LocalDateTime.of(2026, 1, 1, 12, 0));
 
-            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                    snapshotRepo.saveAndFlush(b)
-            ).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> snapshotRepo.saveAndFlush(b))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         }
     }
 
@@ -276,9 +318,12 @@ class PriceCollectorServiceIntegrationTest {
 
         @Test
         void unchangedMetadata_keepsLastSeenStable_withinFreshnessWindow() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null,
+                                            null)));
 
             service.collectForArea(52.5, 13.4, "Berlin");
             em.flush();
@@ -295,16 +340,28 @@ class PriceCollectorServiceIntegrationTest {
 
         @Test
         void changedMetadata_doesUpdate_evenIfLastSeenIsRecent() {
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null,
+                                            null)));
             service.collectForArea(52.5, 13.4, "Berlin");
             em.flush();
             em.clear();
 
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral-Rebranded", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1",
+                                            "Aral 1",
+                                            "Aral-Rebranded",
+                                            52.5,
+                                            13.4,
+                                            1.799,
+                                            null,
+                                            null)));
             service.collectForArea(52.5, 13.4, "Berlin");
             em.flush();
             em.clear();
@@ -328,9 +385,12 @@ class PriceCollectorServiceIntegrationTest {
             priceHistory.put("foo", "stale-history");
             areaStats.put("bar", "stale-stats");
 
-            tankerkoenig.respondWith(area -> List.of(
-                    station("s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null, null)
-            ));
+            tankerkoenig.respondWith(
+                    area ->
+                            List.of(
+                                    station(
+                                            "s1", "Aral 1", "Aral", 52.5, 13.4, 1.799, null,
+                                            null)));
 
             service.collectAll();
 
@@ -342,22 +402,22 @@ class PriceCollectorServiceIntegrationTest {
     // ─── helpers ─────────────────────────────────────────────
 
     private static TankerkoenigResponse.Station station(
-            String id, String name, String brand, double lat, double lng,
-            Double diesel, Double e5, Double e10) {
+            String id,
+            String name,
+            String brand,
+            double lat,
+            double lng,
+            Double diesel,
+            Double e5,
+            Double e10) {
         return new TankerkoenigResponse.Station(
-                id, name, brand,
-                "Street", "1", "10115", "Berlin",
-                lat, lng,
-                0.5,
-                diesel, e5, e10,
-                true
-        );
+                id, name, brand, "Street", "1", "10115", "Berlin", lat, lng, 0.5, diesel, e5, e10,
+                true);
     }
 
     /**
-     * Plain {@link FuelStationClient} implementation — no super-class
-     * RestTemplate construction, so the JDK loopback-Selector bug on
-     * Windows can't bite. PriceCollectorService now depends on the
+     * Plain {@link FuelStationClient} implementation — no super-class RestTemplate construction, so
+     * the JDK loopback-Selector bug on Windows can't bite. PriceCollectorService now depends on the
      * interface, so this is a clean test seam.
      */
     static class RecordingTankerkoenigClient implements FuelStationClient {
@@ -370,7 +430,8 @@ class PriceCollectorServiceIntegrationTest {
         }
 
         @Override
-        public List<TankerkoenigResponse.Station> searchStations(double lat, double lng, double radiusKm) {
+        public List<TankerkoenigResponse.Station> searchStations(
+                double lat, double lng, double radiusKm) {
             AreaQuery q = new AreaQuery(lat, lng, radiusKm);
             calls.add(q);
             return responder.get().apply(q);
@@ -382,7 +443,8 @@ class PriceCollectorServiceIntegrationTest {
         }
 
         @Override
-        public java.util.Map<String, TankerkoenigResponse.PriceEntry> fetchPrices(List<String> stationIds) {
+        public java.util.Map<String, TankerkoenigResponse.PriceEntry> fetchPrices(
+                List<String> stationIds) {
             return java.util.Collections.emptyMap();
         }
 

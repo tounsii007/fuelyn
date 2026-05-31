@@ -6,9 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Fuelyn API Gateway.
  *
- * <p>Single entry point for all frontend requests. Routes traffic to
- * Price Service (8081) and AI Service (8082) with HMAC signing,
- * rate limiting, and circuit breaker fallbacks.</p>
+ * <p>Single entry point for all frontend requests. Routes traffic to Price Service (8081) and AI
+ * Service (8082) with HMAC signing, rate limiting, and circuit breaker fallbacks.
  */
 @SpringBootApplication
 public class GatewayApplication {

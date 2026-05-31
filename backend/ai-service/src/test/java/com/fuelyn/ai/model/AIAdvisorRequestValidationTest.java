@@ -1,17 +1,18 @@
 package com.fuelyn.ai.model;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 class AIAdvisorRequestValidationTest {
 
@@ -35,9 +36,7 @@ class AIAdvisorRequestValidationTest {
 
     @Test
     void valid_requestHasNoViolations() {
-        AIAdvisorRequest req = new AIAdvisorRequest(
-                List.of(sample()), "e10", null, 52.5, 13.4, 50
-        );
+        AIAdvisorRequest req = new AIAdvisorRequest(List.of(sample()), "e10", null, 52.5, 13.4, 50);
 
         Set<ConstraintViolation<AIAdvisorRequest>> violations = validator.validate(req);
 
@@ -46,9 +45,8 @@ class AIAdvisorRequestValidationTest {
 
     @Test
     void invalid_fuelTypeRejected() {
-        AIAdvisorRequest req = new AIAdvisorRequest(
-                List.of(sample()), "premium", null, 52.5, 13.4, 50
-        );
+        AIAdvisorRequest req =
+                new AIAdvisorRequest(List.of(sample()), "premium", null, 52.5, 13.4, 50);
 
         Set<ConstraintViolation<AIAdvisorRequest>> violations = validator.validate(req);
 
@@ -57,9 +55,7 @@ class AIAdvisorRequestValidationTest {
 
     @Test
     void invalid_emptyPricesRejected() {
-        AIAdvisorRequest req = new AIAdvisorRequest(
-                List.of(), "e10", null, 52.5, 13.4, 50
-        );
+        AIAdvisorRequest req = new AIAdvisorRequest(List.of(), "e10", null, 52.5, 13.4, 50);
 
         Set<ConstraintViolation<AIAdvisorRequest>> violations = validator.validate(req);
 
@@ -68,9 +64,8 @@ class AIAdvisorRequestValidationTest {
 
     @Test
     void invalid_latOutOfRangeRejected() {
-        AIAdvisorRequest req = new AIAdvisorRequest(
-                List.of(sample()), "e10", null, 120.0, 13.4, 50
-        );
+        AIAdvisorRequest req =
+                new AIAdvisorRequest(List.of(sample()), "e10", null, 120.0, 13.4, 50);
 
         Set<ConstraintViolation<AIAdvisorRequest>> violations = validator.validate(req);
 
@@ -80,9 +75,7 @@ class AIAdvisorRequestValidationTest {
     @Test
     void invalid_negativePriceRejected() {
         var bad = new AIAdvisorRequest.StationPrice("X", "X", -1.0, 1.0);
-        AIAdvisorRequest req = new AIAdvisorRequest(
-                List.of(bad), "e10", null, 52.5, 13.4, 50
-        );
+        AIAdvisorRequest req = new AIAdvisorRequest(List.of(bad), "e10", null, 52.5, 13.4, 50);
 
         Set<ConstraintViolation<AIAdvisorRequest>> violations = validator.validate(req);
 

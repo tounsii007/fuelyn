@@ -1,18 +1,19 @@
 package com.fuelyn.price.model.dto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Tests the wire contract of {@link UnifiedStationDto}, the iter-8
- * Map-replacement record. The frontend's union type depends on these
- * exact JSON keys; any rename / NON_NULL slip would break the client.
+ * Tests the wire contract of {@link UnifiedStationDto}, the iter-8 Map-replacement record. The
+ * frontend's union type depends on these exact JSON keys; any rename / NON_NULL slip would break
+ * the client.
  */
 class UnifiedStationDtoTest {
 
@@ -24,16 +25,29 @@ class UnifiedStationDtoTest {
 
         @Test
         void emitsKeysFrontendExpects() throws Exception {
-            UnifiedStationDto dto = new UnifiedStationDto(
-                    "s1", "Aral 1", "Aral",
-                    52.5, 13.4, 0.5, true,
-                    "fuel", "tankerkoenig",
-                    new UnifiedStationDto.AddressDto("Street", "1", "10115", "Berlin"),
-                    List.of("diesel", "e5", "e10"),
-                    new UnifiedStationDto.PricesDto(1.799, 1.689, 1.629),
-                    1.629,
-                    null, null, null, null, null, null, null, null
-            );
+            UnifiedStationDto dto =
+                    new UnifiedStationDto(
+                            "s1",
+                            "Aral 1",
+                            "Aral",
+                            52.5,
+                            13.4,
+                            0.5,
+                            true,
+                            "fuel",
+                            "tankerkoenig",
+                            new UnifiedStationDto.AddressDto("Street", "1", "10115", "Berlin"),
+                            List.of("diesel", "e5", "e10"),
+                            new UnifiedStationDto.PricesDto(1.799, 1.689, 1.629),
+                            1.629,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
 
             String body = json.writeValueAsString(dto);
 
@@ -67,16 +81,29 @@ class UnifiedStationDtoTest {
 
         @Test
         void omitsEvNullsViaJsonInclude() throws Exception {
-            UnifiedStationDto dto = new UnifiedStationDto(
-                    "s1", "Aral 1", "Aral",
-                    52.5, 13.4, 0.5, true,
-                    "fuel", "tankerkoenig",
-                    new UnifiedStationDto.AddressDto("S", "1", "10115", "Berlin"),
-                    List.of("diesel"),
-                    new UnifiedStationDto.PricesDto(1.799, null, null),
-                    1.799,
-                    null, null, null, null, null, null, null, null
-            );
+            UnifiedStationDto dto =
+                    new UnifiedStationDto(
+                            "s1",
+                            "Aral 1",
+                            "Aral",
+                            52.5,
+                            13.4,
+                            0.5,
+                            true,
+                            "fuel",
+                            "tankerkoenig",
+                            new UnifiedStationDto.AddressDto("S", "1", "10115", "Berlin"),
+                            List.of("diesel"),
+                            new UnifiedStationDto.PricesDto(1.799, null, null),
+                            1.799,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
 
             String body = json.writeValueAsString(dto);
             // EV-only fields → null → must NOT appear in JSON.
@@ -90,9 +117,7 @@ class UnifiedStationDtoTest {
                     .doesNotContain("usageCost")
                     .doesNotContain("accessType");
             // Within prices, e5/e10 are null → also omitted.
-            assertThat(body)
-                    .doesNotContain("\"e5\":null")
-                    .doesNotContain("\"e10\":null");
+            assertThat(body).doesNotContain("\"e5\":null").doesNotContain("\"e10\":null");
         }
     }
 
@@ -102,23 +127,31 @@ class UnifiedStationDtoTest {
 
         @Test
         void emitsKeysFrontendExpects() throws Exception {
-            UnifiedStationDto dto = new UnifiedStationDto(
-                    "ev-1", "EnBW Charger", "EnBW",
-                    52.5, 13.4, 0.5, true,
-                    "charging", "openchargemap",
-                    new UnifiedStationDto.AddressDto("Street", "", "10115", "Berlin"),
-                    List.of("ev_dc"),
-                    null, null,
-                    "EnBW",
-                    true,
-                    List.of(new UnifiedStationDto.ConnectionDto(
-                            "CCS", "CCS Combo", 150.0, 2, "hpc")),
-                    List.of("hpc"),
-                    150.0,
-                    2,
-                    "Free",
-                    "Public"
-            );
+            UnifiedStationDto dto =
+                    new UnifiedStationDto(
+                            "ev-1",
+                            "EnBW Charger",
+                            "EnBW",
+                            52.5,
+                            13.4,
+                            0.5,
+                            true,
+                            "charging",
+                            "openchargemap",
+                            new UnifiedStationDto.AddressDto("Street", "", "10115", "Berlin"),
+                            List.of("ev_dc"),
+                            null,
+                            null,
+                            "EnBW",
+                            true,
+                            List.of(
+                                    new UnifiedStationDto.ConnectionDto(
+                                            "CCS", "CCS Combo", 150.0, 2, "hpc")),
+                            List.of("hpc"),
+                            150.0,
+                            2,
+                            "Free",
+                            "Public");
 
             String body = json.writeValueAsString(dto);
 
@@ -145,24 +178,32 @@ class UnifiedStationDtoTest {
 
         @Test
         void omitsFuelNullsViaJsonInclude() throws Exception {
-            UnifiedStationDto dto = new UnifiedStationDto(
-                    "ev-1", "EnBW Charger", "EnBW",
-                    52.5, 13.4, 0.5, true,
-                    "charging", "openchargemap",
-                    new UnifiedStationDto.AddressDto("Street", "", "10115", "Berlin"),
-                    List.of("ev_dc"),
-                    null, null,
-                    "EnBW", true,
-                    List.of(),
-                    List.of("dc"),
-                    150.0, 2,
-                    "Free", "Public"
-            );
+            UnifiedStationDto dto =
+                    new UnifiedStationDto(
+                            "ev-1",
+                            "EnBW Charger",
+                            "EnBW",
+                            52.5,
+                            13.4,
+                            0.5,
+                            true,
+                            "charging",
+                            "openchargemap",
+                            new UnifiedStationDto.AddressDto("Street", "", "10115", "Berlin"),
+                            List.of("ev_dc"),
+                            null,
+                            null,
+                            "EnBW",
+                            true,
+                            List.of(),
+                            List.of("dc"),
+                            150.0,
+                            2,
+                            "Free",
+                            "Public");
 
             String body = json.writeValueAsString(dto);
-            assertThat(body)
-                    .doesNotContain("\"prices\":")
-                    .doesNotContain("\"price\":null");
+            assertThat(body).doesNotContain("\"prices\":").doesNotContain("\"price\":null");
         }
     }
 
@@ -172,16 +213,29 @@ class UnifiedStationDtoTest {
 
         @Test
         void serializeThenDeserialize_preservesFields() throws Exception {
-            UnifiedStationDto original = new UnifiedStationDto(
-                    "s1", "Aral 1", "Aral",
-                    52.5, 13.4, 0.5, true,
-                    "fuel", "tankerkoenig",
-                    new UnifiedStationDto.AddressDto("Street", "1", "10115", "Berlin"),
-                    List.of("diesel"),
-                    new UnifiedStationDto.PricesDto(1.799, null, null),
-                    1.799,
-                    null, null, null, null, null, null, null, null
-            );
+            UnifiedStationDto original =
+                    new UnifiedStationDto(
+                            "s1",
+                            "Aral 1",
+                            "Aral",
+                            52.5,
+                            13.4,
+                            0.5,
+                            true,
+                            "fuel",
+                            "tankerkoenig",
+                            new UnifiedStationDto.AddressDto("Street", "1", "10115", "Berlin"),
+                            List.of("diesel"),
+                            new UnifiedStationDto.PricesDto(1.799, null, null),
+                            1.799,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
 
             String body = json.writeValueAsString(original);
             UnifiedStationDto round = json.readValue(body, UnifiedStationDto.class);

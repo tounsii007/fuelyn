@@ -1,35 +1,42 @@
 package com.fuelyn.price.stream;
 
-import com.fuelyn.common.events.EventEnvelope;
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import org.junit.jupiter.api.Test;
-import org.springframework.kafka.support.Acknowledgment;
-
-import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.time.Instant;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.kafka.support.Acknowledgment;
+
+import com.fuelyn.common.events.EventEnvelope;
+import com.fuelyn.common.events.PriceUpdatedEvent;
+
 /**
  * Unit tests for {@link PriceAlertsConsumer}.
  *
- * <p>Covers the alert-firing rule (Δ ≥ 3 ct triggers, smaller deltas
- * do not), the metric counters, and graceful handling of malformed
- * envelopes (no payload / null delta).</p>
+ * <p>Covers the alert-firing rule (Δ ≥ 3 ct triggers, smaller deltas do not), the metric counters,
+ * and graceful handling of malformed envelopes (no payload / null delta).
  */
 class PriceAlertsConsumerTest {
 
-    private static EventEnvelope<PriceUpdatedEvent> envelopeWith(double newPrice, Double previousPrice) {
+    private static EventEnvelope<PriceUpdatedEvent> envelopeWith(
+            double newPrice, Double previousPrice) {
         return EventEnvelope.of(
                 PriceUpdatedEvent.TYPE,
                 "test",
                 PriceUpdatedEvent.forUpdate(
-                        "S1", "Aral X", "aral", "e10",
-                        newPrice, previousPrice,
+                        "S1",
+                        "Aral X",
+                        "aral",
+                        "e10",
+                        newPrice,
+                        previousPrice,
                         Instant.parse("2026-05-07T10:00:00Z"),
-                        52.5, 13.4, "10117"));
+                        52.5,
+                        13.4,
+                        "10117"));
     }
 
     @Test
