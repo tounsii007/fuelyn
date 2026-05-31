@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`wallet:${ip}`);
+  const rl = await limiter.check(`wallet:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const parsed = await parseJson(request, RequestSchema);

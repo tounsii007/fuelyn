@@ -36,7 +36,7 @@ function adminAuthorized(request: NextRequest): boolean {
 
 export async function GET(request: NextRequest) {
   const ip = getClientKey(request);
-  const rl = limiter.check(`admin-r:${ip}`);
+  const rl = await limiter.check(`admin-r:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   if (!adminAuthorized(request)) {
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   const ip = getClientKey(request);
-  const rl = limiter.check(`admin-w:${ip}`);
+  const rl = await limiter.check(`admin-w:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   if (!adminAuthorized(request)) {

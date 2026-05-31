@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`telemetry:${ip}`);
+  const rl = await limiter.check(`telemetry:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   // Telemetry requires a session — getOrCreateSession upserts a User

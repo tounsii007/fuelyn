@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const ip = getClientKey(request);
   const key = `report:${ip}:${parsed.data.stationId}:${parsed.data.fuelType}`;
-  const rl = limiter.check(key);
+  const rl = await limiter.check(key);
   if (rl.limited) {
     return NextResponse.json(
       {

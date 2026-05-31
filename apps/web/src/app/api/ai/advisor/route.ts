@@ -79,7 +79,7 @@ function localHeuristicFallback(body: AdvisorRequest): AIAdvisorResponse {
 
 export async function POST(request: NextRequest) {
   // 1. Rate limiting
-  const { limited, remaining, resetAt } = rateLimiter.check(getClientKey(request));
+  const { limited, remaining, resetAt } = await rateLimiter.check(getClientKey(request));
   const retryAfterSec = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
   if (limited) {
     return NextResponse.json(

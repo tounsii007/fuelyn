@@ -73,7 +73,7 @@ function parseFuel(value: string | null): FuelType {
 
 export async function GET(request: NextRequest) {
   const ip = getClientKey(request);
-  const rl = limiter.check(`widget:${ip}`);
+  const rl = await limiter.check(`widget:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const { searchParams } = request.nextUrl;

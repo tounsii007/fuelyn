@@ -54,7 +54,7 @@ const PushSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const ip = getClientKey(request);
-  const rl = readLimiter.check(`sync-r:${ip}`);
+  const rl = await readLimiter.check(`sync-r:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const session = await getOrCreateSession(request);
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = writeLimiter.check(`sync-w:${ip}`);
+  const rl = await writeLimiter.check(`sync-w:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const session = await getOrCreateSession(request);
@@ -128,7 +128,7 @@ export async function DELETE(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = writeLimiter.check(`sync-d:${ip}`);
+  const rl = await writeLimiter.check(`sync-d:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const session = await getOrCreateSession(request);

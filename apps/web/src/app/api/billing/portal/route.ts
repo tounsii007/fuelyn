@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`portal:${ip}`);
+  const rl = await limiter.check(`portal:${ip}`);
   if (rl.limited) {
     return NextResponse.json(
       { error: 'Too many requests' },

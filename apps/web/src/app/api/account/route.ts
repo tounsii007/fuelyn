@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest) {
   if (csrf) return csrf;
 
   const ip = getClientKey(request);
-  const rl = limiter.check(`account-del:${ip}`);
+  const rl = await limiter.check(`account-del:${ip}`);
   if (rl.limited) return NextResponse.json({ error: 'rate limit' }, { status: 429 });
 
   const session = await getOrCreateSession(request);

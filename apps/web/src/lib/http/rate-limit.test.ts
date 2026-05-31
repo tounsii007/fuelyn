@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
-import { createRateLimiter, getClientKey } from './rate-limit';
+import type { RateLimitRedis } from '@/lib/redis/client';
+import {
+  createRateLimiter,
+  getClientKey,
+  MemoryRateLimitStore,
+  RedisRateLimitStore,
+} from './rate-limit';
 
 function fakeRequest(headers: Record<string, string>): NextRequest {
   return {
@@ -10,7 +16,27 @@ function fakeRequest(headers: Record<string, string>): NextRequest {
   } as unknown as NextRequest;
 }
 
-describe('createRateLimiter', () => {
+// A fake Redis whose EVAL reproduces the limiter's fixed-window Lua:
+// INCR the key, set the TTL on the first hit, return [count, ttlMs].
+function makeFakeRedis(): RateLimitRedis {
+  const store = new Map<string, { count: number; expireAt: number }>();
+  return {
+    async eval(_script: string, _numKeys: number, ...args: (string | number)[]): Promise<unknown> {
+      const key = String(args[0]);
+      const windowMs = Number(args[1]);
+      const now = Date.now();
+      const entry = store.get(key);
+      if (!entry || now > entry.expireAt) {
+        store.set(key, { count: 1, expireAt: now + windowMs });
+        return [1, windowMs];
+      }
+      entry.count += 1;
+      return [entry.count, entry.expireAt - now];
+    },
+  };
+}
+
+describe('createRateLimiter (in-memory default)', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
@@ -20,52 +46,112 @@ describe('createRateLimiter', () => {
     vi.useRealTimers();
   });
 
-  it('allows requests up to the limit', () => {
+  it('allows requests up to the limit', async () => {
     const limiter = createRateLimiter({ windowMs: 60_000, max: 3 });
 
-    expect(limiter.check('ip1').limited).toBe(false);
-    expect(limiter.check('ip1').limited).toBe(false);
-    expect(limiter.check('ip1').limited).toBe(false);
+    expect((await limiter.check('ip1')).limited).toBe(false);
+    expect((await limiter.check('ip1')).limited).toBe(false);
+    expect((await limiter.check('ip1')).limited).toBe(false);
   });
 
-  it('blocks requests beyond the limit in the same window', () => {
+  it('blocks requests beyond the limit in the same window', async () => {
     const limiter = createRateLimiter({ windowMs: 60_000, max: 2 });
 
-    limiter.check('ip1');
-    limiter.check('ip1');
-    const third = limiter.check('ip1');
+    await limiter.check('ip1');
+    await limiter.check('ip1');
+    const third = await limiter.check('ip1');
 
     expect(third.limited).toBe(true);
     expect(third.remaining).toBe(0);
   });
 
-  it('resets after the window elapses', () => {
+  it('resets after the window elapses', async () => {
     const limiter = createRateLimiter({ windowMs: 60_000, max: 1 });
 
-    expect(limiter.check('ip1').limited).toBe(false);
-    expect(limiter.check('ip1').limited).toBe(true);
+    expect((await limiter.check('ip1')).limited).toBe(false);
+    expect((await limiter.check('ip1')).limited).toBe(true);
 
     vi.advanceTimersByTime(60_001);
 
-    const afterWindow = limiter.check('ip1');
+    const afterWindow = await limiter.check('ip1');
     expect(afterWindow.limited).toBe(false);
     expect(afterWindow.remaining).toBe(0); // max=1, so 0 remaining after first call
   });
 
-  it('tracks keys independently', () => {
+  it('tracks keys independently', async () => {
     const limiter = createRateLimiter({ windowMs: 60_000, max: 1 });
 
-    limiter.check('ip1');
-    expect(limiter.check('ip2').limited).toBe(false);
+    await limiter.check('ip1');
+    expect((await limiter.check('ip2')).limited).toBe(false);
   });
 
-  it('reports correct remaining and resetAt', () => {
+  it('reports correct remaining and resetAt', async () => {
     const limiter = createRateLimiter({ windowMs: 60_000, max: 5 });
 
-    const result = limiter.check('ip1');
+    const result = await limiter.check('ip1');
 
     expect(result.remaining).toBe(4);
     expect(result.resetAt).toBe(Date.now() + 60_000);
+  });
+
+  it('gives separately-created limiters independent in-memory stores', async () => {
+    const a = createRateLimiter({ windowMs: 60_000, max: 1 });
+    const b = createRateLimiter({ windowMs: 60_000, max: 1 });
+
+    expect((await a.check('shared-key')).limited).toBe(false);
+    // Different limiter, same key — must not inherit a's count.
+    expect((await b.check('shared-key')).limited).toBe(false);
+  });
+});
+
+describe('RedisRateLimitStore', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('counts hits through the shared store and limits beyond max', async () => {
+    const limiter = createRateLimiter({ windowMs: 60_000, max: 2 }, new RedisRateLimitStore(makeFakeRedis()));
+
+    expect((await limiter.check('ip')).limited).toBe(false);
+    expect((await limiter.check('ip')).remaining).toBe(0);
+    const third = await limiter.check('ip');
+    expect(third.limited).toBe(true);
+    expect(third.remaining).toBe(0);
+  });
+
+  it('resets after the window TTL elapses', async () => {
+    const limiter = createRateLimiter({ windowMs: 60_000, max: 1 }, new RedisRateLimitStore(makeFakeRedis()));
+
+    expect((await limiter.check('ip')).limited).toBe(false);
+    expect((await limiter.check('ip')).limited).toBe(true);
+
+    vi.advanceTimersByTime(60_001);
+
+    expect((await limiter.check('ip')).limited).toBe(false);
+  });
+
+  it('falls back to the in-memory store when the Redis eval throws', async () => {
+    const flaky: RateLimitRedis = {
+      eval: vi.fn(async () => {
+        throw new Error('redis down');
+      }),
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const limiter = createRateLimiter(
+      { windowMs: 60_000, max: 1 },
+      new RedisRateLimitStore(flaky, new MemoryRateLimitStore()),
+    );
+
+    // Both calls degrade to the memory fallback, which still enforces the cap.
+    expect((await limiter.check('ip')).limited).toBe(false);
+    expect((await limiter.check('ip')).limited).toBe(true);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
 

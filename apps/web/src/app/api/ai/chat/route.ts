@@ -155,7 +155,7 @@ async function callOllama(messages: ChatRequest['messages'], locale: ChatRequest
 
 export async function POST(request: NextRequest) {
   // 1. Rate limiting
-  const { limited, remaining, resetAt } = rateLimiter.check(getClientKey(request));
+  const { limited, remaining, resetAt } = await rateLimiter.check(getClientKey(request));
   const retryAfterSec = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
   if (limited) {
     return NextResponse.json(
@@ -190,7 +190,6 @@ export async function POST(request: NextRequest) {
     if (!reply) throw new Error('Ollama returned empty content');
     return NextResponse.json({ reply, source: 'ollama' as const }, { headers: responseHeaders });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn(
       '[AI Chat] Ollama unreachable, using local fallback:',
       error instanceof Error ? error.message : error,
