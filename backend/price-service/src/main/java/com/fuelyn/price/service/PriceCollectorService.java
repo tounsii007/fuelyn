@@ -1,31 +1,5 @@
 package com.fuelyn.price.service;
 
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import com.fuelyn.common.geo.GermanyBounds;
-import com.fuelyn.price.config.CollectionProperties;
-import com.fuelyn.price.model.dto.CollectionResult;
-import com.fuelyn.price.model.dto.TankerkoenigResponse;
-import com.fuelyn.price.model.entity.CollectionRun;
-import com.fuelyn.price.model.entity.PriceSnapshot;
-import com.fuelyn.price.model.entity.StationMeta;
-import com.fuelyn.price.repository.CollectionRunRepository;
-import com.fuelyn.price.repository.PriceSnapshotRepository;
-import com.fuelyn.price.repository.StationMetaRepository;
-import com.fuelyn.price.stream.PriceEventPublisher;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +18,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fuelyn.common.events.PriceUpdatedEvent;
+import com.fuelyn.common.geo.GermanyBounds;
+import com.fuelyn.price.config.CollectionProperties;
+import com.fuelyn.price.model.dto.CollectionResult;
+import com.fuelyn.price.model.dto.TankerkoenigResponse;
+import com.fuelyn.price.model.entity.CollectionRun;
+import com.fuelyn.price.model.entity.PriceSnapshot;
+import com.fuelyn.price.model.entity.StationMeta;
+import com.fuelyn.price.repository.CollectionRunRepository;
+import com.fuelyn.price.repository.PriceSnapshotRepository;
+import com.fuelyn.price.repository.StationMetaRepository;
+import com.fuelyn.price.stream.PriceEventPublisher;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
 /**
  * Orchestrates periodic price collection from Tankerkoenig API.
  *
- * <p>Collects fuel prices for 10 major German cities, storing snapshots
- * in the database for historical analysis and AI-powered recommendations.</p>
+ * <p>Collects fuel prices for 10 major German cities, storing snapshots in the database for
+ * historical analysis and AI-powered recommendations.
  */
 @Service
 public class PriceCollectorService {
@@ -56,28 +57,26 @@ public class PriceCollectorService {
     private static final Logger log = LoggerFactory.getLogger(PriceCollectorService.class);
 
     /**
-     * Default polling grid — top 10 cities by population. Used when
-     * {@code fuelyn.collection.cities} is left empty in configuration so
-     * the service still boots with sane coverage (CI, fresh checkouts,
-     * forgotten environment variables).
+     * Default polling grid — top 10 cities by population. Used when {@code
+     * fuelyn.collection.cities} is left empty in configuration so the service still boots with sane
+     * coverage (CI, fresh checkouts, forgotten environment variables).
      */
-    private static final List<CityCoord> DEFAULT_CITIES = List.of(
-            new CityCoord("Berlin", 52.5200, 13.4050),
-            new CityCoord("Hamburg", 53.5511, 9.9937),
-            new CityCoord("Muenchen", 48.1351, 11.5820),
-            new CityCoord("Koeln", 50.9375, 6.9603),
-            new CityCoord("Frankfurt", 50.1109, 8.6821),
-            new CityCoord("Stuttgart", 48.7758, 9.1829),
-            new CityCoord("Duesseldorf", 51.2277, 6.7735),
-            new CityCoord("Leipzig", 51.3397, 12.3731),
-            new CityCoord("Dortmund", 51.5136, 7.4653),
-            new CityCoord("Nuernberg", 49.4521, 11.0767)
-    );
+    private static final List<CityCoord> DEFAULT_CITIES =
+            List.of(
+                    new CityCoord("Berlin", 52.5200, 13.4050),
+                    new CityCoord("Hamburg", 53.5511, 9.9937),
+                    new CityCoord("Muenchen", 48.1351, 11.5820),
+                    new CityCoord("Koeln", 50.9375, 6.9603),
+                    new CityCoord("Frankfurt", 50.1109, 8.6821),
+                    new CityCoord("Stuttgart", 48.7758, 9.1829),
+                    new CityCoord("Duesseldorf", 51.2277, 6.7735),
+                    new CityCoord("Leipzig", 51.3397, 12.3731),
+                    new CityCoord("Dortmund", 51.5136, 7.4653),
+                    new CityCoord("Nuernberg", 49.4521, 11.0767));
 
     /**
-     * Active polling grid resolved from configuration at construction
-     * time. Operators can extend coverage without a recompile by adding
-     * entries under {@code fuelyn.collection.cities} in
+     * Active polling grid resolved from configuration at construction time. Operators can extend
+     * coverage without a recompile by adding entries under {@code fuelyn.collection.cities} in
      * {@code application.yml}.
      */
     private final List<CityCoord> cities;
@@ -89,35 +88,34 @@ public class PriceCollectorService {
     private final PriceEventPublisher priceEventPublisher;
     private final double radiusKm;
     private final int maxHistoryDays;
+
     /**
-     * Worker count for parallel polling. The Resilience4j {@code @RateLimiter}
-     * on {@link TankerkoenigClient#searchStations} is the actual throttle —
-     * threads beyond the permit budget block waiting for tokens. Parallelism
-     * therefore does NOT amplify upstream load; it only smooths wall time
-     * around slow HTTP responses (one stuck request no longer pauses the
-     * whole queue). Default 4 covers I/O latency without thread thrash.
+     * Worker count for parallel polling. The Resilience4j {@code @RateLimiter} on {@link
+     * TankerkoenigClient#searchStations} is the actual throttle — threads beyond the permit budget
+     * block waiting for tokens. Parallelism therefore does NOT amplify upstream load; it only
+     * smooths wall time around slow HTTP responses (one stuck request no longer pauses the whole
+     * queue). Default 4 covers I/O latency without thread thrash.
      */
     private final int parallelism;
 
     /**
      * Phase B1 — empty-city skip filter.
      *
-     * <p>Of the ~4 600 polling points, a non-trivial number return zero
-     * stations cycle after cycle: tiny Mecklenburg villages with no
-     * fuel station, North-Sea islands with one closed bunker, etc.
-     * Polling them is a sunk cost — every empty call eats a Resilience4j
-     * permit and burns ~150 ms of wall time without producing data.</p>
+     * <p>Of the ~4 600 polling points, a non-trivial number return zero stations cycle after cycle:
+     * tiny Mecklenburg villages with no fuel station, North-Sea islands with one closed bunker,
+     * etc. Polling them is a sunk cost — every empty call eats a Resilience4j permit and burns ~150
+     * ms of wall time without producing data.
      *
-     * <p>This map records per-city consecutive-empty counts. When the
-     * count crosses {@link #SKIP_THRESHOLD} we tag the city as "cold"
-     * and skip it for the next {@link #COLD_CYCLES} cycles. Every
-     * {@link #DISCOVERY_INTERVAL_CYCLES} cycles we force a re-poll of
-     * every cold city in case a station opened (rare but possible).</p>
+     * <p>This map records per-city consecutive-empty counts. When the count crosses {@link
+     * #SKIP_THRESHOLD} we tag the city as "cold" and skip it for the next {@link #COLD_CYCLES}
+     * cycles. Every {@link #DISCOVERY_INTERVAL_CYCLES} cycles we force a re-poll of every cold city
+     * in case a station opened (rare but possible).
      *
-     * <p>The map is in-memory per JVM. A restart re-discovers cold
-     * cities organically — by design, no DB round trip needed.</p>
+     * <p>The map is in-memory per JVM. A restart re-discovers cold cities organically — by design,
+     * no DB round trip needed.
      */
     private final Map<String, AtomicInteger> consecutiveEmpty = new ConcurrentHashMap<>();
+
     private final Map<String, AtomicInteger> coldSkipsRemaining = new ConcurrentHashMap<>();
     private final AtomicLong cycleCount = new AtomicLong();
     private static final int SKIP_THRESHOLD = 5;
@@ -125,44 +123,49 @@ public class PriceCollectorService {
     private static final int DISCOVERY_INTERVAL_CYCLES = 48;
 
     /**
-     * Phase A1 — observability. Optional so tests + early bootstrap don't
-     * need a registry; in production the Micrometer auto-config wires it
-     * automatically. Counters/timers created on first use are cached on
-     * the registry, so we don't pay name-resolution cost per cycle.
+     * Phase A1 — observability. Optional so tests + early bootstrap don't need a registry; in
+     * production the Micrometer auto-config wires it automatically. Counters/timers created on
+     * first use are cached on the registry, so we don't pay name-resolution cost per cycle.
      */
     private final MeterRegistry meterRegistry;
+
     /** Counter for entire-cycle outcomes — `result=success|degraded`. */
     private Counter cycleCounter;
+
     private Counter cycleDegradedCounter;
-    /** Per-city outcome — `outcome=ok|empty|failed`. Tag pruned to keep
-     *  cardinality bounded (city name is ~5 000 unique values, never tag). */
+
+    /**
+     * Per-city outcome — `outcome=ok|empty|failed`. Tag pruned to keep cardinality bounded (city
+     * name is ~5 000 unique values, never tag).
+     */
     private Counter cityOkCounter;
+
     private Counter cityEmptyCounter;
     private Counter cityFailedCounter;
+
     /** Wall-clock time for one entire cycle. */
     private Timer cycleTimer;
 
     /**
-     * Self-reference so {@link #collectAll()} can call {@link #collectForArea}
-     * through the Spring proxy. A direct {@code this.collectForArea(...)} call
-     * would bypass the AOP proxy and silently disable {@code @Transactional},
-     * causing every {@code findById}/{@code save} to open its own implicit
-     * transaction — which also nullifies {@code hibernate.jdbc.batch_size}.
-     * {@code @Lazy} breaks the circular self-dependency at startup.
+     * Self-reference so {@link #collectAll()} can call {@link #collectForArea} through the Spring
+     * proxy. A direct {@code this.collectForArea(...)} call would bypass the AOP proxy and silently
+     * disable {@code @Transactional}, causing every {@code findById}/{@code save} to open its own
+     * implicit transaction — which also nullifies {@code hibernate.jdbc.batch_size}. {@code @Lazy}
+     * breaks the circular self-dependency at startup.
      */
     private final PriceCollectorService self;
 
     /**
-     * Optional cache manager. When wired, {@link #collectAll()} clears the
-     * {@code priceHistory} and {@code areaStats} caches at the end of a
-     * successful cycle so the next read returns the freshly persisted data
-     * instead of waiting up to 5 minutes for the TTL to expire. Optional
+     * Optional cache manager. When wired, {@link #collectAll()} clears the {@code priceHistory} and
+     * {@code areaStats} caches at the end of a successful cycle so the next read returns the
+     * freshly persisted data instead of waiting up to 5 minutes for the TTL to expire. Optional
      * because tests may run without a configured cache type.
      */
     private final CacheManager cacheManager;
 
     /** Cache names that hold price-derived projections — must invalidate post-cycle. */
-    private static final List<String> CACHES_DEPENDENT_ON_PRICES = List.of("priceHistory", "areaStats");
+    private static final List<String> CACHES_DEPENDENT_ON_PRICES =
+            List.of("priceHistory", "areaStats");
 
     public PriceCollectorService(
             FuelStationClient tankerkoenigClient,
@@ -176,8 +179,7 @@ public class PriceCollectorService {
             @Lazy PriceCollectorService self,
             @Autowired(required = false) CacheManager cacheManager,
             @Autowired(required = false) MeterRegistry meterRegistry,
-            CollectionProperties collectionProperties
-    ) {
+            CollectionProperties collectionProperties) {
         this.tankerkoenigClient = tankerkoenigClient;
         this.snapshotRepo = snapshotRepo;
         this.stationRepo = stationRepo;
@@ -193,34 +195,41 @@ public class PriceCollectorService {
     }
 
     /**
-     * Picks the configured city list when present, otherwise falls back
-     * to {@link #DEFAULT_CITIES}. Each entry is validated — coordinates
-     * outside Germany's bounding box (47–55 N, 5.5–15.5 E) are dropped
-     * with a warning rather than silently polluting the polling grid.
-     * If the config exists but every entry fails validation we still
-     * fall back to defaults — booting with zero cities would be a
-     * silent outage.
+     * Picks the configured city list when present, otherwise falls back to {@link #DEFAULT_CITIES}.
+     * Each entry is validated — coordinates outside Germany's bounding box (47–55 N, 5.5–15.5 E)
+     * are dropped with a warning rather than silently polluting the polling grid. If the config
+     * exists but every entry fails validation we still fall back to defaults — booting with zero
+     * cities would be a silent outage.
      */
     private static List<CityCoord> resolveCities(CollectionProperties props) {
         if (props == null || props.getCities() == null || props.getCities().isEmpty()) {
-            log.info("fuelyn.collection.cities not set — using {} default cities", DEFAULT_CITIES.size());
+            log.info(
+                    "fuelyn.collection.cities not set — using {} default cities",
+                    DEFAULT_CITIES.size());
             return DEFAULT_CITIES;
         }
         List<CityCoord> resolved = new ArrayList<>(props.getCities().size());
         for (CollectionProperties.CityConfig c : props.getCities()) {
             if (c.getName() == null || c.getName().isBlank()) {
-                log.warn("Skipping configured city with blank name: lat={}, lng={}", c.getLat(), c.getLng());
+                log.warn(
+                        "Skipping configured city with blank name: lat={}, lng={}",
+                        c.getLat(),
+                        c.getLng());
                 continue;
             }
             if (!GermanyBounds.contains(c.getLat(), c.getLng())) {
-                log.warn("Skipping city {} — coordinates ({}, {}) outside Germany bounds",
-                        c.getName(), c.getLat(), c.getLng());
+                log.warn(
+                        "Skipping city {} — coordinates ({}, {}) outside Germany bounds",
+                        c.getName(),
+                        c.getLat(),
+                        c.getLng());
                 continue;
             }
             resolved.add(new CityCoord(c.getName(), c.getLat(), c.getLng()));
         }
         if (resolved.isEmpty()) {
-            log.warn("All configured cities failed validation — falling back to {} defaults",
+            log.warn(
+                    "All configured cities failed validation — falling back to {} defaults",
                     DEFAULT_CITIES.size());
             return DEFAULT_CITIES;
         }
@@ -229,8 +238,8 @@ public class PriceCollectorService {
     }
 
     /**
-     * Collects prices from all configured cities.
-     * Each city is processed independently; partial failures do not block others.
+     * Collects prices from all configured cities. Each city is processed independently; partial
+     * failures do not block others.
      */
     public CollectionResult collectAll() {
         long start = System.currentTimeMillis();
@@ -249,7 +258,8 @@ public class PriceCollectorService {
                 // Routed through `self` so the @Transactional proxy actually
                 // wraps the call — a direct `collectForArea(...)` would bypass
                 // AOP and run every JPA op in its own auto-commit transaction.
-                CollectionResult cityResult = self.collectForArea(city.lat(), city.lng(), city.name());
+                CollectionResult cityResult =
+                        self.collectForArea(city.lat(), city.lng(), city.name());
                 totalStations += cityResult.stationsCount();
                 totalPrices += cityResult.pricesCount();
             } catch (Exception e) {
@@ -274,7 +284,11 @@ public class PriceCollectorService {
         // "always fresh after the next cycle commits".
         evictPriceDependentCaches();
 
-        log.info("Collection complete: {} stations, {} prices in {}ms", totalStations, totalPrices, duration);
+        log.info(
+                "Collection complete: {} stations, {} prices in {}ms",
+                totalStations,
+                totalPrices,
+                duration);
         return CollectionResult.success(totalStations, totalPrices, duration);
     }
 
@@ -291,32 +305,31 @@ public class PriceCollectorService {
     }
 
     /**
-     * Fuel types we collect — kept as a constant so the batch lookup of
-     * "latest snapshot per (station, fuel)" filters against the same set
-     * the inner loop iterates. Order matches Tankerkönig response order.
+     * Fuel types we collect — kept as a constant so the batch lookup of "latest snapshot per
+     * (station, fuel)" filters against the same set the inner loop iterates. Order matches
+     * Tankerkönig response order.
      */
     private static final List<String> COLLECTED_FUEL_TYPES = List.of("diesel", "e5", "e10");
 
     /**
      * Collects prices for a specific area and persists them.
      *
-     * <p>Hot-path optimisations vs. the naïve "per-station-find-then-save"
-     * loop:</p>
+     * <p>Hot-path optimisations vs. the naïve "per-station-find-then-save" loop:
+     *
      * <ul>
-     *   <li>One {@code findAllById} for all StationMeta in the response,
-     *       instead of N {@code findById} calls.</li>
-     *   <li>One correlated-subquery lookup for the latest snapshot per
-     *       {@code (station, fuel)} across the entire area, instead of
-     *       up to 3N point lookups.</li>
-     *   <li>{@code saveAll} on collected entity lists so Hibernate's
-     *       JDBC batching kicks in inside the surrounding transaction
-     *       (see {@code application.yml#hibernate.jdbc.batch_size}).</li>
+     *   <li>One {@code findAllById} for all StationMeta in the response, instead of N {@code
+     *       findById} calls.
+     *   <li>One correlated-subquery lookup for the latest snapshot per {@code (station, fuel)}
+     *       across the entire area, instead of up to 3N point lookups.
+     *   <li>{@code saveAll} on collected entity lists so Hibernate's JDBC batching kicks in inside
+     *       the surrounding transaction (see {@code application.yml#hibernate.jdbc.batch_size}).
      * </ul>
      */
     @Transactional
     public CollectionResult collectForArea(double lat, double lng, String cityName) {
         long start = System.currentTimeMillis();
-        List<TankerkoenigResponse.Station> stations = tankerkoenigClient.searchStations(lat, lng, radiusKm);
+        List<TankerkoenigResponse.Station> stations =
+                tankerkoenigClient.searchStations(lat, lng, radiusKm);
 
         if (stations.isEmpty()) {
             return CollectionResult.success(0, 0, System.currentTimeMillis() - start);
@@ -328,23 +341,27 @@ public class PriceCollectorService {
         // the race deterministically instead of letting both rows land.
         LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
 
-        Set<String> stationIds = stations.stream()
-                .map(TankerkoenigResponse.Station::id)
-                .collect(Collectors.toSet());
+        Set<String> stationIds =
+                stations.stream().map(TankerkoenigResponse.Station::id).collect(Collectors.toSet());
 
         // Bulk pre-fetches — collapses what used to be 4N round-trips per area
         // (one findById + up to 3 findFirstByStationIdAndFuelType per station)
         // into a flat 2 queries, regardless of how many stations the area has.
-        Map<String, StationMeta> existingStations = stationRepo.findAllById(stationIds).stream()
-                .collect(Collectors.toMap(StationMeta::getId, m -> m));
-        Map<SnapshotKey, PriceSnapshot> latestByKey = snapshotRepo
-                .findLatestByStationIdsAndFuelTypes(stationIds, COLLECTED_FUEL_TYPES).stream()
-                .collect(Collectors.toMap(
-                        ps -> new SnapshotKey(ps.getStationId(), ps.getFuelType()),
-                        ps -> ps));
+        Map<String, StationMeta> existingStations =
+                stationRepo.findAllById(stationIds).stream()
+                        .collect(Collectors.toMap(StationMeta::getId, m -> m));
+        Map<SnapshotKey, PriceSnapshot> latestByKey =
+                snapshotRepo
+                        .findLatestByStationIdsAndFuelTypes(stationIds, COLLECTED_FUEL_TYPES)
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ps -> new SnapshotKey(ps.getStationId(), ps.getFuelType()),
+                                        ps -> ps));
 
         List<StationMeta> stationsToSave = new ArrayList<>(stations.size());
-        List<PriceSnapshot> snapshotsToSave = new ArrayList<>(stations.size() * COLLECTED_FUEL_TYPES.size());
+        List<PriceSnapshot> snapshotsToSave =
+                new ArrayList<>(stations.size() * COLLECTED_FUEL_TYPES.size());
         List<PriceUpdatedEvent> eventsToPublish = new ArrayList<>();
         int priceCount = 0;
         int stationMetaSkipped = 0;
@@ -362,7 +379,8 @@ public class PriceCollectorService {
             // on transaction commit regardless of whether we add it to the
             // saveAll list.
             StationMeta meta;
-            if (existing != null && stationMetadataMatches(existing, s)
+            if (existing != null
+                    && stationMetadataMatches(existing, s)
                     && lastSeenIsFresh(existing, now)) {
                 stationMetaSkipped++;
                 meta = existing; // managed, untouched, no flush
@@ -380,16 +398,43 @@ public class PriceCollectorService {
                 stationsToSave.add(meta);
             }
 
-            if (s.diesel() != null && s.diesel() > 0
-                    && stagePriceUpdate(s, "diesel", s.diesel(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+            if (s.diesel() != null
+                    && s.diesel() > 0
+                    && stagePriceUpdate(
+                            s,
+                            "diesel",
+                            s.diesel(),
+                            now,
+                            meta,
+                            latestByKey,
+                            snapshotsToSave,
+                            eventsToPublish)) {
                 priceCount++;
             }
-            if (s.e5() != null && s.e5() > 0
-                    && stagePriceUpdate(s, "e5", s.e5(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+            if (s.e5() != null
+                    && s.e5() > 0
+                    && stagePriceUpdate(
+                            s,
+                            "e5",
+                            s.e5(),
+                            now,
+                            meta,
+                            latestByKey,
+                            snapshotsToSave,
+                            eventsToPublish)) {
                 priceCount++;
             }
-            if (s.e10() != null && s.e10() > 0
-                    && stagePriceUpdate(s, "e10", s.e10(), now, meta, latestByKey, snapshotsToSave, eventsToPublish)) {
+            if (s.e10() != null
+                    && s.e10() > 0
+                    && stagePriceUpdate(
+                            s,
+                            "e10",
+                            s.e10(),
+                            now,
+                            meta,
+                            latestByKey,
+                            snapshotsToSave,
+                            eventsToPublish)) {
                 priceCount++;
             }
         }
@@ -410,26 +455,32 @@ public class PriceCollectorService {
         }
 
         long duration = System.currentTimeMillis() - start;
-        log.info("Collected {} prices from {} stations in {} ({}ms, meta-skip={})",
-                priceCount, stations.size(), cityName, duration, stationMetaSkipped);
+        log.info(
+                "Collected {} prices from {} stations in {} ({}ms, meta-skip={})",
+                priceCount,
+                stations.size(),
+                cityName,
+                duration,
+                stationMetaSkipped);
         return CollectionResult.success(stations.size(), priceCount, duration);
     }
 
     /**
-     * How long a {@code lastSeen} timestamp can stay unchanged before we
-     * insist on bumping it. Picked to be larger than one normal collection
-     * cycle (30 min cron) but small enough that "recently active" data
-     * stays meaningful — operators querying station_meta for stale rows
+     * How long a {@code lastSeen} timestamp can stay unchanged before we insist on bumping it.
+     * Picked to be larger than one normal collection cycle (30 min cron) but small enough that
+     * "recently active" data stays meaningful — operators querying station_meta for stale rows
      * shouldn't see the freshness signal lag by more than an hour.
      */
-    private static final java.time.Duration LAST_SEEN_FRESHNESS_WINDOW = java.time.Duration.ofHours(1);
+    private static final java.time.Duration LAST_SEEN_FRESHNESS_WINDOW =
+            java.time.Duration.ofHours(1);
 
     /**
-     * True when every observable field on {@code persisted} matches the
-     * incoming Tankerkönig response. Used to skip a row write whose only
-     * effect would have been to bump {@code lastSeen}.
+     * True when every observable field on {@code persisted} matches the incoming Tankerkönig
+     * response. Used to skip a row write whose only effect would have been to bump {@code
+     * lastSeen}.
      */
-    private static boolean stationMetadataMatches(StationMeta persisted, TankerkoenigResponse.Station incoming) {
+    private static boolean stationMetadataMatches(
+            StationMeta persisted, TankerkoenigResponse.Station incoming) {
         String incomingBrand = incoming.brand() != null ? incoming.brand() : "";
         return java.util.Objects.equals(persisted.getName(), incoming.name())
                 && java.util.Objects.equals(persisted.getBrand(), incomingBrand)
@@ -441,9 +492,8 @@ public class PriceCollectorService {
     }
 
     /**
-     * True when {@code lastSeen} has been bumped within the freshness
-     * window — i.e. a write right now would only push it forward by a
-     * few minutes, which is below operator-visible resolution.
+     * True when {@code lastSeen} has been bumped within the freshness window — i.e. a write right
+     * now would only push it forward by a few minutes, which is below operator-visible resolution.
      */
     private static boolean lastSeenIsFresh(StationMeta persisted, LocalDateTime now) {
         LocalDateTime ls = persisted.getLastSeen();
@@ -457,26 +507,27 @@ public class PriceCollectorService {
     private record SnapshotKey(String stationId, String fuelType) {}
 
     /**
-     * Stage a single (station, fuel) snapshot for the batched write at the
-     * end of {@link #collectForArea}. Compared to the previous per-row
-     * persist-and-publish helper, this method:
+     * Stage a single (station, fuel) snapshot for the batched write at the end of {@link
+     * #collectForArea}. Compared to the previous per-row persist-and-publish helper, this method:
+     *
      * <ul>
-     *   <li>Looks up the previous price from the pre-fetched map instead
-     *       of issuing its own SQL — turning N×M findFirst queries into
-     *       a constant-time HashMap probe.</li>
-     *   <li>Skips the bucket-equality case (same minute already persisted)
-     *       to avoid a guaranteed UNIQUE-constraint violation.</li>
-     *   <li>Defers persistence + Kafka emission to the caller, so the
-     *       whole area can be committed in two saveAll batches and the
-     *       events fired together.</li>
+     *   <li>Looks up the previous price from the pre-fetched map instead of issuing its own SQL —
+     *       turning N×M findFirst queries into a constant-time HashMap probe.
+     *   <li>Skips the bucket-equality case (same minute already persisted) to avoid a guaranteed
+     *       UNIQUE-constraint violation.
+     *   <li>Defers persistence + Kafka emission to the caller, so the whole area can be committed
+     *       in two saveAll batches and the events fired together.
      * </ul>
      *
-     * @return {@code true} if a snapshot was queued for write,
-     *         {@code false} if skipped for the bucket-equality reason.
+     * @return {@code true} if a snapshot was queued for write, {@code false} if skipped for the
+     *     bucket-equality reason.
      */
     private boolean stagePriceUpdate(
-            TankerkoenigResponse.Station s, String fuelType, double newPrice,
-            LocalDateTime now, StationMeta meta,
+            TankerkoenigResponse.Station s,
+            String fuelType,
+            double newPrice,
+            LocalDateTime now,
+            StationMeta meta,
             Map<SnapshotKey, PriceSnapshot> latestByKey,
             List<PriceSnapshot> snapshotsToSave,
             List<PriceUpdatedEvent> eventsToPublish) {
@@ -497,40 +548,37 @@ public class PriceCollectorService {
         Double prevPrice = previous != null ? previous.getPrice() : null;
         boolean changed = (prevPrice == null) || Math.abs(prevPrice - newPrice) > 0.0009;
         if (changed) {
-            eventsToPublish.add(PriceUpdatedEvent.forUpdate(
-                    s.id(),
-                    meta.getName(),
-                    meta.getBrand() == null ? "" : meta.getBrand().toLowerCase(),
-                    fuelType,
-                    newPrice,
-                    prevPrice,
-                    now.toInstant(ZoneOffset.UTC),
-                    meta.getLat(),
-                    meta.getLng(),
-                    meta.getPostCode()
-            ));
+            eventsToPublish.add(
+                    PriceUpdatedEvent.forUpdate(
+                            s.id(),
+                            meta.getName(),
+                            meta.getBrand() == null ? "" : meta.getBrand().toLowerCase(),
+                            fuelType,
+                            newPrice,
+                            prevPrice,
+                            now.toInstant(ZoneOffset.UTC),
+                            meta.getLat(),
+                            meta.getLng(),
+                            meta.getPostCode()));
         }
         return true;
     }
 
     /**
-     * Conservative chunk size for the chunked retention purge. 5 000 rows
-     * per DELETE keeps each transaction well under typical Postgres
-     * lock-wait timeouts and lets the polling writer interleave between
-     * chunks instead of getting blocked behind a multi-million-row purge.
+     * Conservative chunk size for the chunked retention purge. 5 000 rows per DELETE keeps each
+     * transaction well under typical Postgres lock-wait timeouts and lets the polling writer
+     * interleave between chunks instead of getting blocked behind a multi-million-row purge.
      */
     private static final int CLEANUP_CHUNK_SIZE = 5_000;
 
     /**
      * Deletes price snapshots older than the configured retention period.
      *
-     * <p>Performed in {@value #CLEANUP_CHUNK_SIZE}-row chunks rather than
-     * a single unbounded {@code DELETE … WHERE timestamp &lt; ?}, because
-     * on a 90-day-deep table the unbounded statement can hold a write
-     * lock on {@code price_snapshots} for minutes — long enough to stall
-     * the collection cycle and trip the Tankerkönig RateLimiter into a
-     * timeout cascade. Each chunk runs in its own short transaction
-     * (REQUIRES_NEW) so the loop yields between chunks.</p>
+     * <p>Performed in {@value #CLEANUP_CHUNK_SIZE}-row chunks rather than a single unbounded {@code
+     * DELETE … WHERE timestamp &lt; ?}, because on a 90-day-deep table the unbounded statement can
+     * hold a write lock on {@code price_snapshots} for minutes — long enough to stall the
+     * collection cycle and trip the Tankerkönig RateLimiter into a timeout cascade. Each chunk runs
+     * in its own short transaction (REQUIRES_NEW) so the loop yields between chunks.
      *
      * @return total number of rows deleted across all chunks.
      */
@@ -542,21 +590,24 @@ public class PriceCollectorService {
             chunk = self.deleteRetentionChunk(cutoff, CLEANUP_CHUNK_SIZE);
             totalDeleted += chunk;
         } while (chunk == CLEANUP_CHUNK_SIZE);
-        log.info("Cleaned up {} old price snapshots (older than {} days, chunk={})",
-                totalDeleted, maxHistoryDays, CLEANUP_CHUNK_SIZE);
+        log.info(
+                "Cleaned up {} old price snapshots (older than {} days, chunk={})",
+                totalDeleted,
+                maxHistoryDays,
+                CLEANUP_CHUNK_SIZE);
         return totalDeleted;
     }
 
     /**
-     * Deletes one retention chunk in its own short-lived transaction.
-     * Public for the @Transactional proxy boundary; not part of the
-     * external API of the service.
+     * Deletes one retention chunk in its own short-lived transaction. Public for the @Transactional
+     * proxy boundary; not part of the external API of the service.
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public int deleteRetentionChunk(LocalDateTime cutoff, int chunkSize) {
-        List<Long> ids = snapshotRepo.findIdsBeforeTimestamp(
-                cutoff,
-                org.springframework.data.domain.PageRequest.of(0, chunkSize));
+        List<Long> ids =
+                snapshotRepo.findIdsBeforeTimestamp(
+                        cutoff, org.springframework.data.domain.PageRequest.of(0, chunkSize));
         if (ids.isEmpty()) {
             return 0;
         }
@@ -569,14 +620,13 @@ public class PriceCollectorService {
     /**
      * Loads the polling grid from {@code cities.csv} on the classpath.
      *
-     * <p>Format: one row per city — {@code name,lat,lng}. Blank lines and
-     * lines starting with {@code #} are skipped. Malformed rows log a
-     * WARN and are skipped; we never abort startup over a single bad
-     * row because the rest of the grid is still useful.</p>
+     * <p>Format: one row per city — {@code name,lat,lng}. Blank lines and lines starting with
+     * {@code #} are skipped. Malformed rows log a WARN and are skipped; we never abort startup over
+     * a single bad row because the rest of the grid is still useful.
      *
-     * <p>Called once from the {@code static} initialiser; the resulting
-     * list is wrapped in {@link Collections#unmodifiableList(List)} so
-     * accidental mutation downstream surfaces as an exception.</p>
+     * <p>Called once from the {@code static} initialiser; the resulting list is wrapped in {@link
+     * Collections#unmodifiableList(List)} so accidental mutation downstream surfaces as an
+     * exception.
      */
     private static List<CityCoord> loadCitiesFromClasspath() {
         List<CityCoord> out = new ArrayList<>(5_000);
@@ -587,8 +637,8 @@ public class PriceCollectorService {
                         .error("cities.csv missing from classpath — collection will be a no-op");
                 return List.of();
             }
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            try (BufferedReader br =
+                    new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String line;
                 int lineNo = 0;
                 while ((line = br.readLine()) != null) {
@@ -598,16 +648,18 @@ public class PriceCollectorService {
                     String[] parts = trimmed.split(",", 4);
                     if (parts.length < 3) {
                         LoggerFactory.getLogger(PriceCollectorService.class)
-                                .warn("cities.csv:{} malformed — expected 'name,lat,lng', got '{}'",
-                                        lineNo, trimmed);
+                                .warn(
+                                        "cities.csv:{} malformed — expected 'name,lat,lng', got '{}'",
+                                        lineNo,
+                                        trimmed);
                         continue;
                     }
                     try {
-                        out.add(new CityCoord(
-                                parts[0].trim(),
-                                Double.parseDouble(parts[1].trim()),
-                                Double.parseDouble(parts[2].trim())
-                        ));
+                        out.add(
+                                new CityCoord(
+                                        parts[0].trim(),
+                                        Double.parseDouble(parts[1].trim()),
+                                        Double.parseDouble(parts[2].trim())));
                     } catch (NumberFormatException nfe) {
                         LoggerFactory.getLogger(PriceCollectorService.class)
                                 .warn("cities.csv:{} bad number — '{}'", lineNo, trimmed);

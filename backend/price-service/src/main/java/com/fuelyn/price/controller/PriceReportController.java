@@ -1,8 +1,8 @@
 package com.fuelyn.price.controller;
 
-import com.fuelyn.common.dto.ApiResponse;
-import com.fuelyn.price.model.entity.PriceReport;
-import com.fuelyn.price.repository.PriceReportRepository;
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -16,30 +16,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import com.fuelyn.common.dto.ApiResponse;
+import com.fuelyn.price.model.entity.PriceReport;
+import com.fuelyn.price.repository.PriceReportRepository;
 
 /**
  * Phase 8 — Crowdsourced price-correction reports.
  *
  * <p>Two HTTP surfaces:
+ *
  * <ul>
- *   <li>{@code POST /api/v1/reports}: store a single report</li>
- *   <li>{@code GET  /api/v1/reports/stations/{id}/count}: how many
- *       distinct reports landed for this station in the last 24 h —
- *       used by the frontend to render a "stale-data" badge</li>
+ *   <li>{@code POST /api/v1/reports}: store a single report
+ *   <li>{@code GET /api/v1/reports/stations/{id}/count}: how many distinct reports landed for this
+ *       station in the last 24 h — used by the frontend to render a "stale-data" badge
  * </ul>
  *
- * <p>Per-device rate limit: max 20 reports per fingerprint per day.
- * Above that we 429 — keeps a single bad actor from drowning the
- * triage queue without needing a real account system.</p>
+ * <p>Per-device rate limit: max 20 reports per fingerprint per day. Above that we 429 — keeps a
+ * single bad actor from drowning the triage queue without needing a real account system.
  */
 @RestController
 @RequestMapping("/api/v1/reports")
@@ -50,6 +50,7 @@ public class PriceReportController {
 
     /** Max reports per fingerprint within {@link #RATE_LIMIT_WINDOW_HOURS}. */
     private static final int RATE_LIMIT_MAX_PER_DAY = 20;
+
     private static final int RATE_LIMIT_WINDOW_HOURS = 24;
 
     private final PriceReportRepository repo;
@@ -65,8 +66,7 @@ public class PriceReportController {
             @DecimalMin("0.0") @DecimalMax("99.9") Double displayedPrice,
             @DecimalMin("0.0") @DecimalMax("99.9") Double reportedPrice,
             @Size(max = 500) String note,
-            @Size(max = 128) String clientFingerprint
-    ) {}
+            @Size(max = 128) String clientFingerprint) {}
 
     @PostMapping
     @Transactional
@@ -76,55 +76,68 @@ public class PriceReportController {
         // Rate-limit per fingerprint. Anonymous reports (no fingerprint)
         // are allowed but globally rate-limited via the BFF anyway.
         if (request.clientFingerprint() != null && !request.clientFingerprint().isBlank()) {
-            long since = repo.countByFingerprintSince(
-                    request.clientFingerprint(),
-                    LocalDateTime.now().minusHours(RATE_LIMIT_WINDOW_HOURS));
+            long since =
+                    repo.countByFingerprintSince(
+                            request.clientFingerprint(),
+                            LocalDateTime.now().minusHours(RATE_LIMIT_WINDOW_HOURS));
             if (since >= RATE_LIMIT_MAX_PER_DAY) {
-                log.warn("Rate-limit triggered for fingerprint={} ({} reports)",
-                        request.clientFingerprint(), since);
+                log.warn(
+                        "Rate-limit triggered for fingerprint={} ({} reports)",
+                        request.clientFingerprint(),
+                        since);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                        .body(ApiResponse.error("Zu viele Meldungen — bitte später erneut versuchen."));
+                        .body(
+                                ApiResponse.error(
+                                        "Zu viele Meldungen — bitte später erneut versuchen."));
             }
         }
 
-        PriceReport saved = repo.save(new PriceReport(
-                request.stationId(),
-                request.fuelType(),
-                request.displayedPrice(),
-                request.reportedPrice(),
-                request.note(),
-                request.clientFingerprint(),
-                LocalDateTime.now()
-        ));
+        PriceReport saved =
+                repo.save(
+                        new PriceReport(
+                                request.stationId(),
+                                request.fuelType(),
+                                request.displayedPrice(),
+                                request.reportedPrice(),
+                                request.note(),
+                                request.clientFingerprint(),
+                                LocalDateTime.now()));
 
-        log.info("Report stored: id={} station={} fuel={} reported={}",
-                saved.getId(), saved.getStationId(), saved.getFuelType(), saved.getReportedPrice());
+        log.info(
+                "Report stored: id={} station={} fuel={} reported={}",
+                saved.getId(),
+                saved.getStationId(),
+                saved.getFuelType(),
+                saved.getReportedPrice());
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(Map.of(
-                        "id", saved.getId(),
-                        "status", saved.getStatus()
-                )));
+                .body(
+                        ApiResponse.success(
+                                Map.of(
+                                        "id", saved.getId(),
+                                        "status", saved.getStatus())));
     }
 
     /**
-     * Number of reports observed for this station/fuel in the last
-     * 24 h. Frontend uses it to flag stations whose displayed price
-     * is in dispute.
+     * Number of reports observed for this station/fuel in the last 24 h. Frontend uses it to flag
+     * stations whose displayed price is in dispute.
      */
     @GetMapping("/stations/{stationId}/count")
     public ResponseEntity<ApiResponse<Map<String, Object>>> countForStation(
             @PathVariable @NotBlank @Size(max = 64) String stationId,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "e10")
-            @Pattern(regexp = "diesel|e5|e10") String fuelType) {
+                    @Pattern(regexp = "diesel|e5|e10")
+                    String fuelType) {
 
-        long n = repo.countByStationIdAndFuelTypeAndCreatedAtAfter(
-                stationId, fuelType, LocalDateTime.now().minusHours(24));
+        long n =
+                repo.countByStationIdAndFuelTypeAndCreatedAtAfter(
+                        stationId, fuelType, LocalDateTime.now().minusHours(24));
 
-        return ResponseEntity.ok(ApiResponse.success(Map.of(
-                "stationId", stationId,
-                "fuelType",  fuelType,
-                "count24h",  n
-        )));
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        Map.of(
+                                "stationId", stationId,
+                                "fuelType", fuelType,
+                                "count24h", n)));
     }
 }

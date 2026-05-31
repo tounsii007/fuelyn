@@ -8,11 +8,10 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+
 import reactor.core.publisher.Mono;
 
-/**
- * Logs request/response details with timing information.
- */
+/** Logs request/response details with timing information. */
 @Component
 public class LoggingFilter implements GlobalFilter, Ordered {
 
@@ -29,16 +28,25 @@ public class LoggingFilter implements GlobalFilter, Ordered {
 
         log.info("[{}] >>> {} {}", requestId, method, path);
 
-        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
-            Long startTime = exchange.getAttribute(START_TIME);
-            long duration = startTime != null ? System.currentTimeMillis() - startTime : -1;
-            HttpStatusCode status = exchange.getResponse().getStatusCode();
+        return chain.filter(exchange)
+                .then(
+                        Mono.fromRunnable(
+                                () -> {
+                                    Long startTime = exchange.getAttribute(START_TIME);
+                                    long duration =
+                                            startTime != null
+                                                    ? System.currentTimeMillis() - startTime
+                                                    : -1;
+                                    HttpStatusCode status = exchange.getResponse().getStatusCode();
 
-            log.info("[{}] <<< {} {} - {} ({}ms)",
-                    requestId, method, path,
-                    status != null ? status.value() : "?",
-                    duration);
-        }));
+                                    log.info(
+                                            "[{}] <<< {} {} - {} ({}ms)",
+                                            requestId,
+                                            method,
+                                            path,
+                                            status != null ? status.value() : "?",
+                                            duration);
+                                }));
     }
 
     @Override

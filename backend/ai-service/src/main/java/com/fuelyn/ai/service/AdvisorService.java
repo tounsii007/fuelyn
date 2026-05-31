@@ -1,21 +1,5 @@
 package com.fuelyn.ai.service;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.fuelyn.ai.backend.EnrichmentBackend;
-import com.fuelyn.ai.fallback.LocalHeuristicFallback;
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorResponse;
-import com.fuelyn.ai.stream.PriceHistoryBuffer;
-import com.fuelyn.ai.telemetry.RegretLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.util.UUID;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -23,12 +7,29 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.fuelyn.ai.backend.EnrichmentBackend;
+import com.fuelyn.ai.fallback.LocalHeuristicFallback;
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorResponse;
+import com.fuelyn.ai.stream.PriceHistoryBuffer;
+import com.fuelyn.ai.telemetry.RegretLogger;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Orchestrator for the tiered advisor pipeline.
  *
  * <h3>Pipeline</h3>
+ *
  * <pre>
  *   Request
  *     ↓
@@ -44,23 +45,23 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  *
  * <h3>Why tiered</h3>
+ *
  * <ul>
- *   <li>Cache absorbs the bulk of repeated identical lookups.</li>
- *   <li>The heuristic guarantees a useful response even if both LLMs
- *       are down — algorithmic correctness never depends on network.</li>
- *   <li>The LLM tier is opt-in via Spring properties; with nothing
- *       configured the service degrades gracefully to heuristic-only.</li>
- *   <li>Local Ollama runs first so the cheapest option is preferred,
- *       and OpenAI tokens are only spent on Ollama outages.</li>
+ *   <li>Cache absorbs the bulk of repeated identical lookups.
+ *   <li>The heuristic guarantees a useful response even if both LLMs are down — algorithmic
+ *       correctness never depends on network.
+ *   <li>The LLM tier is opt-in via Spring properties; with nothing configured the service degrades
+ *       gracefully to heuristic-only.
+ *   <li>Local Ollama runs first so the cheapest option is preferred, and OpenAI tokens are only
+ *       spent on Ollama outages.
  * </ul>
  *
  * <h3>Provider order</h3>
- * Driven by {@code fuelyn.ai.providers}, default {@code "ollama,openai"}.
- * Each backend is queried in order; the first one whose
- * {@link EnrichmentBackend#isAvailable()} returns true and whose
- * {@link EnrichmentBackend#enrich} doesn't throw, wins. Failures are
- * logged and fall through to the next provider, then ultimately to the
- * pure heuristic baseline.
+ *
+ * Driven by {@code fuelyn.ai.providers}, default {@code "ollama,openai"}. Each backend is queried
+ * in order; the first one whose {@link EnrichmentBackend#isAvailable()} returns true and whose
+ * {@link EnrichmentBackend#enrich} doesn't throw, wins. Failures are logged and fall through to the
+ * next provider, then ultimately to the pure heuristic baseline.
  */
 @Service
 public class AdvisorService {
@@ -71,21 +72,20 @@ public class AdvisorService {
     private final List<EnrichmentBackend> orderedBackends;
     private final boolean enrichmentEnabled;
     private final RegretLogger regretLogger;
+
     /** Per-station rolling history fed by the Kafka consumer; nullable for tests. */
     private final PriceHistoryBuffer historyBuffer;
 
     /**
-     * Test-friendly overload — RegretLogger and PriceHistoryBuffer are
-     * optional so unit tests can construct the service without wiring
-     * up Kafka or SLF4J marker plumbing.
+     * Test-friendly overload — RegretLogger and PriceHistoryBuffer are optional so unit tests can
+     * construct the service without wiring up Kafka or SLF4J marker plumbing.
      */
     public AdvisorService(
             List<EnrichmentBackend> backends,
             boolean enrichmentEnabled,
             String providersCsv,
             long cacheMaxSize,
-            long cacheTtlMinutes
-    ) {
+            long cacheTtlMinutes) {
         this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, null, null);
     }
 
@@ -95,9 +95,15 @@ public class AdvisorService {
             String providersCsv,
             long cacheMaxSize,
             long cacheTtlMinutes,
-            RegretLogger regretLogger
-    ) {
-        this(backends, enrichmentEnabled, providersCsv, cacheMaxSize, cacheTtlMinutes, regretLogger, null);
+            RegretLogger regretLogger) {
+        this(
+                backends,
+                enrichmentEnabled,
+                providersCsv,
+                cacheMaxSize,
+                cacheTtlMinutes,
+                regretLogger,
+                null);
     }
 
     @Autowired(required = false)
@@ -108,35 +114,35 @@ public class AdvisorService {
             @Value("${fuelyn.ai.cache.max-size:200}") long cacheMaxSize,
             @Value("${fuelyn.ai.cache.ttl-minutes:15}") long cacheTtlMinutes,
             RegretLogger regretLogger,
-            PriceHistoryBuffer historyBuffer
-    ) {
+            PriceHistoryBuffer historyBuffer) {
         this.regretLogger = regretLogger;
         this.historyBuffer = historyBuffer;
         this.enrichmentEnabled = enrichmentEnabled;
-        this.responseCache = Caffeine.newBuilder()
-                .maximumSize(cacheMaxSize)
-                .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
-                .build();
+        this.responseCache =
+                Caffeine.newBuilder()
+                        .maximumSize(cacheMaxSize)
+                        .expireAfterWrite(cacheTtlMinutes, TimeUnit.MINUTES)
+                        .build();
         this.orderedBackends = orderBackends(backends, providersCsv);
 
-        log.info("AdvisorService ready — enrichment={}, providers={}, cache={}min×{}, buffer={}",
+        log.info(
+                "AdvisorService ready — enrichment={}, providers={}, cache={}min×{}, buffer={}",
                 enrichmentEnabled,
                 orderedBackends.stream().map(EnrichmentBackend::name).toList(),
-                cacheTtlMinutes, cacheMaxSize,
+                cacheTtlMinutes,
+                cacheMaxSize,
                 historyBuffer != null ? "ON" : "OFF");
     }
 
     /**
      * Resolve the advisor pipeline for the given request.
      *
-     * <p>Never throws — pipeline failures degrade silently to the
-     * heuristic baseline, which is guaranteed to produce a usable
-     * response even with empty inputs.</p>
+     * <p>Never throws — pipeline failures degrade silently to the heuristic baseline, which is
+     * guaranteed to produce a usable response even with empty inputs.
      */
     /**
-     * Drop every cached response. Called by the Kafka listener when
-     * any station's price moved — guarantees the next request runs
-     * the heuristic against fresh data instead of serving a stale
+     * Drop every cached response. Called by the Kafka listener when any station's price moved —
+     * guarantees the next request runs the heuristic against fresh data instead of serving a stale
      * verdict. Cheap at our scale (cache holds ≤ 200 entries).
      */
     public void invalidateCache() {
@@ -173,30 +179,33 @@ public class AdvisorService {
         // [6] Telemetry — non-blocking, never alters the response
         if (regretLogger != null) {
             try {
-                regretLogger.record(UUID.randomUUID().toString().substring(0, 8), enrichedRequest, result);
-            } catch (Exception ignored) { /* never break the request path */ }
+                regretLogger.record(
+                        UUID.randomUUID().toString().substring(0, 8), enrichedRequest, result);
+            } catch (Exception ignored) {
+                /* never break the request path */
+            }
         }
 
         return result;
     }
 
     /**
-     * Augment {@code request.priceHistory()} with stored Kafka observations
-     * for the cheapest station in the request. Cheapest is what every
-     * signal — Ewma trend, change-point, forecaster — keys on, so giving
-     * it real history is the highest-impact lever per request.
+     * Augment {@code request.priceHistory()} with stored Kafka observations for the cheapest
+     * station in the request. Cheapest is what every signal — Ewma trend, change-point, forecaster
+     * — keys on, so giving it real history is the highest-impact lever per request.
      *
      * <p>Behaviour matrix:
+     *
      * <ul>
-     *   <li>Buffer disabled / empty → return request unchanged</li>
-     *   <li>Caller already supplied ≥ 4 history points → return request unchanged
-     *       (caller knows their own data better than the broker)</li>
-     *   <li>Otherwise → return a new record with priceHistory built from
-     *       the buffer's cheapest-station tuple</li>
+     *   <li>Buffer disabled / empty → return request unchanged
+     *   <li>Caller already supplied ≥ 4 history points → return request unchanged (caller knows
+     *       their own data better than the broker)
+     *   <li>Otherwise → return a new record with priceHistory built from the buffer's
+     *       cheapest-station tuple
      * </ul>
      *
-     * Records are immutable; we copy via the canonical 8-arg constructor
-     * so future fields don't silently get dropped.</p>
+     * Records are immutable; we copy via the canonical 8-arg constructor so future fields don't
+     * silently get dropped.
      */
     private AIAdvisorRequest enrichWithHistory(AIAdvisorRequest request) {
         if (historyBuffer == null) return request;
@@ -207,9 +216,10 @@ public class AdvisorService {
         // (overnight) snapshots, while the buffer holds fresher Kafka
         // events. Compare the latest timestamps and only skip when the
         // request already has the freshest data we can offer.
-        AIAdvisorRequest.StationPrice cheapest = request.prices().stream()
-                .min(Comparator.comparingDouble(AIAdvisorRequest.StationPrice::price))
-                .orElse(null);
+        AIAdvisorRequest.StationPrice cheapest =
+                request.prices().stream()
+                        .min(Comparator.comparingDouble(AIAdvisorRequest.StationPrice::price))
+                        .orElse(null);
         if (cheapest == null) return request;
 
         // The Kafka payload uses the canonical Tankerkönig station UUID.
@@ -230,32 +240,42 @@ public class AdvisorService {
         // schema serialises Instant as ISO-8601, which is lexicographic-
         // sortable, so this is correct without parsing.
         if (request.priceHistory() != null && request.priceHistory().size() >= 8) {
-            String callerLast = request.priceHistory()
-                    .get(request.priceHistory().size() - 1).timestamp();
+            String callerLast =
+                    request.priceHistory().get(request.priceHistory().size() - 1).timestamp();
             String bufferLast = agg.get().last().toString();
             if (callerLast != null && callerLast.compareTo(bufferLast) >= 0) {
-                log.debug("Deep-analysis: caller already supplied {} points up to {} "
+                log.debug(
+                        "Deep-analysis: caller already supplied {} points up to {} "
                                 + "(buffer last={}) — leaving untouched",
-                        request.priceHistory().size(), callerLast, bufferLast);
+                        request.priceHistory().size(),
+                        callerLast,
+                        bufferLast);
                 return request;
             }
         }
 
-        List<AIAdvisorRequest.PricePoint> derived = historyBuffer
-                .recent(key, request.fuelType())
-                .stream()
-                .map(p -> new AIAdvisorRequest.PricePoint(p.price(), p.observedAt().toString()))
-                .toList();
+        List<AIAdvisorRequest.PricePoint> derived =
+                historyBuffer.recent(key, request.fuelType()).stream()
+                        .map(
+                                p ->
+                                        new AIAdvisorRequest.PricePoint(
+                                                p.price(), p.observedAt().toString()))
+                        .toList();
 
         if (derived.size() < 4) {
-            log.debug("Deep-analysis: only {} history points for {}, leaving untouched",
-                    derived.size(), key);
+            log.debug(
+                    "Deep-analysis: only {} history points for {}, leaving untouched",
+                    derived.size(),
+                    key);
             return request;
         }
 
-        log.info("Deep-analysis: injecting {} buffered points for {} ({}) — "
+        log.info(
+                "Deep-analysis: injecting {} buffered points for {} ({}) — "
                         + "min={}, max={}, μ={}, σ={}, z={}",
-                derived.size(), key, request.fuelType(),
+                derived.size(),
+                key,
+                request.fuelType(),
                 String.format("%.3f", agg.get().minPrice()),
                 String.format("%.3f", agg.get().maxPrice()),
                 String.format("%.3f", agg.get().meanPrice()),
@@ -270,15 +290,15 @@ public class AdvisorService {
                 request.lng(),
                 request.fillUpLiters(),
                 request.vehicleProfile(),
-                request.destination()
-        );
+                request.destination());
     }
 
     /**
-     * Walk the configured backends in order; return the first
-     * successful enrichment. On total failure return the baseline.
+     * Walk the configured backends in order; return the first successful enrichment. On total
+     * failure return the baseline.
      */
-    private AIAdvisorResponse tryEnrichmentChain(AIAdvisorRequest request, AIAdvisorResponse baseline) {
+    private AIAdvisorResponse tryEnrichmentChain(
+            AIAdvisorRequest request, AIAdvisorResponse baseline) {
         for (EnrichmentBackend backend : orderedBackends) {
             if (!backend.isAvailable()) {
                 log.debug("Skip {} — not available", backend.name());
@@ -298,18 +318,19 @@ public class AdvisorService {
     }
 
     /**
-     * Apply the configured provider order to the auto-discovered
-     * backends. Backends not listed in {@code providersCsv} are
-     * silently dropped, so an operator can disable a single tier
-     * without editing code.
+     * Apply the configured provider order to the auto-discovered backends. Backends not listed in
+     * {@code providersCsv} are silently dropped, so an operator can disable a single tier without
+     * editing code.
      */
-    private static List<EnrichmentBackend> orderBackends(List<EnrichmentBackend> backends, String providersCsv) {
+    private static List<EnrichmentBackend> orderBackends(
+            List<EnrichmentBackend> backends, String providersCsv) {
         if (backends == null || backends.isEmpty()) return List.of();
 
-        List<String> wanted = Arrays.stream(providersCsv.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+        List<String> wanted =
+                Arrays.stream(providersCsv.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
 
         // Map each backend to its canonical provider key (everything
         // before the first ':' in name() — e.g. "ollama:qwen2.5:3b").
@@ -334,31 +355,30 @@ public class AdvisorService {
             }
         }
         return ordered.stream()
-                .sorted(Comparator.comparingInt(b -> {
-                    String key = b.name().split(":", 2)[0];
-                    int idx = wanted.indexOf(key);
-                    return idx < 0 ? Integer.MAX_VALUE : idx;
-                }))
+                .sorted(
+                        Comparator.comparingInt(
+                                b -> {
+                                    String key = b.name().split(":", 2)[0];
+                                    int idx = wanted.indexOf(key);
+                                    return idx < 0 ? Integer.MAX_VALUE : idx;
+                                }))
                 .toList();
     }
 
     /**
      * Build a collision-resistant cache key.
      *
-     * <p>Old key was {@code fuelType:rLat:rLng:count}, so two requests with
-     * the same bucket and same station count but completely different
-     * stations / prices collided — a user querying station set A might
-     * receive the verdict computed for set B if both happened to bucket
-     * to the same 0.01° grid square. Even within a single user's session,
-     * two refreshes seconds apart (with the same N stations but a price
-     * just changed at one of them) used to short-circuit to the stale
-     * verdict.</p>
+     * <p>Old key was {@code fuelType:rLat:rLng:count}, so two requests with the same bucket and
+     * same station count but completely different stations / prices collided — a user querying
+     * station set A might receive the verdict computed for set B if both happened to bucket to the
+     * same 0.01° grid square. Even within a single user's session, two refreshes seconds apart
+     * (with the same N stations but a price just changed at one of them) used to short-circuit to
+     * the stale verdict.
      *
-     * <p>The new key folds in a deterministic SHA-256 of the sorted
-     * station list (name + price-rounded + distance-rounded), so a
-     * change in any station triggers a fresh verdict. Sorted ordering
-     * keeps the digest stable when the upstream returns the same set in
-     * a different order.</p>
+     * <p>The new key folds in a deterministic SHA-256 of the sorted station list (name +
+     * price-rounded + distance-rounded), so a change in any station triggers a fresh verdict.
+     * Sorted ordering keeps the digest stable when the upstream returns the same set in a different
+     * order.
      */
     /** Package-private for unit tests; product callers go through {@code getRecommendation}. */
     static String buildCacheKey(AIAdvisorRequest request) {
@@ -376,16 +396,27 @@ public class AdvisorService {
         }
         StringBuilder canonical = new StringBuilder(prices.size() * 32);
         prices.stream()
-                .sorted(java.util.Comparator
-                        .comparing(AIAdvisorRequest.StationPrice::stationName,
-                                java.util.Comparator.nullsLast(String::compareTo))
-                        .thenComparingDouble(AIAdvisorRequest.StationPrice::price))
-                .forEach(p -> canonical.append(p.stationName()).append('|')
-                        .append(Math.round(p.price() * 1000.0)).append('|')
-                        .append(Math.round(p.distance() * 100.0)).append(';'));
+                .sorted(
+                        java.util.Comparator.comparing(
+                                        AIAdvisorRequest.StationPrice::stationName,
+                                        java.util.Comparator.nullsLast(String::compareTo))
+                                .thenComparingDouble(AIAdvisorRequest.StationPrice::price))
+                .forEach(
+                        p ->
+                                canonical
+                                        .append(p.stationName())
+                                        .append('|')
+                                        .append(Math.round(p.price() * 1000.0))
+                                        .append('|')
+                                        .append(Math.round(p.distance() * 100.0))
+                                        .append(';'));
         try {
-            byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            byte[] hash =
+                    java.security.MessageDigest.getInstance("SHA-256")
+                            .digest(
+                                    canonical
+                                            .toString()
+                                            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
             // 12 hex chars = 48 bits = ~280 trillion buckets — comfortable
             // for our cache size of a few hundred entries.
             StringBuilder hex = new StringBuilder(12);

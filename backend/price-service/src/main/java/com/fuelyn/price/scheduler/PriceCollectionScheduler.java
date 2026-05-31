@@ -14,9 +14,9 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 /**
  * Scheduled tasks for automated price collection and data maintenance.
  *
- * <p>Every job is guarded by {@link SchedulerLock} so in a clustered deployment
- * only one instance executes a given job per cron tick. Without this, every
- * replica would call Tankerkoenig at the same time and double-count snapshots.
+ * <p>Every job is guarded by {@link SchedulerLock} so in a clustered deployment only one instance
+ * executes a given job per cron tick. Without this, every replica would call Tankerkoenig at the
+ * same time and double-count snapshots.
  */
 @Component
 @ConditionalOnProperty(name = "fuelyn.collection.enabled", havingValue = "true")

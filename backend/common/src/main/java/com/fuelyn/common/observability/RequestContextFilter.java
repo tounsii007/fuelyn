@@ -16,15 +16,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Populates SLF4J MDC with a stable {@code requestId} for every request so that
- * log lines (and the structured JSON encoder) can be correlated across services.
+ * Populates SLF4J MDC with a stable {@code requestId} for every request so that log lines (and the
+ * structured JSON encoder) can be correlated across services.
  *
- * <p>If the caller supplies an {@code X-Request-Id} header (e.g. from the BFF or a
- * service mesh), that value is reused; otherwise a UUID is generated. The value
- * is echoed back in the response header so the client can quote it in bug reports.
+ * <p>If the caller supplies an {@code X-Request-Id} header (e.g. from the BFF or a service mesh),
+ * that value is reused; otherwise a UUID is generated. The value is echoed back in the response
+ * header so the client can quote it in bug reports.
  *
- * <p>Filter order is the highest precedence so the MDC is populated before any
- * other filter logs.
+ * <p>Filter order is the highest precedence so the MDC is populated before any other filter logs.
  */
 @Component("fuelynRequestContextFilter")
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -35,10 +34,9 @@ public class RequestContextFilter extends OncePerRequestFilter {
     public static final String MDC_SERVICE_ID = "serviceId";
 
     /**
-     * Allow-list for caller-supplied request IDs: hex / dash / underscore /
-     * dot, 1..128 chars. Anything else (CRLF, control chars, JSON, …) gets
-     * a fresh UUID. Without this constraint a header value with embedded
-     * CR/LF could split log lines into attacker-controlled rows — the
+     * Allow-list for caller-supplied request IDs: hex / dash / underscore / dot, 1..128 chars.
+     * Anything else (CRLF, control chars, JSON, …) gets a fresh UUID. Without this constraint a
+     * header value with embedded CR/LF could split log lines into attacker-controlled rows — the
      * classic log-injection vector.
      */
     private static final Pattern SAFE_REQUEST_ID = Pattern.compile("[A-Za-z0-9._\\-]{1,128}");
@@ -46,7 +44,8 @@ public class RequestContextFilter extends OncePerRequestFilter {
     private final String serviceId;
 
     public RequestContextFilter(
-            @org.springframework.beans.factory.annotation.Value("${spring.application.name:unknown}")
+            @org.springframework.beans.factory.annotation.Value(
+                            "${spring.application.name:unknown}")
                     String serviceId) {
         this.serviceId = serviceId;
     }

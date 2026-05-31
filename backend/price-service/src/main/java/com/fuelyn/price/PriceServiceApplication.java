@@ -8,14 +8,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * Entry point for the Fuelyn Price Service.
  *
- * <p>This microservice is responsible for:</p>
+ * <p>This microservice is responsible for:
+ *
  * <ul>
- *   <li>Collecting real-time fuel prices from the Tankerkoenig API</li>
- *   <li>Storing price snapshots in an H2/PostgreSQL database</li>
- *   <li>Providing price history, statistics, and day-of-week patterns</li>
+ *   <li>Collecting real-time fuel prices from the Tankerkoenig API
+ *   <li>Storing price snapshots in an H2/PostgreSQL database
+ *   <li>Providing price history, statistics, and day-of-week patterns
  * </ul>
  *
- * <p>Runs on port 8081 (configurable via {@code server.port}).</p>
+ * <p>Runs on port 8081 (configurable via {@code server.port}).
  */
 @SpringBootApplication(scanBasePackages = {"com.fuelyn.price", "com.fuelyn.common"})
 @EnableScheduling

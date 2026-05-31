@@ -1,9 +1,11 @@
 package com.fuelyn.ai.telemetry;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorResponse;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -14,30 +16,28 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorResponse;
 
 /**
  * Structured regret-telemetry logger.
  *
- * <p>Writes every advisor decision to two sinks:</p>
+ * <p>Writes every advisor decision to two sinks:
+ *
  * <ol>
- *   <li><b>JSON log line</b> under the SLF4J marker
- *       <code>ADVISOR_REGRET</code> — always on. Survives even when the
- *       database is unreachable, since logs are picked up by whatever
- *       log shipper the operator has configured.</li>
- *   <li><b>{@code recommendation_logs} row</b> in Postgres — opt-in via
- *       {@code fuelyn.regret.enabled=true}. Privacy-preserving: lat/lng
- *       are stored as 0.01° (~1 km) buckets, no user/device identifier.
- *       A nightly cron in price-service backfills the realised 24-h
- *       minimum price and the resulting regret value.</li>
+ *   <li><b>JSON log line</b> under the SLF4J marker <code>ADVISOR_REGRET</code> — always on.
+ *       Survives even when the database is unreachable, since logs are picked up by whatever log
+ *       shipper the operator has configured.
+ *   <li><b>{@code recommendation_logs} row</b> in Postgres — opt-in via {@code
+ *       fuelyn.regret.enabled=true}. Privacy-preserving: lat/lng are stored as 0.01° (~1 km)
+ *       buckets, no user/device identifier. A nightly cron in price-service backfills the realised
+ *       24-h minimum price and the resulting regret value.
  * </ol>
  *
- * <p>Both sinks are best-effort: any failure (Jackson, JDBC, schema
- * mismatch) is swallowed. Telemetry must never break the request path.</p>
+ * <p>Both sinks are best-effort: any failure (Jackson, JDBC, schema mismatch) is swallowed.
+ * Telemetry must never break the request path.
  */
 @Component
 public class RegretLogger {
@@ -46,11 +46,11 @@ public class RegretLogger {
     private static final Marker REGRET_MARKER = MarkerFactory.getMarker("ADVISOR_REGRET");
 
     /**
-     * Single-row insert. The sequence is owned by Flyway V5 in
-     * price-service; we read the next value with {@code .nextval}
-     * (Postgres) which H2 also accepts.
+     * Single-row insert. The sequence is owned by Flyway V5 in price-service; we read the next
+     * value with {@code .nextval} (Postgres) which H2 also accepts.
      */
-    private static final String INSERT_SQL = """
+    private static final String INSERT_SQL =
+            """
             INSERT INTO recommendation_logs (
               id, ts_request, fuel_type, lat_bucket, lng_bucket, liters,
               station_count, recommended_action, recommended_price,
@@ -66,6 +66,7 @@ public class RegretLogger {
     private final ObjectMapper mapper;
     private final JdbcTemplate jdbc;
     private final boolean dbEnabled;
+
     /** One-shot flag so we only WARN about misconfiguration once per JVM. */
     private volatile boolean dbWarningEmitted = false;
 
@@ -73,15 +74,15 @@ public class RegretLogger {
     public RegretLogger(
             ObjectMapper mapper,
             @Autowired(required = false) JdbcTemplate jdbc,
-            @Value("${fuelyn.regret.enabled:false}") boolean dbEnabled
-    ) {
+            @Value("${fuelyn.regret.enabled:false}") boolean dbEnabled) {
         this.mapper = mapper;
         this.jdbc = jdbc;
         this.dbEnabled = dbEnabled;
 
         if (dbEnabled && jdbc == null) {
-            log.warn("fuelyn.regret.enabled=true but no JdbcTemplate is wired — "
-                    + "regret will be JSON-logged only. Did you set SPRING_DATASOURCE_URL?");
+            log.warn(
+                    "fuelyn.regret.enabled=true but no JdbcTemplate is wired — "
+                            + "regret will be JSON-logged only. Did you set SPRING_DATASOURCE_URL?");
         } else if (dbEnabled) {
             log.info("RegretLogger ready — DB persistence ON (recommendation_logs)");
         } else {
@@ -105,20 +106,26 @@ public class RegretLogger {
             entry.put("stationCount", request.prices() == null ? 0 : request.prices().size());
 
             if (request.prices() != null && !request.prices().isEmpty()) {
-                entry.put("prices", request.prices().stream().map(p -> Map.of(
-                        "name", p.stationName(),
-                        "brand", String.valueOf(p.brand()),
-                        "price", p.price(),
-                        "distance", p.distance()
-                )).toList());
+                entry.put(
+                        "prices",
+                        request.prices().stream()
+                                .map(
+                                        p ->
+                                                Map.of(
+                                                        "name", p.stationName(),
+                                                        "brand", String.valueOf(p.brand()),
+                                                        "price", p.price(),
+                                                        "distance", p.distance()))
+                                .toList());
             }
 
-            entry.put("verdict", Map.of(
-                    "action", response.action(),
-                    "confidence", response.confidence(),
-                    "savingsEstimate", response.savingsEstimate(),
-                    "fromAI", response.fromAI()
-            ));
+            entry.put(
+                    "verdict",
+                    Map.of(
+                            "action", response.action(),
+                            "confidence", response.confidence(),
+                            "savingsEstimate", response.savingsEstimate(),
+                            "fromAI", response.fromAI()));
             if (response.bestStation() != null) {
                 entry.put("bestStation", response.bestStation().name());
             }
@@ -143,8 +150,10 @@ public class RegretLogger {
                 // afterwards drop to DEBUG to avoid spamming the log
                 // when the DB is down for a sustained period.
                 if (!dbWarningEmitted) {
-                    log.warn("Regret-log INSERT failed: {} — falling back to JSON-only "
-                            + "until next service restart", e.getMessage());
+                    log.warn(
+                            "Regret-log INSERT failed: {} — falling back to JSON-only "
+                                    + "until next service restart",
+                            e.getMessage());
                     dbWarningEmitted = true;
                 } else {
                     log.debug("Regret-log INSERT failed: {}", e.getMessage());
@@ -171,7 +180,8 @@ public class RegretLogger {
         }
 
         Double recommendedPrice = bestPriceOf(request.prices());
-        Double liters = request.fillUpLiters() == null ? null : request.fillUpLiters().doubleValue();
+        Double liters =
+                request.fillUpLiters() == null ? null : request.fillUpLiters().doubleValue();
         int stationCount = request.prices() == null ? 0 : request.prices().size();
 
         // The action enum on the wire is lowercase ("buy_now" / "wait")
@@ -189,8 +199,7 @@ public class RegretLogger {
                 action,
                 recommendedPrice,
                 response.confidence(),
-                response.fromAI()
-        );
+                response.fromAI());
     }
 
     /** Lowest price across the candidate stations — what the user would have paid. */
@@ -210,9 +219,9 @@ public class RegretLogger {
         String upper = action.trim().toUpperCase().replace('-', '_').replace(' ', '_');
         // Allow "buy_now" / "BUY_NOW" / "BuyNow" all to land in the same bucket
         return switch (upper) {
-            case "BUY_NOW", "BUYNOW", "BUY"      -> "BUY_NOW";
-            case "WAIT", "HOLD"                  -> "WAIT";
-            case "WAIT_LONG", "WAITLONG"         -> "WAIT_LONG";
+            case "BUY_NOW", "BUYNOW", "BUY" -> "BUY_NOW";
+            case "WAIT", "HOLD" -> "WAIT";
+            case "WAIT_LONG", "WAITLONG" -> "WAIT_LONG";
             default -> upper.length() > 16 ? upper.substring(0, 16) : upper;
         };
     }

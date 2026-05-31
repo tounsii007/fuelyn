@@ -1,17 +1,16 @@
 package com.fuelyn.price.service;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link RegretBackfillService#computeRegret}.
  *
- * <p>The full SQL path (lookups against {@code price_snapshots} +
- * {@code station_meta}) is covered by an integration test once
- * Testcontainers is wired up; these focus on the pure regret
- * formula because that's the part that drives policy.</p>
+ * <p>The full SQL path (lookups against {@code price_snapshots} + {@code station_meta}) is covered
+ * by an integration test once Testcontainers is wired up; these focus on the pure regret formula
+ * because that's the part that drives policy.
  */
 class RegretBackfillServiceTest {
 

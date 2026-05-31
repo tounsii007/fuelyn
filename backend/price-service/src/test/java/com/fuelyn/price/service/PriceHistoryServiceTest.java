@@ -1,5 +1,11 @@
 package com.fuelyn.price.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,12 +20,6 @@ import com.fuelyn.price.model.dto.PriceHistoryResponse;
 import com.fuelyn.price.model.entity.PriceSnapshot;
 import com.fuelyn.price.repository.PriceSnapshotRepository;
 import com.fuelyn.price.repository.StationMetaRepository;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.offset;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PriceHistoryServiceTest {
@@ -54,11 +54,12 @@ class PriceHistoryServiceTest {
 
     @Test
     void getHistory_computesMinMaxAvg() {
-        List<PriceSnapshot> snapshots = List.of(
-                snap("s1", 1.700, base.minusDays(6)),
-                snap("s1", 1.750, base.minusDays(4)),
-                snap("s1", 1.725, base.minusDays(2)),
-                snap("s1", 1.680, base.minusDays(1)));
+        List<PriceSnapshot> snapshots =
+                List.of(
+                        snap("s1", 1.700, base.minusDays(6)),
+                        snap("s1", 1.750, base.minusDays(4)),
+                        snap("s1", 1.725, base.minusDays(2)),
+                        snap("s1", 1.680, base.minusDays(1)));
         when(repo.findByStationIdAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
                         anyString(), anyString(), any()))
                 .thenReturn(snapshots);
@@ -73,13 +74,14 @@ class PriceHistoryServiceTest {
 
     @Test
     void getHistory_trendIsPositive_whenPricesRising() {
-        List<PriceSnapshot> rising = List.of(
-                snap("s1", 1.500, base.minusDays(5)),
-                snap("s1", 1.510, base.minusDays(4)),
-                snap("s1", 1.520, base.minusDays(3)),
-                snap("s1", 1.700, base.minusDays(2)),
-                snap("s1", 1.710, base.minusDays(1)),
-                snap("s1", 1.720, base));
+        List<PriceSnapshot> rising =
+                List.of(
+                        snap("s1", 1.500, base.minusDays(5)),
+                        snap("s1", 1.510, base.minusDays(4)),
+                        snap("s1", 1.520, base.minusDays(3)),
+                        snap("s1", 1.700, base.minusDays(2)),
+                        snap("s1", 1.710, base.minusDays(1)),
+                        snap("s1", 1.720, base));
         when(repo.findByStationIdAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
                         anyString(), anyString(), any()))
                 .thenReturn(rising);
@@ -91,10 +93,11 @@ class PriceHistoryServiceTest {
 
     @Test
     void getHistory_buildsDayOfWeekPatternFromSnapshots() {
-        List<PriceSnapshot> snapshots = List.of(
-                snap("s1", 1.60, LocalDateTime.of(2026, 1, 5, 12, 0)),  // Mon
-                snap("s1", 1.79, LocalDateTime.of(2026, 1, 9, 12, 0)),  // Fri
-                snap("s1", 1.70, LocalDateTime.of(2026, 1, 7, 12, 0))); // Wed
+        List<PriceSnapshot> snapshots =
+                List.of(
+                        snap("s1", 1.60, LocalDateTime.of(2026, 1, 5, 12, 0)), // Mon
+                        snap("s1", 1.79, LocalDateTime.of(2026, 1, 9, 12, 0)), // Fri
+                        snap("s1", 1.70, LocalDateTime.of(2026, 1, 7, 12, 0))); // Wed
         when(repo.findByStationIdAndFuelTypeAndTimestampAfterOrderByTimestampAsc(
                         anyString(), anyString(), any()))
                 .thenReturn(snapshots);
@@ -103,7 +106,6 @@ class PriceHistoryServiceTest {
 
         assertThat(resp.stats().cheapestDay()).isEqualTo("Montag");
         assertThat(resp.stats().expensiveDay()).isEqualTo("Freitag");
-        assertThat(resp.stats().dayOfWeekAvg())
-                .containsKeys("Montag", "Mittwoch", "Freitag");
+        assertThat(resp.stats().dayOfWeekAvg()).containsKeys("Montag", "Mittwoch", "Freitag");
     }
 }

@@ -1,6 +1,8 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.FuelynProperties;
+import java.security.MessageDigest;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -9,19 +11,18 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
-import java.security.MessageDigest;
-import java.util.List;
+import com.fuelyn.gateway.config.FuelynProperties;
+
+import reactor.core.publisher.Mono;
 
 /**
  * Validates API keys for external client requests.
  *
- * <p>Clients must include an {@code X-API-Key} header. The key is compared
- * against the configured list using constant-time comparison to prevent
- * timing attacks.</p>
+ * <p>Clients must include an {@code X-API-Key} header. The key is compared against the configured
+ * list using constant-time comparison to prevent timing attacks.
  *
- * <p>Actuator and fallback endpoints are excluded from API key validation.</p>
+ * <p>Actuator and fallback endpoints are excluded from API key validation.
  */
 @Component
 public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
@@ -38,11 +39,12 @@ public class ApiKeyValidationFilter implements GlobalFilter, Ordered {
         // env-var expansion might leave behind. Otherwise the loop below
         // would still iterate them (good for constant-time guarantees) but
         // every empty entry takes one constant-time comparison for nothing.
-        this.validApiKeys = properties.getSecurity().getApiKeys() == null
-                ? List.of()
-                : properties.getSecurity().getApiKeys().stream()
-                        .filter(k -> k != null && !k.isBlank())
-                        .toList();
+        this.validApiKeys =
+                properties.getSecurity().getApiKeys() == null
+                        ? List.of()
+                        : properties.getSecurity().getApiKeys().stream()
+                                .filter(k -> k != null && !k.isBlank())
+                                .toList();
     }
 
     @Override

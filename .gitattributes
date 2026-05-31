@@ -1,12 +1,4 @@
-# Force LF line endings for shell scripts. Docker on Linux refuses to
-# exec scripts with CRLF (`/bin/sh^M: not found`), so a stray Windows
-# checkout would otherwise crash the web container at boot.
-*.sh text eol=lf
-
-# Same for files that ship inside Linux containers via COPY.
-Dockerfile text eol=lf
-*.Dockerfile text eol=lf
-.dockerignore text eol=lf
-
-# Caddyfile is read by the Linux Caddy container.
-infra/caddy/Caddyfile text eol=lf
+# Force LF for backend Java sources so cross-platform Spotless stays
+# deterministic (a Windows checkout previously committed CRLF, tripping
+# the Linux spotless:check on CI). Applies in the repo AND the working tree.
+*.java text eol=lf

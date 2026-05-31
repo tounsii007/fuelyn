@@ -1,28 +1,28 @@
 package com.fuelyn.price.model.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 
 /**
  * Persistent metadata for a fuel station sourced from the Tankerkoenig API.
  *
- * <p>The primary key is the Tankerkoenig UUID ({@code id}), which remains stable
- * across API calls. Station metadata is upserted on each collection run so that
- * name, brand, and address fields stay current.</p>
+ * <p>The primary key is the Tankerkoenig UUID ({@code id}), which remains stable across API calls.
+ * Station metadata is upserted on each collection run so that name, brand, and address fields stay
+ * current.
  */
 @Entity
 @Table(
-    name = "station_meta",
-    indexes = {
-        @Index(name = "idx_station_city", columnList = "city"),
-        @Index(name = "idx_station_brand", columnList = "brand"),
-        @Index(name = "idx_station_coords", columnList = "lat, lng")
-    }
-)
+        name = "station_meta",
+        indexes = {
+            @Index(name = "idx_station_city", columnList = "city"),
+            @Index(name = "idx_station_brand", columnList = "brand"),
+            @Index(name = "idx_station_coords", columnList = "lat, lng")
+        })
 public class StationMeta {
 
     /** Tankerkoenig station UUID (serves as the natural primary key). */
@@ -62,11 +62,8 @@ public class StationMeta {
     @Column(name = "last_seen")
     private LocalDateTime lastSeen;
 
-    /**
-     * Default constructor required by JPA.
-     */
-    public StationMeta() {
-    }
+    /** Default constructor required by JPA. */
+    public StationMeta() {}
 
     public String getId() {
         return id;
@@ -142,11 +139,19 @@ public class StationMeta {
 
     @Override
     public String toString() {
-        return "StationMeta{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", brand='" + brand + '\'' +
-                ", city='" + city + '\'' +
-                '}';
+        return "StationMeta{"
+                + "id='"
+                + id
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", brand='"
+                + brand
+                + '\''
+                + ", city='"
+                + city
+                + '\''
+                + '}';
     }
 }

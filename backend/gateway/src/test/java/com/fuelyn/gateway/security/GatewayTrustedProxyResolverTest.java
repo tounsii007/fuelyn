@@ -1,21 +1,20 @@
 package com.fuelyn.gateway.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Mirror of {@code TrustedProxyResolverTest} for the gateway-local
- * sibling. Runs an identical battery of tests so the two implementations
- * stay byte-for-byte equivalent on every release — drift between the
- * common-stack and the webflux-stack version of the resolver would be a
- * silent security gap.
+ * Mirror of {@code TrustedProxyResolverTest} for the gateway-local sibling. Runs an identical
+ * battery of tests so the two implementations stay byte-for-byte equivalent on every release —
+ * drift between the common-stack and the webflux-stack version of the resolver would be a silent
+ * security gap.
  */
 class GatewayTrustedProxyResolverTest {
 
@@ -49,15 +48,15 @@ class GatewayTrustedProxyResolverTest {
 
         @ParameterizedTest
         @CsvSource({
-                "10.0.0.0/8     , 10.255.255.255 , true",
-                "10.0.0.0/8     , 11.0.0.0       , false",
-                "192.168.0.0/16 , 192.168.255.1  , true",
-                "192.168.0.0/16 , 192.169.0.0    , false",
-                "172.16.0.0/12  , 172.31.255.255 , true",
-                "172.16.0.0/12  , 172.32.0.0     , false",
-                "203.0.113.5/32 , 203.0.113.5    , true",
-                "203.0.113.5/32 , 203.0.113.4    , false",
-                "0.0.0.0/0      , 1.2.3.4        , true",
+            "10.0.0.0/8     , 10.255.255.255 , true",
+            "10.0.0.0/8     , 11.0.0.0       , false",
+            "192.168.0.0/16 , 192.168.255.1  , true",
+            "192.168.0.0/16 , 192.169.0.0    , false",
+            "172.16.0.0/12  , 172.31.255.255 , true",
+            "172.16.0.0/12  , 172.32.0.0     , false",
+            "203.0.113.5/32 , 203.0.113.5    , true",
+            "203.0.113.5/32 , 203.0.113.4    , false",
+            "0.0.0.0/0      , 1.2.3.4        , true",
         })
         void resolve_matchesIpv4Cidrs(String cidr, String candidate, boolean expected) {
             GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(List.of(cidr));
@@ -71,8 +70,9 @@ class GatewayTrustedProxyResolverTest {
 
         @Test
         void multipleCidrs_combine() {
-            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(
-                    List.of("10.0.0.0/8", "192.168.0.0/16", "127.0.0.1"));
+            GatewayTrustedProxyResolver r =
+                    new GatewayTrustedProxyResolver(
+                            List.of("10.0.0.0/8", "192.168.0.0/16", "127.0.0.1"));
             assertThat(r.resolve("10.5.5.5", "1.1.1.1")).isEqualTo("1.1.1.1");
             assertThat(r.resolve("192.168.50.50", "1.1.1.1")).isEqualTo("1.1.1.1");
             assertThat(r.resolve("127.0.0.1", "1.1.1.1")).isEqualTo("1.1.1.1");
@@ -107,15 +107,15 @@ class GatewayTrustedProxyResolverTest {
 
         @Test
         void brokenCidrInList_butGoodOnesStillMatch() {
-            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(
-                    List.of("not-an-ip", "10.0.0.0/abc", "10.0.0.0/8"));
+            GatewayTrustedProxyResolver r =
+                    new GatewayTrustedProxyResolver(
+                            List.of("not-an-ip", "10.0.0.0/abc", "10.0.0.0/8"));
             assertThat(r.resolve("10.1.2.3", "9.9.9.9")).isEqualTo("9.9.9.9");
         }
 
         @Test
         void allCidrsBroken_treatsAsEmptyTrustList() {
-            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(
-                    List.of("garbage", ""));
+            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(List.of("garbage", ""));
             assertThat(r.resolve("10.0.0.1", "1.1.1.1")).isEqualTo("10.0.0.1");
         }
 
@@ -132,14 +132,16 @@ class GatewayTrustedProxyResolverTest {
 
         @Test
         void ipv6Cidr_matchesPrefix() {
-            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(List.of("2001:db8::/32"));
+            GatewayTrustedProxyResolver r =
+                    new GatewayTrustedProxyResolver(List.of("2001:db8::/32"));
             assertThat(r.resolve("2001:db8::1", "203.0.113.5")).isEqualTo("203.0.113.5");
             assertThat(r.resolve("2001:db9::1", "203.0.113.5")).isEqualTo("2001:db9::1");
         }
 
         @Test
         void ipv4Address_doesNotMatchIpv6Cidr() {
-            GatewayTrustedProxyResolver r = new GatewayTrustedProxyResolver(List.of("2001:db8::/32"));
+            GatewayTrustedProxyResolver r =
+                    new GatewayTrustedProxyResolver(List.of("2001:db8::/32"));
             assertThat(r.resolve("10.0.0.1", "1.1.1.1")).isEqualTo("10.0.0.1");
         }
 
@@ -151,9 +153,9 @@ class GatewayTrustedProxyResolverTest {
     }
 
     /**
-     * Cross-implementation regression: any change to one resolver MUST be
-     * mirrored to the other. This test compares behaviour directly so a
-     * developer who edits only one side of the pair gets caught.
+     * Cross-implementation regression: any change to one resolver MUST be mirrored to the other.
+     * This test compares behaviour directly so a developer who edits only one side of the pair gets
+     * caught.
      */
     @Nested
     @DisplayName("Cross-implementation parity vs common.TrustedProxyResolver")
@@ -169,22 +171,20 @@ class GatewayTrustedProxyResolverTest {
                     new com.fuelyn.common.security.TrustedProxyResolver(List.of(cidrs));
 
             String[][] cases = {
-                    {"10.5.5.5",     "1.1.1.1"},
-                    {"192.168.0.1",  "1.1.1.1"},
-                    {"2001:db8::1",  "1.1.1.1"},
-                    {"8.8.8.8",      "1.1.1.1"},
-                    {"not-an-ip",    "1.1.1.1"},
-                    {null,           "1.1.1.1"},
-                    {"10.5.5.5",     null},
-                    {"10.5.5.5",     ", 1.2.3.4"},
-                    {"10.5.5.5",     "  9.9.9.9 , 1.2.3.4"},
+                {"10.5.5.5", "1.1.1.1"},
+                {"192.168.0.1", "1.1.1.1"},
+                {"2001:db8::1", "1.1.1.1"},
+                {"8.8.8.8", "1.1.1.1"},
+                {"not-an-ip", "1.1.1.1"},
+                {null, "1.1.1.1"},
+                {"10.5.5.5", null},
+                {"10.5.5.5", ", 1.2.3.4"},
+                {"10.5.5.5", "  9.9.9.9 , 1.2.3.4"},
             };
             for (String[] c : cases) {
                 String gwAns = gw.resolve(c[0], c[1]);
                 String coAns = common.resolve(c[0], c[1]);
-                assertThat(gwAns)
-                        .as("parity for remote=%s xff=%s", c[0], c[1])
-                        .isEqualTo(coAns);
+                assertThat(gwAns).as("parity for remote=%s xff=%s", c[0], c[1]).isEqualTo(coAns);
             }
         }
     }

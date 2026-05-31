@@ -1,6 +1,10 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.config.FuelynProperties;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -12,26 +16,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.fuelyn.gateway.config.FuelynProperties;
+
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Tests for {@link ApiKeyValidationFilter} — the gateway's external-client
- * authentication gate.
+ * Tests for {@link ApiKeyValidationFilter} — the gateway's external-client authentication gate.
  *
- * <p>Critical correctness properties verified here:</p>
+ * <p>Critical correctness properties verified here:
+ *
  * <ul>
- *   <li>{@code /actuator-evil} no longer bypasses (path-anchor fix)</li>
- *   <li>Multiple valid keys all unlock; non-key 403</li>
- *   <li>Iteration through every configured key is unconditional —
- *       short-circuit on first match would leak timing info</li>
- *   <li>Null/blank/missing keys produce deterministic 401 / 403,
- *       never 500</li>
+ *   <li>{@code /actuator-evil} no longer bypasses (path-anchor fix)
+ *   <li>Multiple valid keys all unlock; non-key 403
+ *   <li>Iteration through every configured key is unconditional — short-circuit on first match
+ *       would leak timing info
+ *   <li>Null/blank/missing keys produce deterministic 401 / 403, never 500
  * </ul>
  */
 class ApiKeyValidationFilterTest {
@@ -41,10 +42,12 @@ class ApiKeyValidationFilterTest {
     @BeforeEach
     void setUp() {
         props = new FuelynProperties();
-        props.getSecurity().setApiKeys(
-                List.of("first-key-very-long-and-strong-32+chars-aaaa",
-                        "second-key-also-very-long-and-strong-32-chars",
-                        "third-key-just-as-long-and-strong-32+chars-cc"));
+        props.getSecurity()
+                .setApiKeys(
+                        List.of(
+                                "first-key-very-long-and-strong-32+chars-aaaa",
+                                "second-key-also-very-long-and-strong-32-chars",
+                                "third-key-just-as-long-and-strong-32+chars-cc"));
     }
 
     private ApiKeyValidationFilter filter() {
@@ -72,10 +75,14 @@ class ApiKeyValidationFilterTest {
     class PublicPaths {
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "/actuator", "/actuator/health", "/actuator/prometheus",
-                "/fallback", "/fallback/price-service"
-        })
+        @ValueSource(
+                strings = {
+                    "/actuator",
+                    "/actuator/health",
+                    "/actuator/prometheus",
+                    "/fallback",
+                    "/fallback/price-service"
+                })
         void publicPaths_bypassWithoutKey(String path) {
             AtomicInteger downstream = new AtomicInteger();
             Mono<Void> result = filter().filter(exchange(path), countingChain(downstream));
@@ -84,16 +91,16 @@ class ApiKeyValidationFilterTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "/actuator-evil",      // anchor fix — would have leaked previously
-                "/fallback-evil",
-                "/api/v1/secret"
-        })
+        @ValueSource(
+                strings = {
+                    "/actuator-evil", // anchor fix — would have leaked previously
+                    "/fallback-evil",
+                    "/api/v1/secret"
+                })
         void anchorLookalikes_areBlocked_with401(String path) {
             AtomicInteger downstream = new AtomicInteger();
             ServerWebExchange ex = exchange(path);
-            StepVerifier.create(filter().filter(ex, countingChain(downstream)))
-                    .verifyComplete();
+            StepVerifier.create(filter().filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isZero();
             assertThat(ex.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
@@ -106,7 +113,8 @@ class ApiKeyValidationFilterTest {
         @Test
         void firstKey_succeeds() {
             AtomicInteger downstream = new AtomicInteger();
-            ServerWebExchange ex = exchange("/api/v1/x", "first-key-very-long-and-strong-32+chars-aaaa");
+            ServerWebExchange ex =
+                    exchange("/api/v1/x", "first-key-very-long-and-strong-32+chars-aaaa");
             StepVerifier.create(filter().filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isEqualTo(1);
         }
@@ -114,7 +122,8 @@ class ApiKeyValidationFilterTest {
         @Test
         void middleKey_succeeds() {
             AtomicInteger downstream = new AtomicInteger();
-            ServerWebExchange ex = exchange("/api/v1/x", "second-key-also-very-long-and-strong-32-chars");
+            ServerWebExchange ex =
+                    exchange("/api/v1/x", "second-key-also-very-long-and-strong-32-chars");
             StepVerifier.create(filter().filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isEqualTo(1);
         }
@@ -122,7 +131,8 @@ class ApiKeyValidationFilterTest {
         @Test
         void lastKey_succeeds() {
             AtomicInteger downstream = new AtomicInteger();
-            ServerWebExchange ex = exchange("/api/v1/x", "third-key-just-as-long-and-strong-32+chars-cc");
+            ServerWebExchange ex =
+                    exchange("/api/v1/x", "third-key-just-as-long-and-strong-32+chars-cc");
             StepVerifier.create(filter().filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isEqualTo(1);
         }
@@ -130,7 +140,8 @@ class ApiKeyValidationFilterTest {
         @Test
         void unknownKey_returns403() {
             AtomicInteger downstream = new AtomicInteger();
-            ServerWebExchange ex = exchange("/api/v1/x", "wrong-key-with-similar-length-to-real-keys-X");
+            ServerWebExchange ex =
+                    exchange("/api/v1/x", "wrong-key-with-similar-length-to-real-keys-X");
             StepVerifier.create(filter().filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isZero();
             assertThat(ex.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
@@ -185,11 +196,13 @@ class ApiKeyValidationFilterTest {
 
         @Test
         void mixedBlankAndRealKeys_onlyRealKeysCount() {
-            props.getSecurity().setApiKeys(List.of("", "real-strong-key-aaaaaaaaaaaaaaaaaaaaaaaa", "  "));
+            props.getSecurity()
+                    .setApiKeys(List.of("", "real-strong-key-aaaaaaaaaaaaaaaaaaaaaaaa", "  "));
             ApiKeyValidationFilter f = new ApiKeyValidationFilter(props);
 
             AtomicInteger downstream = new AtomicInteger();
-            ServerWebExchange ex = exchange("/api/v1/x", "real-strong-key-aaaaaaaaaaaaaaaaaaaaaaaa");
+            ServerWebExchange ex =
+                    exchange("/api/v1/x", "real-strong-key-aaaaaaaaaaaaaaaaaaaaaaaa");
             StepVerifier.create(f.filter(ex, countingChain(downstream))).verifyComplete();
             assertThat(downstream.get()).isEqualTo(1);
         }

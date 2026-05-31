@@ -1,13 +1,5 @@
 package com.fuelyn.price.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -17,38 +9,44 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 /**
- * Closes the regret-loop on the {@code recommendation_logs} telemetry
- * written by ai-service.
+ * Closes the regret-loop on the {@code recommendation_logs} telemetry written by ai-service.
  *
  * <h3>What it does</h3>
- * <p>For each row whose request is at least 24 h old and hasn't been
- * backfilled yet, look up the minimum price observed in the same
- * lat/lng bucket and fuel type during the 24 h immediately following
- * the request. Compute regret in € as:</p>
+ *
+ * <p>For each row whose request is at least 24 h old and hasn't been backfilled yet, look up the
+ * minimum price observed in the same lat/lng bucket and fuel type during the 24 h immediately
+ * following the request. Compute regret in € as:
  *
  * <pre>
  *   regret_eur = max(0, recommended_price − realized_min_24h) × liters
  * </pre>
  *
- * <p>Regret is clamped to zero from below: if our suggestion was
- * cheaper than anything that materialised, the user "won" — we don't
- * award negative regret because that would muddle the gradient when
- * later tuning weights.</p>
+ * <p>Regret is clamped to zero from below: if our suggestion was cheaper than anything that
+ * materialised, the user "won" — we don't award negative regret because that would muddle the
+ * gradient when later tuning weights.
  *
  * <h3>Why bucket-based rather than station-based</h3>
- * <p>The telemetry intentionally stores only a 0.01° (~1 km) lat/lng
- * bucket — no station IDs, no user identifier. This protects user
- * privacy at the cost of slightly fuzzy backfill: we measure the
- * cheapest reachable price <em>in the same neighbourhood</em>, which
- * is exactly the counter-factual the advisor is reasoning about.</p>
+ *
+ * <p>The telemetry intentionally stores only a 0.01° (~1 km) lat/lng bucket — no station IDs, no
+ * user identifier. This protects user privacy at the cost of slightly fuzzy backfill: we measure
+ * the cheapest reachable price <em>in the same neighbourhood</em>, which is exactly the
+ * counter-factual the advisor is reasoning about.
  *
  * <h3>Performance</h3>
- * <p>The bucket lookup uses range predicates ({@code sm.lat BETWEEN
- * bucket±0.005}) so the {@code idx_station_latlng} btree index is
- * usable. Each backfill query touches a handful of stations × 24 h
- * of snapshots — sub-millisecond at our scale. Batches of 500 rows
- * keep memory bounded if a long outage left a backlog.</p>
+ *
+ * <p>The bucket lookup uses range predicates ({@code sm.lat BETWEEN bucket±0.005}) so the {@code
+ * idx_station_latlng} btree index is usable. Each backfill query touches a handful of stations × 24
+ * h of snapshots — sub-millisecond at our scale. Batches of 500 rows keep memory bounded if a long
+ * outage left a backlog.
  */
 @Service
 public class RegretBackfillService {
@@ -57,8 +55,10 @@ public class RegretBackfillService {
 
     /** Minimum age of a row before we backfill it. */
     private static final long MIN_AGE_HOURS = 24;
+
     /** Window after the request during which we measure the min price. */
-    private static final long WINDOW_HOURS  = 24;
+    private static final long WINDOW_HOURS = 24;
+
     /** Bucket half-width (must match RegretLogger#roundToBucket in ai-service). */
     private static final double BUCKET_HALF = 0.005;
 
@@ -66,9 +66,7 @@ public class RegretBackfillService {
     private final int batchSize;
 
     public RegretBackfillService(
-            JdbcTemplate jdbc,
-            @Value("${fuelyn.regret.backfill.batch-size:500}") int batchSize
-    ) {
+            JdbcTemplate jdbc, @Value("${fuelyn.regret.backfill.batch-size:500}") int batchSize) {
         this.jdbc = jdbc;
         this.batchSize = Math.max(50, batchSize);
     }
@@ -81,20 +79,20 @@ public class RegretBackfillService {
             double latBucket,
             double lngBucket,
             Double liters,
-            Double recommendedPrice
-    ) {}
+            Double recommendedPrice) {}
 
     /**
-     * Run one backfill pass. Returns the number of rows that received
-     * a non-null {@code regret_eur}. Idempotent — already-filled rows
-     * are skipped via the {@code backfilled_at IS NULL} predicate.
+     * Run one backfill pass. Returns the number of rows that received a non-null {@code
+     * regret_eur}. Idempotent — already-filled rows are skipped via the {@code backfilled_at IS
+     * NULL} predicate.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int runOnce() {
         Instant cutoff = Instant.now().minus(MIN_AGE_HOURS, ChronoUnit.HOURS);
 
-        List<PendingLog> pending = jdbc.query(
-                """
+        List<PendingLog> pending =
+                jdbc.query(
+                        """
                 SELECT id, ts_request, fuel_type, lat_bucket, lng_bucket, liters, recommended_price
                 FROM   recommendation_logs
                 WHERE  backfilled_at IS NULL
@@ -102,18 +100,17 @@ public class RegretBackfillService {
                 ORDER  BY ts_request ASC
                 LIMIT  ?
                 """,
-                (rs, n) -> new PendingLog(
-                        rs.getLong("id"),
-                        rs.getTimestamp("ts_request").toInstant(),
-                        rs.getString("fuel_type"),
-                        rs.getDouble("lat_bucket"),
-                        rs.getDouble("lng_bucket"),
-                        (Double) rs.getObject("liters"),
-                        (Double) rs.getObject("recommended_price")
-                ),
-                Timestamp.from(cutoff),
-                batchSize
-        );
+                        (rs, n) ->
+                                new PendingLog(
+                                        rs.getLong("id"),
+                                        rs.getTimestamp("ts_request").toInstant(),
+                                        rs.getString("fuel_type"),
+                                        rs.getDouble("lat_bucket"),
+                                        rs.getDouble("lng_bucket"),
+                                        (Double) rs.getObject("liters"),
+                                        (Double) rs.getObject("recommended_price")),
+                        Timestamp.from(cutoff),
+                        batchSize);
 
         if (pending.isEmpty()) {
             log.debug("Regret backfill — nothing to do");
@@ -136,8 +133,11 @@ public class RegretBackfillService {
         }
         stampAll(stampBatch);
 
-        log.info("Regret backfill — pass complete: {} regret-rows, {} no-data, batch={}",
-                filled, skipped, pending.size());
+        log.info(
+                "Regret backfill — pass complete: {} regret-rows, {} no-data, batch={}",
+                filled,
+                skipped,
+                pending.size());
         return filled;
     }
 
@@ -148,7 +148,7 @@ public class RegretBackfillService {
 
     private BackfillResult backfillRow(PendingLog row) {
         Instant from = row.tsRequest;
-        Instant to   = row.tsRequest.plus(WINDOW_HOURS, ChronoUnit.HOURS);
+        Instant to = row.tsRequest.plus(WINDOW_HOURS, ChronoUnit.HOURS);
 
         // Stay strictly in the past for `to` — if the user logged a
         // request 23 h ago, we don't have the full 24 h yet. The
@@ -180,23 +180,20 @@ public class RegretBackfillService {
 
                     Double regret = computeRegret(row.recommendedPrice, minPrice, row.liters);
                     return new BackfillResult(
-                            minPrice,
-                            firstAt == null ? null : firstAt.toInstant(),
-                            regret
-                    );
+                            minPrice, firstAt == null ? null : firstAt.toInstant(), regret);
                 },
                 row.fuelType,
                 Timestamp.from(from),
                 Timestamp.from(to),
-                row.latBucket - BUCKET_HALF, row.latBucket + BUCKET_HALF,
-                row.lngBucket - BUCKET_HALF, row.lngBucket + BUCKET_HALF
-        );
+                row.latBucket - BUCKET_HALF,
+                row.latBucket + BUCKET_HALF,
+                row.lngBucket - BUCKET_HALF,
+                row.lngBucket + BUCKET_HALF);
     }
 
     /**
-     * Visible for test — clamped at 0 from below; unknown inputs
-     * collapse to null so the row still gets stamped (no infinite
-     * retry) but the regret column stays empty.
+     * Visible for test — clamped at 0 from below; unknown inputs collapse to null so the row still
+     * gets stamped (no infinite retry) but the regret column stays empty.
      */
     static Double computeRegret(Double recommendedPrice, Double realizedMin, Double liters) {
         if (recommendedPrice == null || realizedMin == null) return null;
@@ -209,9 +206,8 @@ public class RegretBackfillService {
     }
 
     /**
-     * Single-statement batch stamp. Always sets backfilled_at so a row
-     * with no useful realised data still leaves the pending pool — the
-     * outer loop won't reprocess it forever.
+     * Single-statement batch stamp. Always sets backfilled_at so a row with no useful realised data
+     * still leaves the pending pool — the outer loop won't reprocess it forever.
      */
     private void stampAll(List<StampParams> rows) {
         if (rows.isEmpty()) {
@@ -233,11 +229,11 @@ public class RegretBackfillService {
                         StampParams p = rows.get(i);
                         BackfillResult r = p.result();
                         if (r.realizedMin == null) ps.setNull(1, Types.DOUBLE);
-                        else                       ps.setDouble(1, r.realizedMin);
-                        if (r.realizedAt == null)  ps.setNull(2, Types.TIMESTAMP);
-                        else                       ps.setTimestamp(2, Timestamp.from(r.realizedAt));
-                        if (r.regretEur == null)   ps.setNull(3, Types.DOUBLE);
-                        else                       ps.setDouble(3, r.regretEur);
+                        else ps.setDouble(1, r.realizedMin);
+                        if (r.realizedAt == null) ps.setNull(2, Types.TIMESTAMP);
+                        else ps.setTimestamp(2, Timestamp.from(r.realizedAt));
+                        if (r.regretEur == null) ps.setNull(3, Types.DOUBLE);
+                        else ps.setDouble(3, r.regretEur);
                         ps.setTimestamp(4, now);
                         ps.setLong(5, p.id());
                     }
@@ -246,7 +242,6 @@ public class RegretBackfillService {
                     public int getBatchSize() {
                         return rows.size();
                     }
-                }
-        );
+                });
     }
 }

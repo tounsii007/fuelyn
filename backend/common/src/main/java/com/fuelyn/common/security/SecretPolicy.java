@@ -11,18 +11,17 @@ import java.util.Map;
  *
  * <ol>
  *   <li><b>Length</b> ≥ 32 bytes (256-bit floor for HMAC-SHA256)
- *   <li><b>Shannon entropy</b> ≥ 3.5 bits/char — rules out repeated chars / very
- *       small alphabets ("aaaaaaaa", "0000000…")
- *   <li><b>Maximum contiguous-letter run</b> ≤ 7 — rules out dictionary-style
- *       placeholders like {@code "change-me-in-production-32chars!"} which
- *       contains the run {@code "production"} (length 10). Cryptographically
- *       generated tokens (hex, base64) almost never produce a letter run of
- *       this length.
+ *   <li><b>Shannon entropy</b> ≥ 3.5 bits/char — rules out repeated chars / very small alphabets
+ *       ("aaaaaaaa", "0000000…")
+ *   <li><b>Maximum contiguous-letter run</b> ≤ 7 — rules out dictionary-style placeholders like
+ *       {@code "change-me-in-production-32chars!"} which contains the run {@code "production"}
+ *       (length 10). Cryptographically generated tokens (hex, base64) almost never produce a letter
+ *       run of this length.
  * </ol>
  *
- * <p>Combining entropy + the letter-run heuristic catches every realistic
- * placeholder string we have ever seen in the wild, while still accepting
- * any output of {@code openssl rand -hex 32} or {@code openssl rand -base64 32}.
+ * <p>Combining entropy + the letter-run heuristic catches every realistic placeholder string we
+ * have ever seen in the wild, while still accepting any output of {@code openssl rand -hex 32} or
+ * {@code openssl rand -base64 32}.
  */
 public final class SecretPolicy {
 
@@ -35,13 +34,20 @@ public final class SecretPolicy {
     public static void requireStrong(String fieldName, String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(
-                    "Refusing to start: " + fieldName + " is not set. "
+                    "Refusing to start: "
+                            + fieldName
+                            + " is not set. "
                             + "Generate with `openssl rand -hex 32`.");
         }
         if (value.length() < MIN_LENGTH) {
             throw new IllegalStateException(
-                    "Refusing to start: " + fieldName + " must be at least "
-                            + MIN_LENGTH + " characters (got " + value.length() + ").");
+                    "Refusing to start: "
+                            + fieldName
+                            + " must be at least "
+                            + MIN_LENGTH
+                            + " characters (got "
+                            + value.length()
+                            + ").");
         }
 
         double entropy = shannonEntropyBitsPerChar(value);
@@ -54,7 +60,9 @@ public final class SecretPolicy {
                             "Refusing to start: %s has insufficient entropy "
                                     + "(%.2f bits/char, need ≥ %.2f). "
                                     + "Generate a real secret with `openssl rand -hex 32`.",
-                            fieldName, entropy, MIN_ENTROPY_BITS_PER_CHAR));
+                            fieldName,
+                            entropy,
+                            MIN_ENTROPY_BITS_PER_CHAR));
         }
         if (longestLetterRun > MAX_LETTER_RUN) {
             throw new IllegalStateException(
@@ -63,7 +71,8 @@ public final class SecretPolicy {
                             "Refusing to start: %s contains a %d-character "
                                     + "letter run, which looks like a dictionary-word "
                                     + "placeholder. Generate with `openssl rand -hex 32`.",
-                            fieldName, longestLetterRun));
+                            fieldName,
+                            longestLetterRun));
         }
     }
 

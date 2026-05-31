@@ -1,30 +1,28 @@
 package com.fuelyn.common.security;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Determines the real client IP for rate-limiting / audit logging,
- * defending against {@code X-Forwarded-For} spoofing.
+ * Determines the real client IP for rate-limiting / audit logging, defending against {@code
+ * X-Forwarded-For} spoofing.
  *
- * <p>Pre-existing rate limiters trusted {@code X-Forwarded-For} blindly:
- * any client could write the header themselves and rotate through fake
- * values to bypass the per-IP cap. This resolver only honours XFF when
- * the immediate remote address is itself in a configured trusted-proxy
- * CIDR list — i.e. our reverse proxy, load balancer, or CDN. Direct
- * traffic that pretends to forward from another IP is ignored.</p>
+ * <p>Pre-existing rate limiters trusted {@code X-Forwarded-For} blindly: any client could write the
+ * header themselves and rotate through fake values to bypass the per-IP cap. This resolver only
+ * honours XFF when the immediate remote address is itself in a configured trusted-proxy CIDR list —
+ * i.e. our reverse proxy, load balancer, or CDN. Direct traffic that pretends to forward from
+ * another IP is ignored.
  *
- * <p>Default trusted set is <em>empty</em>. When unconfigured the
- * resolver always returns the raw remote address, which is the safe
- * conservative behaviour for self-hosted setups behind a single
- * loopback proxy. Operators behind a multi-hop CDN must explicitly
- * list the upstream CIDRs in {@code fuelyn.security.trusted-proxies}.</p>
+ * <p>Default trusted set is <em>empty</em>. When unconfigured the resolver always returns the raw
+ * remote address, which is the safe conservative behaviour for self-hosted setups behind a single
+ * loopback proxy. Operators behind a multi-hop CDN must explicitly list the upstream CIDRs in
+ * {@code fuelyn.security.trusted-proxies}.
  */
 public final class TrustedProxyResolver {
 
@@ -33,22 +31,23 @@ public final class TrustedProxyResolver {
     private final List<Cidr> trustedCidrs;
 
     public TrustedProxyResolver(List<String> trustedProxyCidrs) {
-        this.trustedCidrs = (trustedProxyCidrs == null || trustedProxyCidrs.isEmpty())
-                ? Collections.emptyList()
-                : trustedProxyCidrs.stream()
-                        .map(TrustedProxyResolver::parseCidr)
-                        .filter(java.util.Objects::nonNull)
-                        .toList();
+        this.trustedCidrs =
+                (trustedProxyCidrs == null || trustedProxyCidrs.isEmpty())
+                        ? Collections.emptyList()
+                        : trustedProxyCidrs.stream()
+                                .map(TrustedProxyResolver::parseCidr)
+                                .filter(java.util.Objects::nonNull)
+                                .toList();
     }
 
     /**
      * Resolve the client IP from the perspective of the application.
      *
-     * @param remoteAddr the connection-level remote IP (never trust this verbatim if it
-     *                   represents a proxy)
+     * @param remoteAddr the connection-level remote IP (never trust this verbatim if it represents
+     *     a proxy)
      * @param xForwardedFor the raw {@code X-Forwarded-For} header value, or {@code null}
-     * @return the resolved client IP — XFF's first hop if remoteAddr is trusted,
-     *         otherwise remoteAddr itself
+     * @return the resolved client IP — XFF's first hop if remoteAddr is trusted, otherwise
+     *     remoteAddr itself
      */
     public String resolve(String remoteAddr, String xForwardedFor) {
         if (remoteAddr == null || remoteAddr.isBlank()) {

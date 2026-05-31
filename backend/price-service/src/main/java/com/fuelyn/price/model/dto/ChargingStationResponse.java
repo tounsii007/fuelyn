@@ -1,12 +1,10 @@
 package com.fuelyn.price.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.List;
 
-/**
- * DTOs for OpenChargeMap API responses and our internal charging station model.
- */
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+/** DTOs for OpenChargeMap API responses and our internal charging station model. */
 public final class ChargingStationResponse {
 
     private ChargingStationResponse() {}
@@ -25,14 +23,9 @@ public final class ChargingStationResponse {
             List<Connection> connections,
             boolean isOperational,
             String usageCost,
-            String accessType
-    ) {}
+            String accessType) {}
 
-    public record Connection(
-            String type,
-            Double powerKW,
-            int quantity
-    ) {}
+    public record Connection(String type, Double powerKW, int quantity) {}
 
     // --- Raw OpenChargeMap response records ---
 
@@ -44,8 +37,7 @@ public final class ChargingStationResponse {
             List<OCMConnection> Connections,
             OCMStatus StatusType,
             String UsageCost,
-            OCMUsageType UsageType
-    ) {}
+            OCMUsageType UsageType) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record OCMOperator(String Title) {}
@@ -58,16 +50,14 @@ public final class ChargingStationResponse {
             String Postcode,
             double Latitude,
             double Longitude,
-            Double Distance
-    ) {}
+            Double Distance) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record OCMConnection(
             int ConnectionTypeID,
             OCMConnectionType ConnectionType,
             Double PowerKW,
-            Integer Quantity
-    ) {}
+            Integer Quantity) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record OCMConnectionType(String Title) {}

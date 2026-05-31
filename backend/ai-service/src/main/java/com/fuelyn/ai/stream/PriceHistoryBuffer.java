@@ -1,10 +1,5 @@
 package com.fuelyn.ai.stream;
 
-import com.fuelyn.common.events.PriceUpdatedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,33 +11,37 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import com.fuelyn.common.events.PriceUpdatedEvent;
+
 /**
- * Bounded per-station rolling window of recent price observations,
- * fed exclusively by the Kafka consumer.
+ * Bounded per-station rolling window of recent price observations, fed exclusively by the Kafka
+ * consumer.
  *
- * <p>The advisor runs purely from the request body today — every signal
- * that wants "history" looks at {@code request.priceHistory()}, which
- * the BFF only supplies when the user has been observing prices long
- * enough on their own device. For brand-new sessions, the request is
- * empty and signals like {@code EwmaChangePoint} short-circuit to
- * {@code STABLE}.</p>
+ * <p>The advisor runs purely from the request body today — every signal that wants "history" looks
+ * at {@code request.priceHistory()}, which the BFF only supplies when the user has been observing
+ * prices long enough on their own device. For brand-new sessions, the request is empty and signals
+ * like {@code EwmaChangePoint} short-circuit to {@code STABLE}.
  *
  * <p>This buffer plugs that gap by retaining the last {@value #DEFAULT_PER_STATION_CAP}
- * change-events per (stationId, fuelType) tuple, observed via the
- * {@code fuelyn.prices.v1} Kafka topic. The advisor can then synthesise
- * a {@link com.fuelyn.ai.model.AIAdvisorRequest.PricePoint} list for
- * each station in the user's request, giving every signal real data to
- * work with on the very first request after warm-up.</p>
+ * change-events per (stationId, fuelType) tuple, observed via the {@code fuelyn.prices.v1} Kafka
+ * topic. The advisor can then synthesise a {@link com.fuelyn.ai.model.AIAdvisorRequest.PricePoint}
+ * list for each station in the user's request, giving every signal real data to work with on the
+ * very first request after warm-up.
  *
  * <h3>Memory budget</h3>
- * Cap × stations × bytes ≈ 200 × 5_000 × 64 ≈ 64 MB worst case. Bounded
- * deques + a hard ceiling on station count keep this stable.
+ *
+ * Cap × stations × bytes ≈ 200 × 5_000 × 64 ≈ 64 MB worst case. Bounded deques + a hard ceiling on
+ * station count keep this stable.
  *
  * <h3>Thread safety</h3>
- * Outer map is a {@link ConcurrentHashMap}. Each per-key value is a
- * {@link ConcurrentLinkedDeque} with manual size-trimming under the
- * dequeue's own intrinsic ordering. Reads always copy into a snapshot
- * list before returning.
+ *
+ * Outer map is a {@link ConcurrentHashMap}. Each per-key value is a {@link ConcurrentLinkedDeque}
+ * with manual size-trimming under the dequeue's own intrinsic ordering. Reads always copy into a
+ * snapshot list before returning.
  */
 @Component
 public class PriceHistoryBuffer {
@@ -67,17 +66,16 @@ public class PriceHistoryBuffer {
     }
 
     /**
-     * One observation. Lightweight record so the deque payload stays
-     * small (24 bytes + object header).
+     * One observation. Lightweight record so the deque payload stays small (24 bytes + object
+     * header).
      */
     public record PricePoint(double price, Instant observedAt) {}
 
     /**
-     * Ingest a Kafka event. The same point is indexed under both
-     * {@code stationId} (UUID) AND {@code stationName} so the advisor
-     * — whose request body only carries human-readable names — can look
-     * it up reliably. Duplicate insertion is acceptable: callers always
-     * read via one key, and the per-key dequeue stays bounded.
+     * Ingest a Kafka event. The same point is indexed under both {@code stationId} (UUID) AND
+     * {@code stationName} so the advisor — whose request body only carries human-readable names —
+     * can look it up reliably. Duplicate insertion is acceptable: callers always read via one key,
+     * and the per-key dequeue stays bounded.
      */
     public void record(PriceUpdatedEvent event) {
         if (event == null || event.fuelType() == null) return;
@@ -107,8 +105,8 @@ public class PriceHistoryBuffer {
     }
 
     /**
-     * @return immutable snapshot of recent points for this tuple, oldest
-     *         first; empty list if no events have been buffered yet.
+     * @return immutable snapshot of recent points for this tuple, oldest first; empty list if no
+     *     events have been buffered yet.
      */
     public List<PricePoint> recent(String stationId, String fuelType) {
         ConcurrentLinkedDeque<PricePoint> deque = store.get(key(stationId, fuelType));
@@ -119,17 +117,15 @@ public class PriceHistoryBuffer {
     }
 
     /**
-     * Aggregated stats over the buffered window — {@code null} when no
-     * data exists for the tuple. Useful for prompt enrichment + the
-     * station-relative baseline signal.
+     * Aggregated stats over the buffered window — {@code null} when no data exists for the tuple.
+     * Useful for prompt enrichment + the station-relative baseline signal.
      */
     public Optional<Aggregate> aggregate(String stationId, String fuelType) {
         List<PricePoint> recent = recent(stationId, fuelType);
         if (recent.isEmpty()) return Optional.empty();
 
-        DoubleSummaryStatistics stats = recent.stream()
-                .mapToDouble(PricePoint::price)
-                .summaryStatistics();
+        DoubleSummaryStatistics stats =
+                recent.stream().mapToDouble(PricePoint::price).summaryStatistics();
         double mean = stats.getAverage();
         double sumSq = 0;
         for (PricePoint p : recent) {
@@ -139,20 +135,22 @@ public class PriceHistoryBuffer {
         double stdDev = recent.size() > 1 ? Math.sqrt(sumSq / (recent.size() - 1)) : 0.0;
         Instant first = recent.get(0).observedAt();
         Instant last = recent.get(recent.size() - 1).observedAt();
-        return Optional.of(new Aggregate(
-                recent.size(),
-                stats.getMin(),
-                stats.getMax(),
-                mean,
-                stdDev,
-                first,
-                last,
-                recent.get(recent.size() - 1).price()
-        ));
+        return Optional.of(
+                new Aggregate(
+                        recent.size(),
+                        stats.getMin(),
+                        stats.getMax(),
+                        mean,
+                        stdDev,
+                        first,
+                        last,
+                        recent.get(recent.size() - 1).price()));
     }
 
     /** Total tuples currently retained — exposed for diagnostic logging. */
-    public int trackedTuples() { return store.size(); }
+    public int trackedTuples() {
+        return store.size();
+    }
 
     /** Total points across all tuples — exposed for diagnostic logging. */
     public long totalPoints() {
@@ -160,9 +158,8 @@ public class PriceHistoryBuffer {
     }
 
     /**
-     * Statistics over the buffered window for one (station, fuelType)
-     * tuple. {@code latestPrice} is the most recently observed price,
-     * {@code first}/{@code last} bound the time window.
+     * Statistics over the buffered window for one (station, fuelType) tuple. {@code latestPrice} is
+     * the most recently observed price, {@code first}/{@code last} bound the time window.
      */
     public record Aggregate(
             int sampleCount,
@@ -172,8 +169,7 @@ public class PriceHistoryBuffer {
             double stdDev,
             Instant first,
             Instant last,
-            double latestPrice
-    ) {
+            double latestPrice) {
         /** Z-score of the current price relative to this station's own history. */
         public double currentZ() {
             if (stdDev <= 1e-6) return 0;
@@ -193,7 +189,10 @@ public class PriceHistoryBuffer {
         Instant oldest = Instant.MAX;
         for (var e : store.entrySet()) {
             PricePoint last = e.getValue().peekLast();
-            if (last == null) { victim = e.getKey(); break; }
+            if (last == null) {
+                victim = e.getKey();
+                break;
+            }
             if (last.observedAt().isBefore(oldest)) {
                 oldest = last.observedAt();
                 victim = e.getKey();

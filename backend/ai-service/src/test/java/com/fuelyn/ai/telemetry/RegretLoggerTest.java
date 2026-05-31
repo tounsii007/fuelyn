@@ -1,14 +1,5 @@
 package com.fuelyn.ai.telemetry;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import com.fuelyn.ai.model.AIAdvisorResponse;
-import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -19,10 +10,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fuelyn.ai.model.AIAdvisorRequest;
+import com.fuelyn.ai.model.AIAdvisorResponse;
+
 /**
- * Tests the persistence side of {@link RegretLogger}. The JSON-log
- * sink is hard to assert on without an SLF4J interceptor, but the
- * DB sink is a small INSERT we can verify via Mockito.
+ * Tests the persistence side of {@link RegretLogger}. The JSON-log sink is hard to assert on
+ * without an SLF4J interceptor, but the DB sink is a small INSERT we can verify via Mockito.
  */
 class RegretLoggerTest {
 
@@ -30,13 +30,12 @@ class RegretLoggerTest {
 
     private static AIAdvisorRequest sampleRequest() {
         return new AIAdvisorRequest(
-                List.of(new AIAdvisorRequest.StationPrice(
-                        "Aral Marburg", "Aral", 1.799, 0.5)),
+                List.of(new AIAdvisorRequest.StationPrice("Aral Marburg", "Aral", 1.799, 0.5)),
                 "e10",
                 null,
-                50.81, 8.77,
-                50
-        );
+                50.81,
+                8.77,
+                50);
     }
 
     private static AIAdvisorResponse sampleResponse() {
@@ -52,8 +51,9 @@ class RegretLoggerTest {
                 "—",
                 false,
                 false,
-                null, null, null
-        );
+                null,
+                null,
+                null);
     }
 
     @Test
@@ -81,17 +81,36 @@ class RegretLoggerTest {
     @Test
     void enabled_writesOneRowPerCall() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.update(anyString(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(jdbc.update(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
                 .thenReturn(1);
 
         RegretLogger logger = new RegretLogger(MAPPER, jdbc, true);
         logger.record("req-1", sampleRequest(), sampleResponse());
 
-        verify(jdbc, times(1)).update(
-                anyString(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
-        );
+        verify(jdbc, times(1))
+                .update(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any());
     }
 
     @Test
@@ -104,12 +123,19 @@ class RegretLoggerTest {
 
         logger.record("req-1", sampleRequest(), sampleResponse());
 
-        verify(jdbc).update(
-                anyString(),
-                any(), any(), any(), any(), any(), any(),
-                eq("BUY_NOW"),       // the normalised action enum
-                any(), any(), any()
-        );
+        verify(jdbc)
+                .update(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq("BUY_NOW"), // the normalised action enum
+                        any(),
+                        any(),
+                        any());
     }
 
     @Test
@@ -119,9 +145,14 @@ class RegretLoggerTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         RegretLogger logger = new RegretLogger(MAPPER, jdbc, true);
 
-        AIAdvisorRequest noCoords = new AIAdvisorRequest(
-                List.of(new AIAdvisorRequest.StationPrice("X", "Aral", 1.79, 0.0)),
-                "e10", null, /* lat= */ null, /* lng= */ null, 50);
+        AIAdvisorRequest noCoords =
+                new AIAdvisorRequest(
+                        List.of(new AIAdvisorRequest.StationPrice("X", "Aral", 1.79, 0.0)),
+                        "e10",
+                        null,
+                        /* lat= */ null,
+                        /* lng= */ null,
+                        50);
 
         logger.record("req-1", noCoords, sampleResponse());
 
@@ -133,8 +164,18 @@ class RegretLoggerTest {
         // Telemetry path must never break the request. A real JDBC
         // failure (DB down) is logged as a warning and ignored.
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.update(anyString(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(jdbc.update(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
                 .thenThrow(new DataAccessResourceFailureException("postgres down"));
 
         RegretLogger logger = new RegretLogger(MAPPER, jdbc, true);

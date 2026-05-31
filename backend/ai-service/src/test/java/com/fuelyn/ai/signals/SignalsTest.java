@@ -1,7 +1,6 @@
 package com.fuelyn.ai.signals;
 
-import com.fuelyn.ai.model.AIAdvisorRequest;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -12,16 +11,18 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+
+import com.fuelyn.ai.model.AIAdvisorRequest;
 
 /**
- * Pure-function tests for each signal helper. Keeps the LocalHeuristicFallback
- * integration test focused on the orchestration; these guard the maths.
+ * Pure-function tests for each signal helper. Keeps the LocalHeuristicFallback integration test
+ * focused on the orchestration; these guard the maths.
  */
 class SignalsTest {
 
-    private static final Clock FIXED_NOW = Clock.fixed(
-            Instant.parse("2026-05-07T10:00:00Z"), ZoneId.of("UTC"));
+    private static final Clock FIXED_NOW =
+            Clock.fixed(Instant.parse("2026-05-07T10:00:00Z"), ZoneId.of("UTC"));
 
     // ─── PriceFreshness ──────────────────────────────────────────
 
@@ -53,28 +54,29 @@ class SignalsTest {
 
     @Test
     void brandBaseline_separatesAralFromStarCluster() {
-        var prices = List.of(
-                new AIAdvisorRequest.StationPrice("Aral A", "Aral", 1.799, 1.0),
-                new AIAdvisorRequest.StationPrice("Aral B", "Aral", 1.819, 2.0),
-                new AIAdvisorRequest.StationPrice("Aral C", "Aral", 1.789, 3.0),
-                new AIAdvisorRequest.StationPrice("Star A", "Star", 1.749, 1.0),
-                new AIAdvisorRequest.StationPrice("Star B", "Star", 1.759, 2.0),
-                new AIAdvisorRequest.StationPrice("Star C", "Star", 1.739, 3.0)
-        );
+        var prices =
+                List.of(
+                        new AIAdvisorRequest.StationPrice("Aral A", "Aral", 1.799, 1.0),
+                        new AIAdvisorRequest.StationPrice("Aral B", "Aral", 1.819, 2.0),
+                        new AIAdvisorRequest.StationPrice("Aral C", "Aral", 1.789, 3.0),
+                        new AIAdvisorRequest.StationPrice("Star A", "Star", 1.749, 1.0),
+                        new AIAdvisorRequest.StationPrice("Star B", "Star", 1.759, 2.0),
+                        new AIAdvisorRequest.StationPrice("Star C", "Star", 1.739, 3.0));
         var stats = BrandBaseline.compute(prices);
         assertThat(stats.perBrand()).containsKeys("aral", "star");
         // Star cluster mean ~1.749, Aral cluster mean ~1.802 — far apart
-        assertThat(stats.perBrand().get("aral").mean()).isGreaterThan(stats.perBrand().get("star").mean() + 0.04);
+        assertThat(stats.perBrand().get("aral").mean())
+                .isGreaterThan(stats.perBrand().get("star").mean() + 0.04);
     }
 
     @Test
     void brandBaseline_singletonBrandFallsBackToGlobalZ() {
         // One unique brand, two of another — the singleton's z must be computed globally.
-        var prices = List.of(
-                new AIAdvisorRequest.StationPrice("Solo", "Solo", 1.700, 1.0),
-                new AIAdvisorRequest.StationPrice("Big A", "Big", 1.800, 2.0),
-                new AIAdvisorRequest.StationPrice("Big B", "Big", 1.810, 3.0)
-        );
+        var prices =
+                List.of(
+                        new AIAdvisorRequest.StationPrice("Solo", "Solo", 1.700, 1.0),
+                        new AIAdvisorRequest.StationPrice("Big A", "Big", 1.800, 2.0),
+                        new AIAdvisorRequest.StationPrice("Big B", "Big", 1.810, 3.0));
         var stats = BrandBaseline.compute(prices);
         // The cheapest is "Solo" — its brandZ uses global (mean ≈ 1.770, std > 0)
         assertThat(stats.cheapestBrandZ()).isLessThan(0); // negative = below mean
@@ -97,13 +99,19 @@ class SignalsTest {
         List<AIAdvisorRequest.PricePoint> history = new ArrayList<>();
         Instant base = Instant.parse("2026-05-06T00:00:00Z");
         for (int i = 0; i < 20; i++) {
-            history.add(new AIAdvisorRequest.PricePoint(1.790,
-                    OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC).toString()));
+            history.add(
+                    new AIAdvisorRequest.PricePoint(
+                            1.790,
+                            OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC)
+                                    .toString()));
         }
         // Sharp 5 ct drop at hour 20
         for (int i = 20; i < 24; i++) {
-            history.add(new AIAdvisorRequest.PricePoint(1.740,
-                    OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC).toString()));
+            history.add(
+                    new AIAdvisorRequest.PricePoint(
+                            1.740,
+                            OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC)
+                                    .toString()));
         }
         var r = EwmaChangePoint.analyse(history);
         assertThat(r.changePoint()).isEqualTo(EwmaChangePoint.ChangePoint.RECENT_DROP);
@@ -112,10 +120,11 @@ class SignalsTest {
 
     @Test
     void ewma_treatsTooFewPointsAsStable() {
-        var r = EwmaChangePoint.analyse(List.of(
-                new AIAdvisorRequest.PricePoint(1.7, "2026-05-07T08:00:00Z"),
-                new AIAdvisorRequest.PricePoint(1.7, "2026-05-07T09:00:00Z")
-        ));
+        var r =
+                EwmaChangePoint.analyse(
+                        List.of(
+                                new AIAdvisorRequest.PricePoint(1.7, "2026-05-07T08:00:00Z"),
+                                new AIAdvisorRequest.PricePoint(1.7, "2026-05-07T09:00:00Z")));
         assertThat(r.direction()).isEqualTo(EwmaChangePoint.Direction.STABLE);
         assertThat(r.changePoint()).isEqualTo(EwmaChangePoint.ChangePoint.NONE);
     }
@@ -163,8 +172,7 @@ class SignalsTest {
     void routePenalty_zeroForStationOnDirectPath() {
         // Origin (0,0) → station (0, 0.5) → destination (0, 1.0):
         // station lies exactly on the path, extra distance = 0
-        var s = new AIAdvisorRequest.StationPrice(
-                "OnPath", "X", 1.7, 0, null, 0.0, 0.5);
+        var s = new AIAdvisorRequest.StationPrice("OnPath", "X", 1.7, 0, null, 0.0, 0.5);
         var dest = new AIAdvisorRequest.Destination(0.0, 1.0);
         var d = RoutePenalty.compute(0, 0, s, dest);
         assertThat(d.extraKm()).isLessThan(0.01);
@@ -173,8 +181,7 @@ class SignalsTest {
     @Test
     void routePenalty_largeForOffPathStation() {
         // Origin (0,0), destination (0, 1.0), station 100 km off-path
-        var s = new AIAdvisorRequest.StationPrice(
-                "Faraway", "X", 1.7, 0, null, 1.0, 0.5);
+        var s = new AIAdvisorRequest.StationPrice("Faraway", "X", 1.7, 0, null, 1.0, 0.5);
         var dest = new AIAdvisorRequest.Destination(0.0, 1.0);
         var d = RoutePenalty.compute(0, 0, s, dest);
         assertThat(d.extraKm()).isGreaterThan(50);
@@ -191,18 +198,25 @@ class SignalsTest {
 
     private static AIAdvisorRequest.StationPrice stationWithTimestamp(Instant t) {
         return new AIAdvisorRequest.StationPrice(
-                "X", "X", 1.7, 1.0,
+                "X",
+                "X",
+                1.7,
+                1.0,
                 OffsetDateTime.ofInstant(t, ZoneOffset.UTC).toString(),
-                null, null);
+                null,
+                null);
     }
 
-    private static List<AIAdvisorRequest.PricePoint> linear(double start, double stepPerHour, int points) {
+    private static List<AIAdvisorRequest.PricePoint> linear(
+            double start, double stepPerHour, int points) {
         List<AIAdvisorRequest.PricePoint> out = new ArrayList<>(points);
         Instant base = Instant.parse("2026-05-06T00:00:00Z");
         for (int i = 0; i < points; i++) {
-            out.add(new AIAdvisorRequest.PricePoint(
-                    start + stepPerHour * i,
-                    OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC).toString()));
+            out.add(
+                    new AIAdvisorRequest.PricePoint(
+                            start + stepPerHour * i,
+                            OffsetDateTime.ofInstant(base.plusSeconds(3_600L * i), ZoneOffset.UTC)
+                                    .toString()));
         }
         return out;
     }

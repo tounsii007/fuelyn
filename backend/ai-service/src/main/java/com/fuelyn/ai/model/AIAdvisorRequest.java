@@ -1,6 +1,7 @@
 package com.fuelyn.ai.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -12,52 +13,46 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Request DTO for the AI fuel advisor endpoint.
  *
- * <p>Optional fields: {@code vehicleProfile}, {@code destination}, and
- * {@code priceHistory} are all nullable so legacy clients continue to
- * work. When present, they sharpen the recommendation:
+ * <p>Optional fields: {@code vehicleProfile}, {@code destination}, and {@code priceHistory} are all
+ * nullable so legacy clients continue to work. When present, they sharpen the recommendation:
+ *
  * <ul>
- *   <li>{@code vehicleProfile} → exact drive-cost penalty instead of
- *       a flat €/km estimate, plus tank-urgency signal</li>
- *   <li>{@code destination} → score stations along the route, not by
- *       Luftlinie distance</li>
- *   <li>{@code priceHistory} → trend signal via EWMA + change-point</li>
+ *   <li>{@code vehicleProfile} → exact drive-cost penalty instead of a flat €/km estimate, plus
+ *       tank-urgency signal
+ *   <li>{@code destination} → score stations along the route, not by Luftlinie distance
+ *   <li>{@code priceHistory} → trend signal via EWMA + change-point
  * </ul>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AIAdvisorRequest(
         @NotEmpty(message = "At least one station price is required")
-        @Size(max = 50, message = "Maximum 50 stations per request")
-        @Valid
-        List<StationPrice> prices,
-
-        @NotBlank @Pattern(regexp = "diesel|e5|e10", message = "fuelType must be diesel, e5, or e10")
-        String fuelType,
-
-        @Size(max = 500, message = "priceHistory is limited to 500 points")
-        @Valid
-        List<PricePoint> priceHistory,
-
-        @DecimalMin(value = "-90.0")  @DecimalMax(value = "90.0")  Double lat,
+                @Size(max = 50, message = "Maximum 50 stations per request")
+                @Valid
+                List<StationPrice> prices,
+        @NotBlank
+                @Pattern(regexp = "diesel|e5|e10", message = "fuelType must be diesel, e5, or e10")
+                String fuelType,
+        @Size(max = 500, message = "priceHistory is limited to 500 points") @Valid
+                List<PricePoint> priceHistory,
+        @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0") Double lat,
         @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") Double lng,
-
         @Min(value = 10, message = "fillUpLiters must be at least 10")
-        @Max(value = 200, message = "fillUpLiters must be at most 200")
-        Integer fillUpLiters,
+                @Max(value = 200, message = "fillUpLiters must be at most 200")
+                Integer fillUpLiters,
 
         // ─── Optional, sharpens the verdict when provided ───────
         @Valid VehicleProfile vehicleProfile,
-        @Valid Destination    destination
-) {
+        @Valid Destination destination) {
 
     /**
-     * One station's current price. {@code lastChangeIso} is optional
-     * — when present it lets the heuristic down-weight stale prices
-     * (Tankerkönig sometimes serves 4 h-old data after MTS-K hiccups).
+     * One station's current price. {@code lastChangeIso} is optional — when present it lets the
+     * heuristic down-weight stale prices (Tankerkönig sometimes serves 4 h-old data after MTS-K
+     * hiccups).
      */
     public record StationPrice(
             @NotBlank @Size(max = 200) String stationName,
@@ -72,9 +67,8 @@ public record AIAdvisorRequest(
             // Optional — used when caller has per-station coordinates
             // (lets us compute route-detour penalties rather than
             // user-relative distance).
-            @DecimalMin(value = "-90.0")  @DecimalMax(value = "90.0")  Double lat,
-            @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") Double lng
-    ) {
+            @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0") Double lat,
+            @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") Double lng) {
         // Compact canonical constructor — keep the legacy 4-arg ctor
         // working so existing callers and tests don't need to change.
         public StationPrice(String stationName, String brand, double price, double distance) {
@@ -83,9 +77,7 @@ public record AIAdvisorRequest(
     }
 
     public record PricePoint(
-            @PositiveOrZero double price,
-            @NotBlank @Size(max = 40) String timestamp
-    ) {}
+            @PositiveOrZero double price, @NotBlank @Size(max = 40) String timestamp) {}
 
     public record VehicleProfile(
             // L/100 km — typical 4–12 for ICE
@@ -93,18 +85,20 @@ public record AIAdvisorRequest(
             // Current fuel level as a fraction in [0,1]; used for tank-urgency
             @DecimalMin("0.0") @DecimalMax("1.0") Double fuelLevel,
             // Tank capacity in litres (optional — falls back to fillUpLiters)
-            @DecimalMin("10.0") @DecimalMax("200.0") Double tankCapacityL
-    ) {}
+            @DecimalMin("10.0") @DecimalMax("200.0") Double tankCapacityL) {}
 
     public record Destination(
-            @DecimalMin("-90.0")  @DecimalMax("90.0")  Double lat,
-            @DecimalMin("-180.0") @DecimalMax("180.0") Double lng
-    ) {}
+            @DecimalMin("-90.0") @DecimalMax("90.0") Double lat,
+            @DecimalMin("-180.0") @DecimalMax("180.0") Double lng) {}
 
     // Compact ctor with defaults — preserves legacy 6-arg / 7-arg calls.
-    public AIAdvisorRequest(List<StationPrice> prices, String fuelType,
-                            List<PricePoint> priceHistory, Double lat, Double lng,
-                            Integer fillUpLiters) {
+    public AIAdvisorRequest(
+            List<StationPrice> prices,
+            String fuelType,
+            List<PricePoint> priceHistory,
+            Double lat,
+            Double lng,
+            Integer fillUpLiters) {
         this(prices, fuelType, priceHistory, lat, lng, fillUpLiters, null, null);
     }
 

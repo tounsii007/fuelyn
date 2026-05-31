@@ -1,9 +1,9 @@
 package com.fuelyn.gateway.filter;
 
-import com.fuelyn.gateway.security.GatewayTrustedProxyResolver;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.fuelyn.gateway.config.FuelynProperties;
+import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -12,15 +12,17 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+
+import com.fuelyn.gateway.config.FuelynProperties;
+import com.fuelyn.gateway.security.GatewayTrustedProxyResolver;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import reactor.core.publisher.Mono;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * IP-based rate limiter using a sliding window with Caffeine cache.
- * Returns 429 Too Many Requests when the limit is exceeded.
+ * IP-based rate limiter using a sliding window with Caffeine cache. Returns 429 Too Many Requests
+ * when the limit is exceeded.
  */
 @Component
 public class RateLimitFilter implements GlobalFilter, Ordered {
@@ -31,13 +33,15 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private final Cache<String, AtomicInteger> requestCounts;
     private final GatewayTrustedProxyResolver trustedProxyResolver;
 
-    public RateLimitFilter(FuelynProperties properties, GatewayTrustedProxyResolver trustedProxyResolver) {
+    public RateLimitFilter(
+            FuelynProperties properties, GatewayTrustedProxyResolver trustedProxyResolver) {
         this.burstCapacity = properties.getGateway().getRateLimit().getBurstCapacity();
         this.trustedProxyResolver = trustedProxyResolver;
-        this.requestCounts = Caffeine.newBuilder()
-                .maximumSize(10_000)
-                .expireAfterWrite(1, TimeUnit.SECONDS)
-                .build();
+        this.requestCounts =
+                Caffeine.newBuilder()
+                        .maximumSize(10_000)
+                        .expireAfterWrite(1, TimeUnit.SECONDS)
+                        .build();
     }
 
     @Override
@@ -55,23 +59,24 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
         // Add rate limit headers
         exchange.getResponse().getHeaders().add("X-RateLimit-Limit", String.valueOf(burstCapacity));
-        exchange.getResponse().getHeaders().add("X-RateLimit-Remaining",
-                String.valueOf(Math.max(0, burstCapacity - currentCount)));
+        exchange.getResponse()
+                .getHeaders()
+                .add(
+                        "X-RateLimit-Remaining",
+                        String.valueOf(Math.max(0, burstCapacity - currentCount)));
 
         return chain.filter(exchange);
     }
 
     private String extractClientIp(ServerWebExchange exchange) {
         InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-        String remoteAddr = remoteAddress != null
-                ? remoteAddress.getAddress().getHostAddress()
-                : null;
+        String remoteAddr =
+                remoteAddress != null ? remoteAddress.getAddress().getHostAddress() : null;
         // X-Forwarded-For only counts when the immediate remote is in the
         // configured trusted-proxy CIDR list. Otherwise an attacker could
         // spoof the header to rotate through fake IPs and bypass the cap.
         return trustedProxyResolver.resolve(
-                remoteAddr,
-                exchange.getRequest().getHeaders().getFirst("X-Forwarded-For"));
+                remoteAddr, exchange.getRequest().getHeaders().getFirst("X-Forwarded-For"));
     }
 
     @Override

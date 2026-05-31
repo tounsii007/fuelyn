@@ -1,12 +1,14 @@
 package com.fuelyn.common.security;
 
-import com.fuelyn.common.config.SecurityProperties;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,32 +18,36 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.atomic.AtomicLong;
+import com.fuelyn.common.config.SecurityProperties;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Global rate limiter using a token bucket algorithm backed by Caffeine cache.
  *
- * <p>This filter enforces per-IP rate limiting to prevent abuse and protect
- * downstream services from excessive traffic. Each unique client IP address
- * gets its own token bucket that refills over time.</p>
+ * <p>This filter enforces per-IP rate limiting to prevent abuse and protect downstream services
+ * from excessive traffic. Each unique client IP address gets its own token bucket that refills over
+ * time.
  *
  * <h3>Configuration Properties</h3>
+ *
  * <ul>
- *   <li>{@code fuelyn.rate-limit.requests-per-minute} - maximum requests per minute per IP (default: 60)</li>
- *   <li>{@code fuelyn.rate-limit.enabled} - enable/disable rate limiting (default: true)</li>
+ *   <li>{@code fuelyn.rate-limit.requests-per-minute} - maximum requests per minute per IP
+ *       (default: 60)
+ *   <li>{@code fuelyn.rate-limit.enabled} - enable/disable rate limiting (default: true)
  * </ul>
  *
  * <h3>Algorithm</h3>
- * <p>Uses a sliding window counter stored in a Caffeine cache with a 1-minute TTL.
- * Each IP's request count is tracked per window. When the count exceeds the configured
- * limit, requests are rejected with HTTP 429 (Too Many Requests).</p>
  *
- * <p>Response headers on every request:</p>
+ * <p>Uses a sliding window counter stored in a Caffeine cache with a 1-minute TTL. Each IP's
+ * request count is tracked per window. When the count exceeds the configured limit, requests are
+ * rejected with HTTP 429 (Too Many Requests).
+ *
+ * <p>Response headers on every request:
+ *
  * <ul>
- *   <li>{@code X-RateLimit-Limit} - the maximum number of requests per window</li>
- *   <li>{@code X-RateLimit-Remaining} - remaining requests in the current window</li>
+ *   <li>{@code X-RateLimit-Limit} - the maximum number of requests per window
+ *   <li>{@code X-RateLimit-Remaining} - remaining requests in the current window
  * </ul>
  *
  * @see com.fuelyn.common.exception.RateLimitExceededException
@@ -55,7 +61,7 @@ public class RateLimiterConfig {
      * Creates the per-IP rate limiting servlet filter.
      *
      * @param requestsPerMinute the maximum allowed requests per minute per IP
-     * @param enabled           whether rate limiting is active
+     * @param enabled whether rate limiting is active
      * @return the configured rate limiter filter
      */
     @Bean
@@ -67,10 +73,9 @@ public class RateLimiterConfig {
     }
 
     /**
-     * Shared {@link TrustedProxyResolver} bean used by every IP-based filter
-     * across the backend. Defining it here (a {@code @Configuration} that's
-     * already on every service's classpath via {@code common}) means each
-     * service automatically picks up the same trusted-proxies list from
+     * Shared {@link TrustedProxyResolver} bean used by every IP-based filter across the backend.
+     * Defining it here (a {@code @Configuration} that's already on every service's classpath via
+     * {@code common}) means each service automatically picks up the same trusted-proxies list from
      * {@code fuelyn.security.trusted-proxies} without per-service wiring.
      */
     @Bean
@@ -81,9 +86,9 @@ public class RateLimiterConfig {
     /**
      * Servlet filter implementing per-IP sliding window rate limiting.
      *
-     * <p>Uses a Caffeine cache with automatic expiration to track request counts.
-     * Each entry expires 1 minute after creation, effectively creating a sliding
-     * window for rate limit enforcement.</p>
+     * <p>Uses a Caffeine cache with automatic expiration to track request counts. Each entry
+     * expires 1 minute after creation, effectively creating a sliding window for rate limit
+     * enforcement.
      */
     public static class RateLimiterFilter extends OncePerRequestFilter {
 
@@ -101,26 +106,29 @@ public class RateLimiterConfig {
         private final TrustedProxyResolver trustedProxyResolver;
 
         /**
-         * Cache mapping client IP addresses to their request counters.
-         * Entries expire 1 minute after creation (sliding window).
+         * Cache mapping client IP addresses to their request counters. Entries expire 1 minute
+         * after creation (sliding window).
          */
         private final Cache<String, AtomicLong> requestCounts;
 
-        public RateLimiterFilter(int maxRequestsPerMinute, boolean enabled,
-                                 TrustedProxyResolver trustedProxyResolver) {
+        public RateLimiterFilter(
+                int maxRequestsPerMinute,
+                boolean enabled,
+                TrustedProxyResolver trustedProxyResolver) {
             this.maxRequestsPerMinute = maxRequestsPerMinute;
             this.enabled = enabled;
             this.trustedProxyResolver = trustedProxyResolver;
-            this.requestCounts = Caffeine.newBuilder()
-                    .expireAfterWrite(Duration.ofMinutes(1))
-                    .maximumSize(10_000) // Limit memory usage
-                    .build();
+            this.requestCounts =
+                    Caffeine.newBuilder()
+                            .expireAfterWrite(Duration.ofMinutes(1))
+                            .maximumSize(10_000) // Limit memory usage
+                            .build();
         }
 
         @Override
-        protected void doFilterInternal(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        FilterChain filterChain) throws ServletException, IOException {
+        protected void doFilterInternal(
+                HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
 
             if (!enabled) {
                 filterChain.doFilter(request, response);
@@ -137,8 +145,11 @@ public class RateLimiterConfig {
             response.setHeader(HEADER_RATE_REMAINING, String.valueOf(remaining));
 
             if (currentCount > maxRequestsPerMinute) {
-                log.warn("Rate limit exceeded for IP '{}': {}/{} requests/min",
-                        clientIp, currentCount, maxRequestsPerMinute);
+                log.warn(
+                        "Rate limit exceeded for IP '{}': {}/{} requests/min",
+                        clientIp,
+                        currentCount,
+                        maxRequestsPerMinute);
                 response.setHeader(HEADER_RETRY_AFTER, "60");
                 sendRateLimitResponse(response);
                 return;
@@ -148,15 +159,13 @@ public class RateLimiterConfig {
         }
 
         /**
-         * Resolves the real client IP via {@link TrustedProxyResolver}.
-         * X-Forwarded-For is now only honoured when the immediate remote
-         * address is itself in the configured trusted-proxy CIDR list,
-         * defeating header-spoof bypass of the rate limit.
+         * Resolves the real client IP via {@link TrustedProxyResolver}. X-Forwarded-For is now only
+         * honoured when the immediate remote address is itself in the configured trusted-proxy CIDR
+         * list, defeating header-spoof bypass of the rate limit.
          */
         private String resolveClientIp(HttpServletRequest request) {
             return trustedProxyResolver.resolve(
-                    request.getRemoteAddr(),
-                    request.getHeader("X-Forwarded-For"));
+                    request.getRemoteAddr(), request.getHeader("X-Forwarded-For"));
         }
 
         /**
@@ -168,10 +177,10 @@ public class RateLimiterConfig {
         private void sendRateLimitResponse(HttpServletResponse response) throws IOException {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write(
-                    "{\"success\":false,\"error\":{\"code\":\"RATE_LIMIT_EXCEEDED\","
-                            + "\"message\":\"Too many requests. Please try again later.\"}}"
-            );
+            response.getWriter()
+                    .write(
+                            "{\"success\":false,\"error\":{\"code\":\"RATE_LIMIT_EXCEEDED\","
+                                    + "\"message\":\"Too many requests. Please try again later.\"}}");
         }
     }
 }

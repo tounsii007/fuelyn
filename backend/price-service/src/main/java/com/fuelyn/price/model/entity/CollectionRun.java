@@ -1,5 +1,7 @@
 package com.fuelyn.price.model.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,29 +10,30 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 
 /**
  * Audit record for a single price collection run.
  *
- * <p>Each time the scheduler (or a manual trigger) collects prices for a city,
- * a {@code CollectionRun} is persisted with timing, counts, and outcome status.
- * This table supports operational monitoring and diagnostics.</p>
+ * <p>Each time the scheduler (or a manual trigger) collects prices for a city, a {@code
+ * CollectionRun} is persisted with timing, counts, and outcome status. This table supports
+ * operational monitoring and diagnostics.
  */
 @Entity
 @Table(
-    name = "collection_runs",
-    indexes = {
-        @Index(name = "idx_run_started", columnList = "started_at"),
-        @Index(name = "idx_run_status", columnList = "status"),
-        @Index(name = "idx_run_city", columnList = "city")
-    }
-)
+        name = "collection_runs",
+        indexes = {
+            @Index(name = "idx_run_started", columnList = "started_at"),
+            @Index(name = "idx_run_status", columnList = "status"),
+            @Index(name = "idx_run_city", columnList = "city")
+        })
 public class CollectionRun {
 
     /** Auto-generated surrogate primary key, backed by a portable sequence. */
     @Id
-    @SequenceGenerator(name = "collectionRunsSeq", sequenceName = "collection_runs_seq", allocationSize = 50)
+    @SequenceGenerator(
+            name = "collectionRunsSeq",
+            sequenceName = "collection_runs_seq",
+            allocationSize = 50)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "collectionRunsSeq")
     private Long id;
 
@@ -62,11 +65,8 @@ public class CollectionRun {
     @Column(name = "city", length = 128)
     private String city;
 
-    /**
-     * Default constructor required by JPA.
-     */
-    public CollectionRun() {
-    }
+    /** Default constructor required by JPA. */
+    public CollectionRun() {}
 
     public Long getId() {
         return id;
@@ -134,12 +134,19 @@ public class CollectionRun {
 
     @Override
     public String toString() {
-        return "CollectionRun{" +
-                "id=" + id +
-                ", city='" + city + '\'' +
-                ", status='" + status + '\'' +
-                ", stationsCount=" + stationsCount +
-                ", pricesCount=" + pricesCount +
-                '}';
+        return "CollectionRun{"
+                + "id="
+                + id
+                + ", city='"
+                + city
+                + '\''
+                + ", status='"
+                + status
+                + '\''
+                + ", stationsCount="
+                + stationsCount
+                + ", pricesCount="
+                + pricesCount
+                + '}';
     }
 }

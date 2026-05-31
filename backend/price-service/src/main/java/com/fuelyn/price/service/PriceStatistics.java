@@ -13,16 +13,17 @@ import com.fuelyn.price.model.entity.PriceSnapshot;
 /**
  * Pure helpers that compute price statistics from in-memory snapshot lists.
  *
- * <p>Extracted from controllers and services so the math is testable in
- * isolation, has no Spring or database dependencies, and is portable across
- * H2 and Postgres (no dialect-specific SQL).
+ * <p>Extracted from controllers and services so the math is testable in isolation, has no Spring or
+ * database dependencies, and is portable across H2 and Postgres (no dialect-specific SQL).
  */
 public final class PriceStatistics {
 
     /** Default rounding precision: thousandths of a cent (3 decimal places). */
     public static final int PRICE_PRECISION = 1000;
+
     /** Trend half-window for "first" and "last" averages. */
     public static final int TREND_WINDOW = 3;
+
     /** Threshold (EUR/L) above which a trend is reported as "rising"/"falling". */
     public static final double TREND_THRESHOLD = 0.005;
 
@@ -68,9 +69,10 @@ public final class PriceStatistics {
         double firstAvg = avgRange(snapshots, 0, window);
         double lastAvg = avgRange(snapshots, n - window, n);
         double trend = lastAvg - firstAvg;
-        String trendLabel = trend > TREND_THRESHOLD
-                ? "rising"
-                : trend < -TREND_THRESHOLD ? "falling" : "stable";
+        String trendLabel =
+                trend > TREND_THRESHOLD
+                        ? "rising"
+                        : trend < -TREND_THRESHOLD ? "falling" : "stable";
 
         // Day-of-week aggregation (portable, computed in Java)
         EnumMap<DayOfWeek, double[]> dowAcc = new EnumMap<>(DayOfWeek.class);
@@ -131,14 +133,12 @@ public final class PriceStatistics {
     public record MinMaxStations(StationAverage cheapest, StationAverage mostExpensive) {}
 
     /**
-     * Single-pass O(n) variant for callers that only need the cheapest
-     * and most-expensive station average — i.e. the area-stats response
-     * which previously called {@link #stationAverages} (O(n log n) due
-     * to the sort) and then read just element 0 and element {@code n-1}.
+     * Single-pass O(n) variant for callers that only need the cheapest and most-expensive station
+     * average — i.e. the area-stats response which previously called {@link #stationAverages} (O(n
+     * log n) due to the sort) and then read just element 0 and element {@code n-1}.
      *
-     * <p>Returns {@link Optional#empty()} when the input has no usable
-     * snapshots, so callers can short-circuit cleanly without a special
-     * "no data" sentinel record.</p>
+     * <p>Returns {@link Optional#empty()} when the input has no usable snapshots, so callers can
+     * short-circuit cleanly without a special "no data" sentinel record.
      */
     public static Optional<MinMaxStations> cheapestAndMostExpensive(List<PriceSnapshot> snapshots) {
         if (snapshots == null || snapshots.isEmpty()) {
