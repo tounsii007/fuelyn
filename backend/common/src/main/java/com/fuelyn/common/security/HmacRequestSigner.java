@@ -24,7 +24,6 @@ import java.util.Base64;
  * prevents an attacker from replaying a captured request at a later time.</p>
  *
  * @see ServiceAuthFilter
- * @see SecureServiceClient
  */
 public final class HmacRequestSigner {
 

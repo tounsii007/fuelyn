@@ -1,8 +1,6 @@
 package com.fuelyn.gateway.filter;
 
 import com.fuelyn.gateway.config.FuelynProperties;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,21 +21,18 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Date;
 
 /**
- * Signs outbound requests to downstream services with HMAC-SHA256 and JWT.
+ * Signs outbound requests to downstream services with HMAC-SHA256.
  *
  * <p>Adds the following headers to every proxied request:</p>
  * <ul>
  *   <li>{@code X-Signature} — HMAC-SHA256(timestamp:body)</li>
  *   <li>{@code X-Timestamp} — epoch millis when signed</li>
  *   <li>{@code X-Service-Id} — "gateway"</li>
- *   <li>{@code Authorization} — Bearer JWT for service auth</li>
  * </ul>
  */
 @Component
@@ -48,7 +43,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
 
     private final String hmacSecret;
     private final String serviceId;
-    private final SecretKey jwtKey;
     /**
      * Hard ceiling on the size (bytes) of a request body we will buffer
      * for HMAC signing. Bodies above this limit are rejected with
@@ -64,8 +58,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
     ) {
         this.hmacSecret = properties.getSecurity().getHmacSecret();
         this.serviceId = properties.getSecurity().getServiceId();
-        this.jwtKey = Keys.hmacShaKeyFor(
-                properties.getSecurity().getJwtSecret().getBytes(StandardCharsets.UTF_8));
         this.maxSignedBodyBytes = maxSignedBodyBytes;
     }
 
@@ -79,7 +71,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
         }
 
         String timestamp = String.valueOf(System.currentTimeMillis());
-        String jwt = generateServiceToken();
 
         // For requests with body (POST/PUT), read and sign the body
         if (exchange.getRequest().getMethod() != null &&
@@ -109,7 +100,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
                                 .header("X-Signature", signature)
                                 .header("X-Timestamp", timestamp)
                                 .header("X-Service-Id", serviceId)
-                                .header("Authorization", "Bearer " + jwt)
                                 .build();
 
                         // Re-wrap body since we consumed it
@@ -134,7 +124,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
                 .header("X-Signature", signature)
                 .header("X-Timestamp", timestamp)
                 .header("X-Service-Id", serviceId)
-                .header("Authorization", "Bearer " + jwt)
                 .build();
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
@@ -153,19 +142,6 @@ public class HmacSigningFilter implements GlobalFilter, Ordered {
             log.error("HMAC signing failed: {}", e.getMessage());
             throw new RuntimeException("HMAC signing failed", e);
         }
-    }
-
-    private String generateServiceToken() {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + 15L * 60L * 1000L);
-
-        return Jwts.builder()
-                .subject(serviceId)
-                .claim("type", "service")
-                .issuedAt(now)
-                .expiration(expiration)
-                .signWith(jwtKey)
-                .compact();
     }
 
     @Override

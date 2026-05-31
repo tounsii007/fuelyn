@@ -33,7 +33,6 @@ class HmacSigningFilterTest {
     void setUp() {
         props = new FuelynProperties();
         props.getSecurity().setHmacSecret("unit-test-secret-32+chars-for-hmac-signing");
-        props.getSecurity().setJwtSecret("unit-test-jwt-secret-min-32-chars-for-hs256-signing");
         props.getSecurity().setServiceId("gateway-test");
     }
 
@@ -80,8 +79,6 @@ class HmacSigningFilterTest {
                     .isNotNull().matches("[0-9]+");
             assertThat(downstream.get().getRequest().getHeaders().getFirst("X-Service-Id"))
                     .isEqualTo("gateway-test");
-            assertThat(downstream.get().getRequest().getHeaders().getFirst("Authorization"))
-                    .startsWith("Bearer ");
         }
     }
 

@@ -145,17 +145,26 @@ npm install
 # Backend bauen + testen
 cd backend && mvn clean install
 
-# Web-App
+# Web-BFF-Datenbank: eigene `fuelyn_web`-Postgres auf :25432. Der
+# Dev-Compose-Service legt die DB beim ersten Start automatisch an.
+docker compose -f docker-compose.dev.yml up -d postgres
+
+# Web-App (erwartet Postgres auf localhost:25432 — siehe apps/web/.env.example)
 npm run dev:web   # http://localhost:3000
 ```
+
+Die Web-BFF persistiert seit der Postgres-Umstellung in eine **eigene
+logische DB `fuelyn_web`** (Prisma + `@prisma/adapter-pg`) — getrennt
+von der Flyway-verwalteten Backend-DB `fuelyn`, beide auf demselben
+Postgres-Container. `DATABASE_URL` wird in `docker-compose.dev.yml`
+gesetzt; bare-metal liest `npm run dev:web` den localhost-Default aus
+`apps/web/.env.example`. Die Unit-Tests brauchen **keine** laufende DB.
 
 Mindest-ENV für ein Java-Service-Start (Backend verweigert Boot bei
 Placeholders/zu kurz/zu wenig Entropie):
 
 ```bash
 export HMAC_SECRET="$(openssl rand -hex 32)"
-export JWT_PUBLIC_KEY="$(awk '{printf \"%s\\n\",$0}' public.pem)"
-export JWT_PRIVATE_KEY="$(awk '{printf \"%s\\n\",$0}' private.pem)"
 export TANKERKOENIG_API_KEY=...
 ```
 
@@ -188,14 +197,14 @@ GitHub Actions führt bei jedem Push/PR aus:
 - Vitest + Coverage-Gates (core + web) — `--coverage` erzwingt die Schwellwerte aus den `vitest.config.ts` (Regressions-Floor)
 - Spotless (Java-Format-Check)
 - Maven test (alle Backend-Module)
-- Docker-Build-Smoke-Test (auf PRs)
+- Docker-Build-Smoke-Test aller Images — web + gateway + price-service + ai-service (auf PRs, Matrix)
 
 ## Sicherheit
 
 | Schicht | Maßnahme |
 |---------|----------|
 | **Secrets**           | Entropy + Letter-Run-Policy lehnt Placeholder ab |
-| **JWT**               | RS256 (asymmetrisch); Verify-only Mode für nicht-issuende Services |
+| **Service-Auth**      | HMAC-SHA256 (timestamp:body), Replay-Schutz (5 min), Body-Cap |
 | **CRON-Endpunkte**    | `timingSafeEqual` (Node `crypto`) |
 | **CSP / HSTS**        | Edge-Middleware; per-Request Nonce |
 | **Rate Limit**        | Lazy-Sweep In-Memory + Trusted-Proxy-Opt-in |

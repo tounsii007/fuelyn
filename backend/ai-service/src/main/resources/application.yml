@@ -40,8 +40,6 @@ spring:
 fuelyn:
   security:
     hmac-secret: ${HMAC_SECRET:}
-    jwt-public-key: ${JWT_PUBLIC_KEY:}
-    jwt-private-key: ${JWT_PRIVATE_KEY:}
     service-id: ai-service
 
   # ─── Regret-loop telemetry ──────────────────────────────────

@@ -17,15 +17,10 @@ import com.fuelyn.common.security.SecretPolicy;
  * Externalized security configuration properties shared across Fuelyn services.
  *
  * <p>Bound to the {@code fuelyn.security} prefix in {@code application.yml}.
- * Provides the HMAC shared secret, an asymmetric JWT key pair, service identity,
- * and API key lists.
+ * Provides the HMAC shared secret, service identity, and API key lists.
  *
  * <p>All secrets MUST be provided via environment variables. {@link SecretPolicy}
  * rejects weak or placeholder values at startup.
- *
- * <p>JWT keys are intentionally asymmetric (RS256): only the issuing service holds
- * the private key, while all verifiers share only the public key. This contains
- * the blast radius if a single service is compromised.
  */
 @Component
 @ConfigurationProperties(prefix = "fuelyn.security")
@@ -38,16 +33,7 @@ public class SecurityProperties {
             message = "HMAC secret must be at least 32 characters")
     private String hmacSecret;
 
-    /** RSA public key (PEM, PKCS#8, or SPKI). Used by all services to verify JWTs. */
-    private String jwtPublicKey;
-
-    /**
-     * RSA private key (PEM, PKCS#8). Only services that issue tokens need this;
-     * verify-only services can leave it blank.
-     */
-    private String jwtPrivateKey;
-
-    /** Identifier of the current microservice (used in signed headers and JWT sub). */
+    /** Identifier of the current microservice (used in signed headers). */
     @NotBlank
     private String serviceId = "unknown-service";
 
@@ -66,19 +52,6 @@ public class SecurityProperties {
     void validateSecrets() {
         SecretPolicy.requireStrong("fuelyn.security.hmac-secret", hmacSecret);
 
-        if (jwtPublicKey == null || jwtPublicKey.isBlank()) {
-            throw new IllegalStateException(
-                    "Refusing to start: fuelyn.security.jwt-public-key is not set. "
-                            + "Generate with `openssl genrsa -out key.pem 2048` then "
-                            + "`openssl rsa -in key.pem -pubout` for the public key.");
-        }
-        // Private key is optional (verify-only services). If present, it must be non-trivial.
-        if (jwtPrivateKey != null && !jwtPrivateKey.isBlank()) {
-            if (jwtPrivateKey.length() < 256) {
-                throw new IllegalStateException(
-                        "fuelyn.security.jwt-private-key is too short to be a real RSA key.");
-            }
-        }
         for (int i = 0; i < apiKeys.size(); i++) {
             String key = apiKeys.get(i);
             if (key != null && !key.isBlank()) {
@@ -93,22 +66,6 @@ public class SecurityProperties {
 
     public void setHmacSecret(String hmacSecret) {
         this.hmacSecret = hmacSecret;
-    }
-
-    public String getJwtPublicKey() {
-        return jwtPublicKey;
-    }
-
-    public void setJwtPublicKey(String jwtPublicKey) {
-        this.jwtPublicKey = jwtPublicKey;
-    }
-
-    public String getJwtPrivateKey() {
-        return jwtPrivateKey;
-    }
-
-    public void setJwtPrivateKey(String jwtPrivateKey) {
-        this.jwtPrivateKey = jwtPrivateKey;
     }
 
     public String getServiceId() {
