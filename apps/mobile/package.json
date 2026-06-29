@@ -13,10 +13,10 @@
   "dependencies": {
     "@fuelyn/core": "*",
     "@react-native-async-storage/async-storage": "3.1.1",
-    "@react-navigation/bottom-tabs": "^7.18.2",
+    "@react-navigation/bottom-tabs": "^7.18.3",
     "@react-navigation/native": "^7.3.3",
-    "@react-navigation/native-stack": "^7.17.5",
-    "@tanstack/react-query": "^5.101.0",
+    "@react-navigation/native-stack": "^7.17.6",
+    "@tanstack/react-query": "^5.101.2",
     "expo": "^56.0.12",
     "expo-location": "^56.0.18",
     "expo-status-bar": "^56.0.4",

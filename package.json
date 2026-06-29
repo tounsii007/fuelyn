@@ -30,12 +30,12 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^10.5.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.6.0",
+    "globals": "^17.7.0",
     "husky": "9.1.7",
-    "lint-staged": "^17.0.7",
-    "turbo": "^2.9.18",
+    "lint-staged": "^17.0.8",
+    "turbo": "^2.10.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.1"
+    "typescript-eslint": "^8.62.0"
   },
   "overrides": {
     "postcss": "^8.5.10",
