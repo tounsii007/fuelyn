@@ -54,7 +54,7 @@ export const en: TranslationKeys = {
     stations: 'Stations',
     distance: 'Distance',
     myLocation: 'My location',
-    centerOnLocation: 'Center on location',
+    centerOnLocation: 'Centre on location',
     refreshPrices: 'Refresh prices',
     styleAria: 'Map style',
     legendBest: 'Best',
@@ -111,11 +111,11 @@ export const en: TranslationKeys = {
   },
 
   reachability: {
-    safe: 'Safely reachable',
-    tight: 'Barely reachable',
-    unreachable: 'Not reachable',
+    safe: 'Easily in range',
+    tight: 'Only just in range',
+    unreachable: 'Out of range',
     withCurrentFuel: 'with current fuel',
-    fuelCostToReach: 'Estimated fuel cost to reach',
+    fuelCostToReach: 'Estimated cost to get there',
   },
 
   recommendation: {
@@ -145,7 +145,7 @@ export const en: TranslationKeys = {
   },
 
   vehicle: {
-    title: 'Vehicle data',
+    title: 'Vehicle details',
     pageTitle: 'Vehicle',
     name: 'Vehicle name',
     namePlaceholder: 'e.g. My Golf',
@@ -185,7 +185,7 @@ export const en: TranslationKeys = {
     fuelLevelPlaceholderLiters: 'e.g. 25',
     fuelLevelPlaceholderPercent: 'e.g. 50',
     saveVehicle: 'Save vehicle',
-    noVehicle: 'No vehicle configured',
+    noVehicle: 'No vehicle added yet',
     addVehicle: 'Add vehicle',
     editVehicle: 'Edit vehicle',
   },
@@ -238,7 +238,7 @@ export const en: TranslationKeys = {
     permissionMessage: 'Fuelyn uses your location to find nearby petrol stations.',
     permissionDenied: 'Location access denied',
     permissionDeniedHint: 'Please allow location access in settings or search for a location manually.',
-    searchPlaceholder: 'Enter city, ZIP code, or place...',
+    searchPlaceholder: 'Enter town, postcode or city...',
     useCurrentLocation: 'Use current location',
     locating: 'Locating...',
   },
@@ -269,7 +269,7 @@ export const en: TranslationKeys = {
   },
 
   offline: {
-    banner: 'Offline \u2014 Showing cached data',
+    banner: 'Offline \u2014 showing cached data',
     backOnline: 'Back online',
     cachedData: 'Showing cached data',
     syncPending: 'Update pending',
@@ -301,7 +301,7 @@ export const en: TranslationKeys = {
   },
 
   compare: {
-    trayLabel: 'selected for compare',
+    trayLabel: 'selected to compare',
     cta: 'Compare',
     clearAll: 'Clear compare',
     addedHint: 'Add to compare',
@@ -325,7 +325,7 @@ export const en: TranslationKeys = {
     accuracyLabel: 'Accuracy',
     forgetLocation: 'Forget stored location',
     forgetLocationDesc:
-      'Resets your position. The next load will fetch a fresh fix.',
+      'Resets your position. Detected fresh next time you open the app.',
   },
 
   bestDeal: {
@@ -371,8 +371,8 @@ export const en: TranslationKeys = {
     pausedShort: 'paused',
     bulkActivate: 'Activate all',
     bulkPause: 'Pause all',
-    bulkActivateTitle: 'Activate all alarms',
-    bulkPauseTitle: 'Temporarily pause all alarms',
+    bulkActivateTitle: 'Activate all alerts',
+    bulkPauseTitle: 'Temporarily pause all alerts',
     pageTitle: 'Price alerts',
     newAlertCta: 'New alert',
     newAlertHeading: 'New price alert',
@@ -385,9 +385,9 @@ export const en: TranslationKeys = {
     footnote: 'Alerts are re-checked the next time the app opens.',
     under: 'under',
     createdAt: 'Created on',
-    toggleEnable: 'Enable alarm',
-    toggleDisable: 'Disable alarm',
-    removeAria: 'Delete alarm',
+    toggleEnable: 'Enable alert',
+    toggleDisable: 'Disable alert',
+    removeAria: 'Delete alert',
   },
 
   moreMenu: {
@@ -425,7 +425,7 @@ export const en: TranslationKeys = {
     themeDarkShort: 'Dark',
     themeSystemShort: 'System',
     forgetLocation: 'Forget saved location',
-    forgetLocationDesc: 'Resets your position. Next time the app opens it will be detected fresh.',
+    forgetLocationDesc: 'Resets your position — it\'s detected fresh next time you open the app.',
     exportStarted: 'Export started',
     exportFailed: 'Export failed',
     importSuccess: 'Import successful',
@@ -468,9 +468,9 @@ export const en: TranslationKeys = {
     roundTrip: 'Round trip',
     modeRoad: 'Road distance',
     modeAir: 'Air distance',
-    needsRefuel: 'You need ~{fills} tank fills — plan a stop.',
+    needsRefuel: 'You\'ll need ~{fills} fill-ups — plan a stop.',
     assumesPrice: 'Assumes {price}/L (30-day regional average)',
-    needsVehicle: 'Add your vehicle to compute fuel costs.',
+    needsVehicle: 'Add your vehicle to work out fuel costs.',
   },
 
   memberships: {
@@ -541,7 +541,7 @@ export const en: TranslationKeys = {
       'saved-500':            { label: '€500 saved',          desc: 'Pro tier.' },
       'co2-220':              { label: '10 trees offset',     desc: '220 kg CO₂ tracked.' },
       'co2-1100':             { label: '50 trees offset',     desc: 'A small grove.' },
-      'brands-3':             { label: 'Brand switcher',      desc: 'Fueled at 3 different brands.' },
+      'brands-3':             { label: 'Brand switcher',      desc: 'Fuelled at 3 different brands.' },
       'stations-5':           { label: 'Station tester',      desc: 'Visited 5 different stations.' },
       'stations-15':          { label: 'Station tourist',     desc: 'Visited 15 different stations.' },
       'smart-time-of-day':    { label: 'Early bird / night owl', desc: 'At least one fill before 8 a.m. or after 8 p.m.' },
@@ -683,7 +683,7 @@ export const en: TranslationKeys = {
   offset: {
     eyebrow: 'Carbon offset',
     title: 'Offset your footprint',
-    subtitle: '{tons} tons of CO₂ total ({kg} kg) — offsetable through these providers:',
+    subtitle: '{tons} tonnes of CO₂ in total ({kg} kg) — offset through these providers:',
     cheapestLabel: 'Cheapest',
     permanenceLabel: 'Highest permanence',
     purchaseCta: 'Offset now ↗',
@@ -700,7 +700,7 @@ export const en: TranslationKeys = {
     daysRemaining: '{days} days left',
     monthlyLabel: 'Monthly',
     annualLabel: 'Annual',
-    annualSavingsBadge: '−37 % vs monthly',
+    annualSavingsBadge: '−37 % vs. monthly',
     feeDisclaimer: 'Auto-renews — cancel anytime.',
     upgradeCta: 'Unlock Premium',
     lockedDesc: 'This feature is part of Fuelyn Premium.',
@@ -734,7 +734,7 @@ export const en: TranslationKeys = {
     bankUnknown: 'Unknown',
     andMore: '… and {n} more',
     confirmCta: 'Import {n} entries',
-    successTitle: 'Bank import done',
+    successTitle: 'Bank import complete',
     successDesc: '{imported} imported · {duplicates} duplicates · {scanned} rows scanned.',
     errorTitle: 'Could not read CSV',
   },
@@ -763,7 +763,7 @@ export const en: TranslationKeys = {
 
   accountDelete: {
     title: 'Delete account',
-    desc: 'Removes your account and all stored data — permanent.',
+    desc: 'Permanently removes your account and all your stored data.',
     openCta: 'Delete account …',
     confirmLabel: 'Type "{phrase}" to confirm.',
     confirmCta: 'Delete forever',
@@ -775,7 +775,7 @@ export const en: TranslationKeys = {
   },
 
   dashboardCustomizer: {
-    title: 'Customize dashboard',
+    title: 'Customise dashboard',
     desc: 'Order & visibility of the sidebar cards.',
     reset: 'Default',
     moveUp: 'Move up',
@@ -801,7 +801,7 @@ export const en: TranslationKeys = {
     statusParsing: 'Parsing …',
     errorPrefix: 'Error',
     errorGeneric: 'Photo could not be read.',
-    readTitle: 'Display recognized',
+    readTitle: 'Display recognised',
     readDesc: 'Detected price: {price} €/L · {percent}% confidence.',
     unreadableTitle: 'Display unreadable',
     unreadableDesc: 'Please type the price manually.',
@@ -848,7 +848,7 @@ export const en: TranslationKeys = {
   },
 
   miscAria: {
-    searchRunning: 'Search running',
+    searchRunning: 'Search in progress',
     inputClear: 'Clear input',
     filterOpen: 'Open filter',
     notificationClose: 'Dismiss notification',
@@ -1007,7 +1007,7 @@ export const en: TranslationKeys = {
     featureSmartTitle: 'Smart pick',
     featureSmartBody: 'Not just the cheapest — the smartest station for your route.',
     featureMarketTitle: 'Market context',
-    featureMarketBody: '±p vs. avg for every station. Knowing what cheap actually means.',
+    featureMarketBody: '±ct vs. avg for every station. Know what cheap really means.',
     featureBestTimeTitle: 'Best time',
     featureBestTimeBody: 'When it usually gets cheaper — by weekday and hour.',
     privacyNote:

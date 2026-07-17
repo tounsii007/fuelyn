@@ -117,7 +117,7 @@ export const enUS: TranslationKeys = {
   },
 
   reachability: {
-    safe: 'Safely reachable',
+    safe: 'Comfortably in range',
     tight: 'Just within range',
     unreachable: 'Out of range',
     withCurrentFuel: 'on remaining fuel',
@@ -309,10 +309,10 @@ export const enUS: TranslationKeys = {
   compare: {
     trayLabel: 'selected for compare',
     cta: 'Compare',
-    clearAll: 'Clear compare',
+    clearAll: 'Clear all',
     addedHint: 'Add to compare',
     removeHint: 'Remove from compare',
-    full: 'Compare full (3/3)',
+    full: 'Comparison full (3/3)',
   },
 
   liveGps: {
@@ -320,7 +320,7 @@ export const enUS: TranslationKeys = {
     toggleTitle: 'Track live location',
     toggleDesc:
       'Auto-updates your position as you move so distances and ' +
-      'ordering keep refreshing. Uses more battery — off by default.',
+      'order stay current. Uses more battery — off by default.',
     permission: 'Permission',
     permissionGranted: 'Granted',
     permissionDenied: 'Denied',
@@ -387,7 +387,7 @@ export const enUS: TranslationKeys = {
     createCta: 'Create',
     emptyTitle: 'No price alerts yet',
     emptyMessage:
-      'Add an alert and we’ll ping you when the price drops under your target.',
+      'Add an alert and we’ll ping you when the price drops below your target.',
     footnote: 'Alerts are re-checked the next time you open the app.',
     under: 'under',
     createdAt: 'Created',
@@ -431,7 +431,7 @@ export const enUS: TranslationKeys = {
     themeDarkShort: 'Dark',
     themeSystemShort: 'System',
     forgetLocation: 'Forget saved location',
-    forgetLocationDesc: 'Resets your position. Next time you open the app it’ll be detected fresh.',
+    forgetLocationDesc: 'Resets your position. We’ll find it again next time you open the app.',
     exportStarted: 'Export started',
     exportFailed: 'Export failed',
     importSuccess: 'Import successful',
@@ -474,14 +474,14 @@ export const enUS: TranslationKeys = {
     roundTrip: 'Round trip',
     modeRoad: 'Road distance',
     modeAir: 'Air distance',
-    needsRefuel: 'You need ~{fills} tank fills — plan a stop.',
+    needsRefuel: 'You’ll need ~{fills} fill-ups — plan a stop.',
     assumesPrice: 'Assumes {price}/L (30-day regional average)',
-    needsVehicle: 'Add your vehicle to compute fuel costs.',
+    needsVehicle: 'Add your vehicle to estimate fuel costs.',
   },
 
   memberships: {
     title: 'Loyalty cards',
-    subtitle: 'Activate your cards — effective prices factor in the discount automatically.',
+    subtitle: 'Activate your cards — the discount is baked into your effective price automatically.',
     cards: {
       'aral-klubkarte':   { label: 'Aral Klubkarte' },
       'shell-clubsmart':  { label: 'Shell ClubSmart' },
@@ -498,7 +498,7 @@ export const enUS: TranslationKeys = {
     scenario: {
       'switch-to-hybrid':       { title: 'With a hybrid', desc: '~30% lower consumption.' },
       'switch-to-ev':           { title: 'With an EV', desc: '~18 kWh/100 km at €0.45/kWh.' },
-      'switch-to-diesel':       { title: 'With a diesel', desc: 'Lower fuel duty + ~15% lower consumption.' },
+      'switch-to-diesel':       { title: 'With a diesel', desc: 'Lower fuel tax + ~15% lower consumption.' },
       'switch-to-e10':          { title: 'On E10 instead of E5', desc: '~1.5% cheaper, ~1.5% more consumption.' },
       'fill-at-best-station':   { title: 'At the cheapest station', desc: 'Always the lowest pump nearby, every fill.' },
       'fill-before-8am':        { title: 'Filling before 8 a.m.', desc: 'Consistently in the morning cheap window.' },
@@ -689,7 +689,7 @@ export const enUS: TranslationKeys = {
   offset: {
     eyebrow: 'Carbon offset',
     title: 'Offset your footprint',
-    subtitle: '{tons} tons of CO₂ total ({kg} kg) — offsetable through these providers:',
+    subtitle: '{tons} tons of CO₂ total ({kg} kg) — offset it through these providers:',
     cheapestLabel: 'Cheapest',
     permanenceLabel: 'Highest permanence',
     purchaseCta: 'Offset now ↗',
@@ -706,7 +706,7 @@ export const enUS: TranslationKeys = {
     daysRemaining: '{days} days left',
     monthlyLabel: 'Monthly',
     annualLabel: 'Annual',
-    annualSavingsBadge: '−37 % vs monthly',
+    annualSavingsBadge: '−37% vs. monthly',
     feeDisclaimer: 'Auto-renews — cancel anytime.',
     upgradeCta: 'Unlock Premium',
     lockedDesc: 'This feature is part of Fuelyn Premium.',
@@ -740,7 +740,7 @@ export const enUS: TranslationKeys = {
     bankUnknown: 'Unknown',
     andMore: '… and {n} more',
     confirmCta: 'Import {n} entries',
-    successTitle: 'Bank import done',
+    successTitle: 'Bank import complete',
     successDesc: '{imported} imported · {duplicates} duplicates · {scanned} rows scanned.',
     errorTitle: 'Could not read CSV',
   },
@@ -769,7 +769,7 @@ export const enUS: TranslationKeys = {
 
   accountDelete: {
     title: 'Delete account',
-    desc: 'Removes your account and all stored data — permanent.',
+    desc: 'Permanently removes your account and all stored data.',
     openCta: 'Delete account …',
     confirmLabel: 'Type "{phrase}" to confirm.',
     confirmCta: 'Delete forever',
@@ -790,7 +790,7 @@ export const enUS: TranslationKeys = {
 
   vehicleManager: {
     title: 'Your vehicles',
-    subtitle: 'Pick the active vehicle — all calculations follow it.',
+    subtitle: 'Pick the active vehicle — all calculations use it.',
     add: 'Add vehicle',
     delete: 'Remove',
     confirmDelete: 'Remove?',
@@ -799,24 +799,24 @@ export const enUS: TranslationKeys = {
   },
 
   pumpPhoto: {
-    cta: 'Photo of the pump display',
+    cta: 'Scan the pump display',
     busyCta: 'Reading …',
     pickAria: 'Pick a pump photo',
     statusLoadingEngine: 'Loading OCR engine …',
     statusRecognizing: 'Reading display —',
     statusParsing: 'Parsing …',
     errorPrefix: 'Error',
-    errorGeneric: 'Photo could not be read.',
+    errorGeneric: 'Could not read the photo.',
     readTitle: 'Display recognized',
     readDesc: 'Detected price: {price} €/L · {percent}% confidence.',
     unreadableTitle: 'Display unreadable',
-    unreadableDesc: 'Please type the price manually.',
+    unreadableDesc: 'Please enter the price manually.',
   },
 
   borderCrossing: {
     eyebrow: 'Border in range',
     hint: 'You can save about {ctPerL}¢/L on {fuel} just across the border.',
-    savingPerL: 'Estimated saving per liter',
+    savingPerL: 'Estimated savings per liter',
     savingPerFill: 'Per fill-up',
     disclaimer: 'Estimate based on EU market data — not live station prices.',
     liveBadge: 'Live price',
@@ -920,7 +920,7 @@ export const enUS: TranslationKeys = {
     formTitle: 'New location alert',
     cancelAria: 'Cancel',
     labelLabel: 'Name (optional)',
-    labelPlaceholder: 'e.g. Costco on the way home',
+    labelPlaceholder: 'e.g., Costco on the way home',
     locationLabel: 'Location',
     currentLocation: 'Current location',
     currentLocationUnavailable: 'Current location (unavailable)',
@@ -1013,7 +1013,7 @@ export const enUS: TranslationKeys = {
     featureSmartTitle: 'Smart pick',
     featureSmartBody: 'Not just the cheapest — the smartest station for your route.',
     featureMarketTitle: 'Market context',
-    featureMarketBody: '±¢ vs. avg for every station. Knowing what cheap actually means.',
+    featureMarketBody: '±¢ vs. avg for every station. Know what cheap really means.',
     featureBestTimeTitle: 'Best time',
     featureBestTimeBody: 'When it typically gets cheaper — by weekday and hour.',
     privacyNote:

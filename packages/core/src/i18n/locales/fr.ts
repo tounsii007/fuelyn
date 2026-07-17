@@ -73,7 +73,7 @@ export const fr: TranslationKeys = {
     h2Available: 'Disponible',
     h2Unavailable: 'Indisponible',
     gasFallbackName: 'Station GPL/GNV',
-    pinDropToastPrefix: 'Centre de recherche mis à jour',
+    pinDropToastPrefix: 'Centre de recherche défini',
   },
 
   prices: {
@@ -265,7 +265,7 @@ export const fr: TranslationKeys = {
     step1Title: 'Partagez votre position',
     step1Text: 'Nous afficherons les stations à proximité.',
     step2Title: 'Renseignez votre véhicule',
-    step2Text: 'Optionnel : indiquez votre consommation pour des recommandations personnalisées.',
+    step2Text: 'Facultatif : indiquez votre consommation pour des recommandations personnalisées.',
     step3Title: 'Faites le plein malin',
     step3Text: 'Nous prenons en compte le prix, la distance et votre autonomie.',
     skip: 'Passer',
@@ -296,7 +296,7 @@ export const fr: TranslationKeys = {
     withYourVehicle: 'Avec votre véhicule',
     fullTank: 'Plein',
     fuelCostRoundTrip: 'Carburant aller-retour',
-    fullRange: 'Autonomie plein',
+    fullRange: 'Autonomie au plein',
     bestChoice: 'MEILLEUR CHOIX',
     cheapestChip: 'le moins cher',
     belowAvg: 'ct sous la moy.',
@@ -331,7 +331,7 @@ export const fr: TranslationKeys = {
     accuracyLabel: 'Précision',
     forgetLocation: 'Oublier la position enregistrée',
     forgetLocationDesc:
-      'Réinitialise votre position. Au prochain chargement, elle sera redéterminée.',
+      'Réinitialise votre position. À la prochaine ouverture, elle sera redéterminée.',
   },
 
   bestDeal: {
@@ -378,7 +378,7 @@ export const fr: TranslationKeys = {
     bulkActivate: 'Tout activer',
     bulkPause: 'Tout mettre en pause',
     bulkActivateTitle: 'Activer toutes les alertes',
-    bulkPauseTitle: 'Mettre en pause toutes les alertes temporairement',
+    bulkPauseTitle: 'Mettre temporairement toutes les alertes en pause',
     pageTitle: 'Alertes prix',
     newAlertCta: 'Nouvelle alerte',
     newAlertHeading: 'Nouvelle alerte prix',
@@ -461,7 +461,7 @@ export const fr: TranslationKeys = {
     rationale: {
       'down-trending': 'Les prix baissent — attendez si possible.',
       'up-trending': 'Les prix montent — faites le plein aujourd’hui.',
-      'stable-with-pattern': 'Stable — suivez le motif journalier.',
+      'stable-with-pattern': 'Stable — suivez la tendance habituelle.',
       'insufficient-data': 'Pas encore assez de données pour prévoir.',
     },
   },
@@ -534,20 +534,20 @@ export const fr: TranslationKeys = {
     items: {
       'first-fill':           { label: 'Premier plein',         desc: 'Votre toute première entrée.' },
       'fills-10':             { label: '10 pleins',             desc: 'Vous êtes sérieux.' },
-      'fills-50':             { label: '50 pleins',             desc: 'Statut utilisateur régulier.' },
+      'fills-50':             { label: '50 pleins',             desc: 'Statut d’habitué.' },
       'fills-100':            { label: '100 pleins',            desc: 'Cent passages à la pompe.' },
-      'liters-500':           { label: '500 litres faits',      desc: 'Une demi-tonne de carburant.' },
-      'liters-2000':          { label: '2 000 litres faits',    desc: 'Toute une saison.' },
+      'liters-500':           { label: '500 litres à la pompe',      desc: 'Une demi-tonne de carburant.' },
+      'liters-2000':          { label: '2 000 litres à la pompe',    desc: 'Toute une saison.' },
       'streak-3':             { label: 'Série maline : 3',      desc: '3 pleins d’affilée sous le marché.' },
       'streak-7':             { label: 'Série maline : 7',      desc: 'Une semaine de timing parfait.' },
-      'streak-14':            { label: 'Série maline : 14',     desc: 'Deux semaines d’affaires.' },
+      'streak-14':            { label: 'Série maline : 14',     desc: 'Deux semaines de bonnes affaires.' },
       'saved-10':             { label: '10 € économisés',       desc: 'Premières vraies économies.' },
       'saved-50':             { label: '50 € économisés',       desc: 'Une semaine de courses.' },
       'saved-100':            { label: '100 € économisés',      desc: 'Premières économies à trois chiffres.' },
       'saved-500':            { label: '500 € économisés',      desc: 'Niveau pro.' },
       'co2-220':              { label: '10 arbres compensés',   desc: '220 kg de CO₂ suivis.' },
       'co2-1100':             { label: '50 arbres compensés',   desc: 'Un petit bosquet.' },
-      'brands-3':             { label: 'Changeur de marques',   desc: 'Plein chez 3 marques différentes.' },
+      'brands-3':             { label: 'Multi-marques',   desc: 'Plein chez 3 marques différentes.' },
       'stations-5':           { label: 'Testeur de stations',   desc: '5 stations différentes visitées.' },
       'stations-15':          { label: 'Touriste des stations', desc: '15 stations différentes visitées.' },
       'smart-time-of-day':    { label: 'Lève-tôt / couche-tard',desc: 'Au moins un plein avant 8 h ou après 20 h.' },
@@ -578,7 +578,7 @@ export const fr: TranslationKeys = {
     subtitle: 'Jour × heure · {count} relevés',
     bestLabel: 'Créneau le moins cher',
     worstLabel: 'Créneau le plus cher',
-    empty: 'Aucun relevé de prix encore. Explorez la carte quelques jours, votre motif apparaîtra ici.',
+    empty: 'Aucun relevé de prix pour l’instant. Explorez la carte quelques jours et votre tendance apparaîtra ici.',
     confidence: {
       high: 'forte confiance',
       medium: 'confiance moyenne',
@@ -608,11 +608,11 @@ export const fr: TranslationKeys = {
     statSkipped: 'Erreurs',
     showSkipped: 'Afficher les lignes ignorées',
     row: 'Ligne',
-    andMore: '… et {n} de plus',
+    andMore: '… et {n} autres',
     confirmCta: 'Importer {n} entrées',
     successTitle: 'Import terminé',
     successDesc: '{imported} importés, {duplicates} doublons ignorés, {skipped} lignes avec erreurs.',
-    errorTitle: 'CSV illisible',
+    errorTitle: 'Impossible de lire le CSV',
   },
 
   receiptScanner: {
@@ -630,8 +630,8 @@ export const fr: TranslationKeys = {
 
   aiChat: {
     title: 'Assistant Fuelyn',
-    subtitle: 'Posez vos questions sur les prix, trajets, économies',
-    emptyTitle: 'Bonjour ! Comment puis-je aider ?',
+    subtitle: 'Posez vos questions : prix, trajets, économies',
+    emptyTitle: 'Bonjour ! Comment puis-je vous aider ?',
     emptyBody: 'Demandez les stations les moins chères, le meilleur moment pour faire le plein, ou une stratégie pour un long trajet.',
     suggestionCheap: 'Où trouver le diesel le moins cher aujourd’hui ?',
     suggestionTime: 'Quand devrais-je faire le plein ?',
@@ -695,12 +695,12 @@ export const fr: TranslationKeys = {
     purchaseCta: 'Compenser ↗',
     unlockCta: 'Compenser avec Premium',
     showAll: 'Voir tous les fournisseurs',
-    premiumHint: 'Les liens d\'achat direct sont débloqués avec Premium — sinon aperçu seulement.',
+    premiumHint: 'Les liens d’achat direct sont débloqués avec Premium — sinon, aperçu uniquement.',
   },
 
   premium: {
     eyebrow: 'Fuelyn Premium',
-    statusFree: 'Plan gratuit',
+    statusFree: 'Version gratuite',
     statusActive: 'Premium actif',
     activeBadge: 'Actif',
     daysRemaining: '{days} jours restants',
@@ -713,7 +713,7 @@ export const fr: TranslationKeys = {
     errorTitle: 'Échec du paiement',
     stubTitle: 'Premium activé (mode dev)',
     stubDesc: 'Aucune clé Stripe configurée — premium activé localement.',
-    managePortalCta: 'Gérer l\'abonnement',
+    managePortalCta: 'Gérer l’abonnement',
     featureTitles: {
       'ai-chat-pro':           'Chat IA illimité',
       'price-prediction-7d':   'Prévision 7 jours',
@@ -730,9 +730,9 @@ export const fr: TranslationKeys = {
 
   bankImport: {
     title: 'Importer un relevé bancaire',
-    desc: 'CSV de votre banque (DKB / Sparkasse / ING / N26) → journal de plein',
-    cta: 'Choisir CSV',
-    busyCta: 'Lecture …',
+    desc: 'CSV de votre banque (DKB / Sparkasse / ING / N26) → journal carburant',
+    cta: 'Choisir un CSV',
+    busyCta: 'Lecture…',
     pickAria: 'Choisir le CSV bancaire',
     statBank: 'Banque',
     statFound: 'Trouvés',
@@ -747,7 +747,7 @@ export const fr: TranslationKeys = {
 
   walletPass: {
     cta: 'Ajouter à Wallet',
-    loading: 'Construction …',
+    loading: 'Création…',
     successTitle: 'Pass Wallet prêt',
     successDesc: 'Le fichier du pass a été téléchargé.',
     errorTitle: 'Impossible de créer le pass',
@@ -769,7 +769,7 @@ export const fr: TranslationKeys = {
 
   accountDelete: {
     title: 'Supprimer le compte',
-    desc: 'Supprime votre compte et toutes les données — définitif.',
+    desc: 'Supprime définitivement votre compte et toutes vos données enregistrées.',
     openCta: 'Supprimer le compte …',
     confirmLabel: 'Tapez « {phrase} » pour confirmer.',
     confirmCta: 'Supprimer définitivement',
@@ -790,7 +790,7 @@ export const fr: TranslationKeys = {
 
   vehicleManager: {
     title: 'Vos véhicules',
-    subtitle: 'Choisissez le véhicule actif — tous les calculs le suivent.',
+    subtitle: 'Choisissez le véhicule actif — tous les calculs s\'y réfèrent.',
     add: 'Ajouter un véhicule',
     delete: 'Retirer',
     confirmDelete: 'Confirmer ?',
@@ -799,11 +799,11 @@ export const fr: TranslationKeys = {
   },
 
   pumpPhoto: {
-    cta: 'Photo de l\'écran de la pompe',
+    cta: 'Photo de l’écran de la pompe',
     busyCta: 'Lecture …',
     pickAria: 'Choisir une photo de pompe',
     statusLoadingEngine: 'Chargement du moteur OCR …',
-    statusRecognizing: 'Lecture de l\'écran —',
+    statusRecognizing: 'Lecture de l’écran —',
     statusParsing: 'Analyse …',
     errorPrefix: 'Erreur',
     errorGeneric: 'Impossible de lire la photo.',
@@ -828,7 +828,7 @@ export const fr: TranslationKeys = {
     openMicAria: 'Lancer la commande vocale',
     closeAria: 'Fermer',
     dialogAria: 'Boîte de dialogue de la commande vocale',
-    listening: 'À l\'écoute …',
+    listening: 'À l’écoute …',
     processing: 'Traitement …',
     permissionDenied: 'Accès au microphone refusé',
     unsupported: 'Commande vocale non prise en charge',
@@ -927,7 +927,7 @@ export const fr: TranslationKeys = {
     radiusLabel: 'Rayon',
     fuelTypeLabel: 'Carburant',
     maxPriceLabel: 'Prix max €/L',
-    maxPriceHint: 'Facultatif. Vide = tout prix.',
+    maxPriceHint: 'Facultatif. Vide = aucune limite.',
     cancelCta: 'Annuler',
     createCta: 'Créer l’alerte',
     toastLocationMissingTitle: 'Position manquante',
@@ -953,13 +953,13 @@ export const fr: TranslationKeys = {
   },
 
   openingHours: {
-    allDayHeading: 'Ouverte 24h/24',
+    allDayHeading: 'Ouverte 24 h/24 (7j/7)',
     allDayDesc: 'Cette station est ouverte 24 heures sur 24.',
-    holidays: 'Horaires spéciaux',
+    holidays: 'Horaires exceptionnels',
   },
 
   filterPanel: {
-    title: 'Filtre',
+    title: 'Filtres',
     energyType: 'Type d’énergie / carburant',
     stationType: 'Type de station',
     stationTypeHint: 'Aucune sélection = tous les types',
