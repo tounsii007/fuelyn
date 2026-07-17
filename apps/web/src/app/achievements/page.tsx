@@ -52,8 +52,6 @@ function AchievementsContent() {
     [fuelLog, market],
   );
 
-  if (!hydrated) return null;
-
   const dateFmt = (iso: string | null) =>
     !iso
       ? '—'
@@ -63,33 +61,43 @@ function AchievementsContent() {
 
   return (
     <div className="max-w-3xl mx-auto p-6 animate-fade-in">
+      {/* Header renders on the server too (no hydration gate) so the
+          page always ships a descriptive <h1> for SEO/crawlers. The
+          store-derived counts + trophy grid wait for the persisted
+          store to rehydrate to avoid a 0→real flash. */}
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-[var(--color-fg)]">
           {t('achievements.title')}
         </h1>
-        <p className="text-sm text-[var(--color-fg-subtle)] mt-1">
-          {t('achievements.subtitle')
-            .replace('{unlocked}', String(result.unlockedCount))
-            .replace('{total}', String(result.totalCount))
-            .replace('{points}', String(result.points))}
-        </p>
+        {hydrated && (
+          <p className="text-sm text-[var(--color-fg-subtle)] mt-1">
+            {t('achievements.subtitle')
+              .replace('{unlocked}', String(result.unlockedCount))
+              .replace('{total}', String(result.totalCount))
+              .replace('{points}', String(result.points))}
+          </p>
+        )}
       </header>
 
-      {result.unlockedCount === 0 && fuelLog.length === 0 && (
-        <div className="bg-[var(--color-surface)] rounded-2xl p-6 text-center border border-[var(--color-border-subtle)]">
-          <span className="text-4xl mb-3 inline-block">🌱</span>
-          <p className="text-sm text-[var(--color-fg)]">{t('achievements.emptyTitle')}</p>
-          <p className="text-xs text-[var(--color-fg-subtle)] mt-1">{t('achievements.emptyHint')}</p>
-        </div>
-      )}
+      {hydrated && (
+        <>
+          {result.unlockedCount === 0 && fuelLog.length === 0 && (
+            <div className="bg-[var(--color-surface)] rounded-2xl p-6 text-center border border-[var(--color-border-subtle)]">
+              <span className="text-4xl mb-3 inline-block">🌱</span>
+              <p className="text-sm text-[var(--color-fg)]">{t('achievements.emptyTitle')}</p>
+              <p className="text-xs text-[var(--color-fg-subtle)] mt-1">{t('achievements.emptyHint')}</p>
+            </div>
+          )}
 
-      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {result.achievements.map((a) => (
-          <li key={a.id}>
-            <Card achievement={a} t={t} dateFmt={dateFmt} />
-          </li>
-        ))}
-      </ul>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {result.achievements.map((a) => (
+              <li key={a.id}>
+                <Card achievement={a} t={t} dateFmt={dateFmt} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

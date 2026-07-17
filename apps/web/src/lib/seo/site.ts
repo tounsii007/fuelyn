@@ -18,7 +18,10 @@ export const SITE_URL = (
 
 export const SITE_NAME = 'Fuelyn';
 
-export const SITE_TITLE = 'Fuelyn — AI-powered fuel intelligence';
+// Home / default document title. German + search-intent keywords
+// ("Spritpreise vergleichen", "günstig tanken") since the app targets
+// German fuel-price queries; brand stays first for recognition.
+export const SITE_TITLE = 'Fuelyn — Spritpreise vergleichen & günstig tanken';
 
 export const SITE_TITLE_TEMPLATE = '%s · Fuelyn';
 
