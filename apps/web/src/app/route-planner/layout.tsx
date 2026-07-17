@@ -1,13 +1,11 @@
-import type { ReactNode } from 'react';
-import { pageMetadata } from '@/lib/seo/metadata';
+import { routeSegment } from '@/lib/seo/route-segment';
 
-export const metadata = pageMetadata({
+const seg = routeSegment({
   title: 'Routenplaner mit Tankstopps',
   description:
     'Plane deine Route mit optimalen Tankstopps — günstig tanken genau dann, wenn es sich lohnt.',
   path: '/route-planner',
 });
 
-export default function Layout({ children }: { children: ReactNode }) {
-  return children;
-}
+export const metadata = seg.metadata;
+export default seg.Layout;

@@ -1,13 +1,11 @@
-import type { ReactNode } from 'react';
-import { pageMetadata } from '@/lib/seo/metadata';
+import { routeSegment } from '@/lib/seo/route-segment';
 
-export const metadata = pageMetadata({
+const seg = routeSegment({
   title: 'Verbrauchsstatistik',
   description:
     'Analysiere deinen Kraftstoffverbrauch: Kosten, Trends und Einsparpotenziale über die Zeit.',
   path: '/stats',
 });
 
-export default function Layout({ children }: { children: ReactNode }) {
-  return children;
-}
+export const metadata = seg.metadata;
+export default seg.Layout;

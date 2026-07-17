@@ -21,6 +21,12 @@ export type PageMetaInput = {
 };
 
 export function pageMetadata({ title, description, path, index = true }: PageMetaInput): Metadata {
+  // Per-route social card: /og renders a branded 1200×630 image with
+  // this page's own title/subtitle, so shared sub-page links look
+  // intentional instead of the generic home image.
+  const ogImage = `/og?title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(description)}`;
+  const ogImages = [{ url: ogImage, width: 1200, height: 630, alt: `${title} · Fuelyn` }];
+
   return {
     title,
     description,
@@ -29,10 +35,12 @@ export function pageMetadata({ title, description, path, index = true }: PageMet
       title: `${title} · Fuelyn`,
       description,
       url: path,
+      images: ogImages,
     },
     twitter: {
       title: `${title} · Fuelyn`,
       description,
+      images: ogImages,
     },
     robots: index
       ? undefined // inherit the indexable root robots directives

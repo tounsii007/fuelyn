@@ -1,13 +1,11 @@
-import type { ReactNode } from 'react';
-import { pageMetadata } from '@/lib/seo/metadata';
+import { routeSegment } from '@/lib/seo/route-segment';
 
-export const metadata = pageMetadata({
+const seg = routeSegment({
   title: 'Tank-Jahresrückblick',
   description:
     'Dein Jahr in Zahlen: gefahrene Kilometer, getanktes Volumen und wie viel du mit Fuelyn gespart hast.',
   path: '/wrapped',
 });
 
-export default function Layout({ children }: { children: ReactNode }) {
-  return children;
-}
+export const metadata = seg.metadata;
+export default seg.Layout;
