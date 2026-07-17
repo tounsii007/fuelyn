@@ -59,6 +59,27 @@ function ThemeSync() {
   return null;
 }
 
+// Keep <html lang> in sync with the active UI locale (a11y / SEO —
+// WCAG 3.1.1/3.1.2). The document ships lang="de" from the server;
+// when the user switches language, screen readers and search engines
+// must see the matching BCP-47 tag instead of stale "de". Set via an
+// effect (post-mount) so there's no hydration mismatch — same pattern
+// as the theme/background sync above.
+const LOCALE_TO_BCP47: Record<string, string> = {
+  de: 'de',
+  en: 'en-GB',
+  'en-US': 'en-US',
+  fr: 'fr',
+};
+
+function LangSync() {
+  const locale = useAppStore((s) => s.settings.locale);
+  useEffect(() => {
+    document.documentElement.lang = LOCALE_TO_BCP47[locale] ?? 'de';
+  }, [locale]);
+  return null;
+}
+
 function ServiceWorkerRegistrar() {
   useEffect(() => {
     // Escape hatch: NEXT_PUBLIC_DISABLE_SW=1 turns the service worker
@@ -149,6 +170,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <ToastProvider>
             <StoreHydrator>
               <ThemeSync />
+              <LangSync />
               <ServiceWorkerRegistrar />
               <OfflineBanner />
               <CommandPalette />
