@@ -712,7 +712,7 @@ export const enUS: TranslationKeys = {
     lockedDesc: 'This feature is part of Fuelyn Premium.',
     errorTitle: 'Checkout failed',
     stubTitle: 'Premium activated (dev mode)',
-    stubDesc: 'No Stripe key configured — premium is enabled locally.',
+    stubDesc: 'No Stripe key configured — Premium is enabled locally.',
     managePortalCta: 'Manage subscription',
     featureTitles: {
       'ai-chat-pro':           'Unlimited AI chat',
@@ -820,7 +820,7 @@ export const enUS: TranslationKeys = {
     savingPerFill: 'Per fill-up',
     disclaimer: 'Estimate based on EU market data — not live station prices.',
     liveBadge: 'Live price',
-    liveDisclaimer: 'Live price from the neighboring country\'s official open-data feed.',
+    liveDisclaimer: 'Live price from the neighboring country’s official open-data feed.',
   },
 
   voice: {

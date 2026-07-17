@@ -89,7 +89,7 @@ export const en: TranslationKeys = {
   },
 
   station: {
-    stations: 'Petrol stations',
+    stations: 'Stations',
     stationSingular: 'Station',
     nearby: 'Nearby stations',
     detail: 'Station details',
@@ -258,7 +258,7 @@ export const en: TranslationKeys = {
     tipVehicleTitle: 'Vehicle profile',
     tipVehicleText: 'Add your car for range checks',
     step1Title: 'Share your location',
-    step1Text: 'We\'ll show you nearby stations.',
+    step1Text: 'We’ll show you nearby stations.',
     step2Title: 'Enter your vehicle',
     step2Text: 'Optional: Enter your consumption for smart recommendations.',
     step3Title: 'Fuel up smartly',
@@ -533,7 +533,7 @@ export const en: TranslationKeys = {
       'liters-500':           { label: '500 litres fuelled',  desc: 'Half a tonne of fuel.' },
       'liters-2000':          { label: '2,000 litres fuelled',desc: 'A whole season.' },
       'streak-3':             { label: 'Smart streak: 3',     desc: '3 below-market fills in a row.' },
-      'streak-7':             { label: 'Smart streak: 7',     desc: 'A whole week of timing.' },
+      'streak-7':             { label: 'Smart streak: 7',     desc: 'A whole week of perfect timing.' },
       'streak-14':            { label: 'Smart streak: 14',    desc: 'Two weeks of bargains.' },
       'saved-10':             { label: '€10 saved',           desc: 'First real savings.' },
       'saved-50':             { label: '€50 saved',           desc: 'A week of groceries.' },
@@ -814,7 +814,7 @@ export const en: TranslationKeys = {
     savingPerFill: 'Per fill-up',
     disclaimer: 'Estimate based on EU market data — not live station prices.',
     liveBadge: 'Live price',
-    liveDisclaimer: 'Live price from the neighbouring country\'s official open-data feed.',
+    liveDisclaimer: 'Live price from the neighbouring country’s official open-data feed.',
   },
 
   voice: {
