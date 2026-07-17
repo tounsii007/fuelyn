@@ -67,10 +67,5 @@
       "auth": false,
       "update": 900
     }
-  ],
-  "categories": ["travel", "utilities", "productivity"],
-  "lang": "de",
-  "dir": "ltr",
-  "orientation": "any",
-  "prefer_related_applications": false
+  ]
 }

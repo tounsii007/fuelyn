@@ -60,12 +60,14 @@
   --color-ai-glow-from: oklch(0.62 0.24 250);
   --color-ai-glow-to:   oklch(0.58 0.25 295);
 
-  /* ─── Typography ───────────────────────────────────────── */
-  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system,
+  /* ─── Typography ───────────────────────────────────────────
+     --font-inter is injected by next/font (self-hosted Inter, see
+     app/layout.tsx). Falls back to the platform stack if unset. */
+  --font-sans: var(--font-inter), system-ui, -apple-system,
                 "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular",
                 "Menlo", monospace;
-  --font-display: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-display: var(--font-inter), system-ui, sans-serif;
 
   /* Type scale — modular, mobile-first */
   --text-xs:   0.75rem;

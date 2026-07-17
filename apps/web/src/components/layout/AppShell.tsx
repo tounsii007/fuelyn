@@ -137,7 +137,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-hidden focus:outline-none">
+        {children}
+      </main>
 
       {/*
         Floating compare-tray indicator. Mounts globally so it

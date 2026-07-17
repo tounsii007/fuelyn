@@ -61,6 +61,23 @@ function ThemeSync() {
 
 function ServiceWorkerRegistrar() {
   useEffect(() => {
+    // Escape hatch: NEXT_PUBLIC_DISABLE_SW=1 turns the service worker
+    // off entirely (set by docker-compose.dev.yml). In dev the SW
+    // caches aggressively, breaks hot-reload and can serve a stale
+    // offline shell — so when disabled we also proactively UNREGISTER
+    // any SW a previous session already installed and drop its caches.
+    if (process.env.NEXT_PUBLIC_DISABLE_SW === '1') {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        });
+        if (typeof caches !== 'undefined') {
+          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+        }
+      }
+      return;
+    }
+
     // Only register service worker in production or on localhost
     // Network dev access (phone on same WiFi) doesn't support SW well
     const isLocalhost =

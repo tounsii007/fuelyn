@@ -37,9 +37,10 @@ function buildCsp(): string {
     "default-src 'self'",
     scriptSrc,
     // Tailwind v4 + Next emits inline <style> tags during hydration.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' data: https://fonts.gstatic.com",
+    // Fonts are self-hosted via next/font — no Google Fonts hosts needed.
+    "style-src 'self' 'unsafe-inline'",
+    "style-src-elem 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
     "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://creativecommons.tankerkoenig.de",
     // Map tiles fetched by the service worker via fetch() go through
     // `connect-src`, not `img-src`. List every tile CDN the StationMap

@@ -34,7 +34,7 @@ export default function WrappedPage() {
   return (
     <Suspense
       fallback={
-        <main className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated grid place-items-center">
+        <main id="main-content" tabIndex={-1} className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated grid place-items-center focus:outline-none">
           <div className="text-white/80 text-sm">Lade Wrapped …</div>
         </main>
       }
@@ -102,7 +102,7 @@ function buildSlides(report: WrappedReport): StorySlide[] {
 function NotEnoughData({ year }: { year: number }) {
   const { t } = useTranslations();
   return (
-    <main className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated flex items-center justify-center p-6">
+    <main id="main-content" tabIndex={-1} className="fixed inset-0 z-[80] fy-mesh fy-mesh-animated flex items-center justify-center p-6 focus:outline-none">
       <div className="max-w-md w-full text-center text-white fy-enter">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-3">
           Fuelyn Wrapped {year}

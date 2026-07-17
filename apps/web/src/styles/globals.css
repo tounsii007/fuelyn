@@ -97,7 +97,7 @@
 @layer utilities {
   /* ─── Leaflet Modern Overrides ──────────────────── */
   .leaflet-container {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
   }
 
   /* Remove default marker icon styling */

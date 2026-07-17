@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
 
   transpilePackages: ['@fuelyn/core'],
 
+  // Don't advertise the framework — small security/perf nicety.
+  poweredByHeader: false,
+
   // Allow dev server access from phones/tablets on the same network (HTTP + HTTPS)
   allowedDevOrigins: [
     'http://192.168.178.31:3000',
@@ -53,6 +56,10 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '1mb',
     },
+    // Tree-shake heavy barrel imports into direct submodule imports at
+    // build time. @fuelyn/core is imported 160+ times across the app;
+    // this keeps unused exports out of each route's bundle.
+    optimizePackageImports: ['@fuelyn/core', '@tanstack/react-query'],
   },
 
   // Security headers
