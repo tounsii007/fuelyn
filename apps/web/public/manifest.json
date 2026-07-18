@@ -1,7 +1,7 @@
 {
-  "name": "Fuelyn — Günstig & schlau tanken",
+  "name": "Fuelyn — Der günstigste Tankstopp",
   "short_name": "Fuelyn",
-  "description": "Finde die beste Tankstelle in deiner Nähe. Nicht nur die billigste — die sinnvollste.",
+  "description": "Nicht der billigste Liter — der günstigste Tankstopp. Effektivpreis inkl. Umweg, Tankkarten-Rabatt und Reichweite, aus der amtlichen MTS-K-Spritpreisquelle.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
