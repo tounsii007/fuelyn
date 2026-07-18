@@ -111,13 +111,38 @@ export async function POST(request: NextRequest) {
 
   // Production path — POST the payload to Stripe.
   try {
+    // payload.line_items carry the stable lookup_key (fuelyn-monthly /
+    // fuelyn-annual). Stripe's line_items[][price] needs the generated
+    // price ID, so resolve lookup_key → price ID first. The prices are
+    // created by scripts/stripe-setup.mjs.
+    const priceIdByKey = new Map<string, string>();
+    for (const li of payload.line_items) {
+      if (priceIdByKey.has(li.price)) continue;
+      const lookupRes = await fetch(
+        `https://api.stripe.com/v1/prices?active=true&lookup_keys[]=${encodeURIComponent(li.price)}`,
+        { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` } },
+      );
+      const lookupJson = (await lookupRes.json()) as { data?: Array<{ id?: string }> };
+      const priceId = lookupRes.ok ? lookupJson.data?.[0]?.id : undefined;
+      if (!priceId) {
+        return NextResponse.json(
+          {
+            error: 'Stripe price not configured',
+            detail: `No active price with lookup_key "${li.price}". Run scripts/stripe-setup.mjs.`,
+          },
+          { status: 502 },
+        );
+      }
+      priceIdByKey.set(li.price, priceId);
+    }
+
     const body = new URLSearchParams();
     body.set('mode', payload.mode);
     payload.payment_method_types.forEach((t) =>
       body.append('payment_method_types[]', t),
     );
     payload.line_items.forEach((li, idx) => {
-      body.set(`line_items[${idx}][price]`, li.price);
+      body.set(`line_items[${idx}][price]`, priceIdByKey.get(li.price)!);
       body.set(`line_items[${idx}][quantity]`, String(li.quantity));
     });
     body.set('success_url', payload.success_url);
