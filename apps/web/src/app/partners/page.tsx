@@ -99,7 +99,9 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
         <a
           href={partner.affiliateUrl}
           target="_blank"
-          rel="noopener noreferrer"
+          // Affiliate links must be tagged sponsored+nofollow (Google
+          // link-spam policy) so referral params don't pass PageRank.
+          rel="sponsored nofollow noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-brand-500 to-brand-700
                      text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-500/20
                      hover:shadow-lg hover:shadow-brand-500/30 hover:scale-[1.02] active:scale-[0.98]
@@ -149,6 +151,15 @@ export default function PartnersPage() {
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Spare bei jedem Tanken und Laden mit der richtigen Karte.
+          </p>
+          {/* Prominent affiliate disclosure (UWG §5a / Kennzeichnungspflicht):
+              the ad relationship must be labelled clearly, not just in the
+              fine print at the bottom. */}
+          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium
+                        text-gray-500 dark:text-gray-400
+                        bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1">
+            <span className="font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">Anzeige</span>
+            Affiliate-Links — Fuelyn erhält ggf. eine Provision, ohne Mehrkosten für dich.
           </p>
         </div>
 
