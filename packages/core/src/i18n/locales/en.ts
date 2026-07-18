@@ -701,7 +701,7 @@ export const en: TranslationKeys = {
     daysRemaining: '{days} days left',
     monthlyLabel: 'Monthly',
     annualLabel: 'Annual',
-    annualSavingsBadge: '−16 % vs. monthly',
+    annualSavingsBadge: '−{pct} % vs. monthly',
     feeDisclaimer: 'Auto-renews — cancel anytime.',
     upgradeCta: 'Unlock Premium',
     lockedDesc: 'This feature is part of Fuelyn Premium.',

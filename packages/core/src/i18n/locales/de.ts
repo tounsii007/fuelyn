@@ -709,7 +709,7 @@ export const de = {
     daysRemaining: 'Noch {days} Tage',
     monthlyLabel: 'Monatlich',
     annualLabel: 'Jährlich',
-    annualSavingsBadge: '−16 % gegenüber monatlich',
+    annualSavingsBadge: '−{pct} % gegenüber monatlich',
     feeDisclaimer: 'Verlängert sich automatisch — jederzeit kündbar.',
     upgradeCta: 'Premium freischalten',
     lockedDesc: 'Diese Funktion ist Teil von Fuelyn Premium.',

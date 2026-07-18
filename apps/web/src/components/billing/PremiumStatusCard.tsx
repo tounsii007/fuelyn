@@ -14,6 +14,7 @@ import { useTranslations } from '@/lib/hooks/use-translations';
 import { useToast } from '@/components/ui/Toast';
 import { isPremium, daysUntilExpiry } from '@fuelyn/core';
 import { track } from '@/lib/hooks/use-telemetry';
+import { PREMIUM_PRICE, PREMIUM_ANNUAL_SAVINGS_PCT, formatEur } from '@/lib/premium/pricing';
 
 export function PremiumStatusCard() {
   const { t, locale } = useTranslations();
@@ -149,9 +150,9 @@ export function PremiumStatusCard() {
             <p className="text-[10px] uppercase tracking-wide text-[var(--color-fg-subtle)]">
               {t('premium.monthlyLabel')}
             </p>
-            {/* Displayed price must match the Stripe price object keyed
-                'fuelyn-monthly' (configured in the Stripe dashboard). */}
-            <p className="text-sm font-semibold text-[var(--color-fg)]">1,99 €/Monat</p>
+            <p className="text-sm font-semibold text-[var(--color-fg)]">
+              {formatEur(PREMIUM_PRICE.monthlyEur, locale)}
+            </p>
           </button>
           <button
             type="button"
@@ -163,8 +164,12 @@ export function PremiumStatusCard() {
             <p className="text-[10px] uppercase tracking-wide text-[var(--color-brand-600)]">
               {t('premium.annualLabel')}
             </p>
-            <p className="text-sm font-semibold text-[var(--color-fg)]">19,99 €/Jahr</p>
-            <p className="text-[10px] text-[var(--color-success-600)]">{t('premium.annualSavingsBadge')}</p>
+            <p className="text-sm font-semibold text-[var(--color-fg)]">
+              {formatEur(PREMIUM_PRICE.annualEur, locale)}
+            </p>
+            <p className="text-[10px] text-[var(--color-success-600)]">
+              {t('premium.annualSavingsBadge').replace('{pct}', String(PREMIUM_ANNUAL_SAVINGS_PCT))}
+            </p>
           </button>
         </div>
       )}
