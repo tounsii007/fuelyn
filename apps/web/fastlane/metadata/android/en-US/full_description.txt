@@ -1,0 +1,15 @@
+Fuelyn finds not the cheapest, but the smartest station.
+
+The cheapest station is no bargain if the detour eats the saving. Fuelyn computes the effective price: pump price + the fuel cost of the detour + your loyalty-card rebate + a reachability check — so you see which stop actually pays off for your route.
+
+Why Fuelyn
+• Live fuel prices from Germany’s official transparency feed (MTS-K) — E5, E10, Diesel
+• Effective price, not pump price: detour, fuel card and range factored in
+• Price forecast: when it typically gets cheaper, by weekday and hour
+• Transparent recommendation with a reason you can check — no black box
+• Route planner with optimal stops + cross-border price comparison
+• Fuel log: consumption (L/100 km) and cost — with receipt, bank-CSV and Spritmonitor import
+• Price alerts, favorites, EV charging & hydrogen
+• Privacy: your location never leaves your device
+
+Free to use. Available in German, English and French.

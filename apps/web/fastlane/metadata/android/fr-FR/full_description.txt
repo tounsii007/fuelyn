@@ -1,0 +1,15 @@
+Fuelyn trouve non pas la station la moins chère, mais la plus pertinente.
+
+La station la moins chère n’est pas une bonne affaire si le détour annule l’économie. Fuelyn calcule le prix réel : prix à la pompe + coût du détour + remise de votre carte carburant + vérification de l’autonomie — pour voir quel arrêt est vraiment rentable sur votre trajet.
+
+Pourquoi Fuelyn
+• Prix en direct de la source officielle allemande (MTS-K) — E5, E10, Diesel
+• Prix réel, pas prix à la pompe : détour, carte carburant et autonomie compris
+• Prévision de prix : quand ça baisse habituellement, par jour et par heure
+• Recommandation transparente et justifiée — pas de boîte noire
+• Planificateur d’itinéraire avec arrêts optimaux + comparaison transfrontalière
+• Journal carburant : consommation (L/100 km) et coûts — import ticket, CSV bancaire, Spritmonitor
+• Alertes de prix, favoris, recharge VE & hydrogène
+• Confidentialité : votre position ne quitte jamais votre appareil
+
+Gratuit. Disponible en allemand, anglais et français.

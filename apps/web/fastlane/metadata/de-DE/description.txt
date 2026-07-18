@@ -1,0 +1,15 @@
+Fuelyn findet nicht die billigste, sondern die sinnvollste Tankstelle.
+
+Die billigste Tankstelle nützt nichts, wenn der Umweg den Rabatt auffrisst. Fuelyn rechnet den Effektivpreis: Pumpenpreis + Fahrtkosten für den Umweg + Tankkarten-Rabatt + Reichweiten-Check. So siehst du, welcher Tankstopp sich für deine Strecke wirklich lohnt.
+
+Warum Fuelyn
+• Live-Spritpreise aus der amtlichen Markttransparenzstelle (MTS-K) — E5, E10, Diesel
+• Effektivpreis statt Pumpenpreis: Umweg, Tankkarte und Reichweite eingerechnet
+• Preisprognose: wann es typischerweise günstiger wird — pro Wochentag und Uhrzeit
+• Transparente Empfehlung mit nachvollziehbarer Begründung (keine Black-Box)
+• Routenplaner mit optimalen Tankstopps + Grenzvergleich beim Nachbarland
+• Tank-Logbuch: Verbrauch (L/100 km) und Kosten — inkl. Import (Kassenbon, Bank-CSV, Spritmonitor)
+• Preisalarme, Favoriten, EV-Laden & Wasserstoff
+• Datenschutz: dein Standort verlässt nie dein Gerät
+
+Kostenlos nutzbar. Verfügbar auf Deutsch, Englisch und Französisch.
