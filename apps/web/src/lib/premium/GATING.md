@@ -1,46 +1,59 @@
-# Premium gating — proposed realignment (spec)
+# Premium gating — how it works & the proposed realignment
 
-> Status: **proposal, not yet implemented.** The `FeatureId` enum in
-> `feature-flags.ts` is mirrored in the Java gateway (see the note at the top of
-> that file). Changing which features are free vs premium therefore requires a
-> **coordinated web + backend change** and product sign-off. This document is the
-> agreed target so both sides can move in lockstep.
+## Actual architecture (verified)
 
-## Why (competitive analysis)
+There is **no server-side / Java feature enum** — premium gating is **client-side
+only** today. (An earlier `feature-flags.ts` claimed "the same enum lives in Java";
+it was dead code with zero imports and has been removed.)
 
-The German fuel-price market anchors paid tiers at **€3.99–4.99 / year** (ADAC is
-free). Selling ad-removal or price *forecasting* (mehr-tanken "Flizzi", ADAC
-"Tank-Prognose" already do it) will not sustain a subscription. Premium must
-monetize **the stack no incumbent bundles** — see the competitive report.
+The single source of truth is **`@fuelyn/core`**:
+- `PremiumFeature` — the feature id union.
+- `FEATURE_TIER: Record<PremiumFeature, 'free' | 'premium'>` — the gating matrix
+  (`billing/subscription.ts`).
+- `isFeatureUnlocked(feature, subscription)` — the engine (trial/active → all
+  premium; cancelled/past_due → until period end).
+- `<PremiumGate feature="…">` (web) wraps UI in an upgrade prompt.
 
-Displayed price is now **€1.99 / month** (annual €19.99, ~16 % off) — see
-`pricing.ts`. Positioning: *the cheapest stop, not the cheapest litre.*
+**Currently gated in the UI** (via inline `isFeatureUnlocked`):
+- `carbon-offset-buy` → `CarbonOffsetCard`
+- `border-crossing-live` → `BorderCrossingCard`
 
-## Target tiers
+`FEATURE_TIER` marks 10 features premium, but only those 2 are wired. `<PremiumGate>`
+exists but isn't wrapped around any surface yet.
 
-**Free (acquisition — must stay generous):**
-- Live map + prices (MTS-K), search, filters, favourites
-- Basic best-deal recommendation + reachability
-- Single vehicle, price history, cross-device sync
+## Proposed realignment (competitive report)
 
-**Premium — the differentiators (value-stack):**
-| Capability | Feature id (proposed) | Today |
+Lead premium with the **value-stack** (what no incumbent bundles), not with parity
+features. Price is **€1.99/mo** (see `pricing.ts`; Stripe objects via
+`scripts/stripe-setup.mjs`).
+
+**Move to FREE** (parity — gating them reads as petty):
+- `price-prediction-7d` → free (mehr-tanken/ADAC already forecast for free).
+- Keep price alerts free (at least one tier).
+
+**Keep / make PREMIUM (wire these next):**
+| Feature | Surface to gate | Wired? |
 |---|---|---|
-| Effective-price automation (auto drive-cost + loyalty rebate on every station) | `effective-price-auto` | free/partial |
-| Import & bookkeeping (receipt OCR, bank-CSV, Spritmonitor) | `imports-pro` | free |
-| Multi-vehicle / fleet | `multi-vehicle-fleet` | — |
-| Cross-border live comparison | `border-crossing-live` | free |
-| Unlimited route stops | `unlimited-route-stops` | in enum |
-| AI chat without limit | `ai-chat-pro` | — |
-| Wrapped export (PDF) / CSV export | `wrap-export`, `csv-export` | in enum |
+| `border-crossing-live` | BorderCrossingCard | ✅ |
+| `carbon-offset-buy` | CarbonOffsetCard | ✅ |
+| `multi-vehicle-fleet` | vehicle manager (2nd+ vehicle) | ☐ |
+| `csv-export` / `wrapped-pdf` | fuel-log / wrapped export | ☐ |
+| `ai-chat-pro` | /ai-chat (unlimited) | ☐ |
+| *(new)* effective-price automation, imports (receipt/bank/Spritmonitor) | add to `PremiumFeature` + `FEATURE_TIER`, then gate | ☐ |
 
-**Explicitly NOT premium-gated** (parity features — gating them reads as petty):
-price forecast, price alerts (keep at least one free), basic history.
+## Why the rest isn't wired here
 
-## Implementation checklist (when scheduled)
-1. Extend `FeatureId` in `feature-flags.ts` **and** the Java gateway enum together.
-2. Move the differentiators above out of the free path; keep basic finding free.
-3. Wrap the premium surfaces in `<PremiumGate feature="…">` with an upgrade fallback.
-4. Keep the 14-day trial (`TRIAL_FEATURES`) seeded with the highest-pull items
-   (effective-price-auto, imports-pro) to drive conversion.
-5. Add analytics on gate views → checkout to measure conversion at €1.99.
+Wrapping currently-free features in a paywall changes free-tier UX and revenue — a
+**product decision** that needs sign-off and visual QA (unavailable this session).
+The engine is ready; flipping each surface is a one-liner:
+
+```tsx
+<PremiumGate feature="multi-vehicle-fleet"><AddVehicle /></PremiumGate>
+// or inline:  if (!isFeatureUnlocked('csv-export', subscription)) return <Upsell/>;
+```
+
+Checklist when scheduled: (1) set `FEATURE_TIER` (incl. `price-prediction-7d` → free);
+(2) add any new `PremiumFeature` ids in core; (3) wrap the surfaces above;
+(4) seed the 14-day trial with the highest-pull items; (5) if a hard paywall is
+required (not just UI hiding), add **server-side** enforcement in the gateway —
+that is the only part that would introduce a real Java change.
