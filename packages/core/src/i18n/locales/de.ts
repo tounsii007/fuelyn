@@ -484,6 +484,7 @@ export const de = {
   memberships: {
     title: 'Tankkarten / Programme',
     subtitle: 'Aktiviere deine Karten — die Effektivpreise rechnen den Rabatt automatisch ein.',
+    discoverCta: 'Noch keine Karte? Partner-Angebote entdecken',
     cards: {
       'aral-klubkarte':   { label: 'Aral Klubkarte' },
       'shell-clubsmart':  { label: 'Shell ClubSmart' },

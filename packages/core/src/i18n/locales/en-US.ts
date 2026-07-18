@@ -482,6 +482,7 @@ export const enUS: TranslationKeys = {
   memberships: {
     title: 'Loyalty cards',
     subtitle: 'Activate your cards — the discount is baked into your effective price automatically.',
+    discoverCta: 'No card yet? Explore partner offers',
     cards: {
       'aral-klubkarte':   { label: 'Aral Klubkarte' },
       'shell-clubsmart':  { label: 'Shell ClubSmart' },

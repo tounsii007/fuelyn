@@ -9,6 +9,7 @@
 
 'use client';
 
+import Link from 'next/link';
 import { MEMBERSHIPS, type MembershipDiscount } from '@fuelyn/core';
 import { useAppStore } from '@/lib/store/app-store';
 import { useTranslations } from '@/lib/hooks/use-translations';
@@ -48,6 +49,18 @@ export function MembershipPicker() {
           />
         ))}
       </ul>
+
+      {/* Bridge from the effective-price loyalty context to the affiliate
+          channel: users without a card can discover partner offers. */}
+      <Link
+        href="/partners"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-300
+                   hover:text-brand-700 dark:hover:text-brand-200
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 rounded-md"
+      >
+        {t('memberships.discoverCta')}
+        <span aria-hidden="true">→</span>
+      </Link>
     </section>
   );
 }
