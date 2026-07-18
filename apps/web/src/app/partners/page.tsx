@@ -9,6 +9,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AFFILIATE_PARTNERS } from '@/lib/affiliate-partners';
 import type { AffiliatePartner } from '@fuelyn/core';
 import { useTranslations } from '@/lib/hooks/use-translations';
+import { PARTNER_TEXT } from '@/lib/partner-text';
 
 type TabId = 'all' | 'tankkarte' | 'ladekarte' | 'club';
 
@@ -34,8 +35,13 @@ const CATEGORY_LABEL_KEYS: Record<string, string> = {
 };
 
 function PartnerCard({ partner }: { partner: AffiliatePartner }) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [expanded, setExpanded] = useState(false);
+
+  // Localized marketing copy, falling back to German if a locale is
+  // missing a partner (keeps rendering resilient to data drift).
+  const text = PARTNER_TEXT[locale]?.[partner.id] ?? PARTNER_TEXT.de[partner.id];
+  if (!text) return null;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700
@@ -56,16 +62,16 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
               </span>
             </div>
           </div>
-          {partner.discount && (
+          {text.discount && (
             <div className="flex-shrink-0 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800
                           text-green-700 dark:text-green-400 text-[11px] font-bold px-2 py-1 rounded-lg text-center leading-tight">
-              {partner.discount}
+              {text.discount}
             </div>
           )}
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">
-          {partner.description}
+          {text.description}
         </p>
       </div>
 
@@ -76,7 +82,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
             {t('partners.benefitsHeading')}
           </p>
           <ul className="space-y-1.5">
-            {partner.benefits.map((b, i) => (
+            {text.benefits.map((b, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <svg className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
