@@ -18,12 +18,11 @@ const NOW = new Date('2026-05-10T12:00:00Z');
 
 describe('isFeatureUnlocked', () => {
   it('returns true for free-tier features regardless of subscription', () => {
-    // (At time of writing every PremiumFeature is gated, but the
-    // function must still correctly grant any 'free' entries — this
-    // test guards future free-tier additions.)
-    expect(isFeatureUnlocked('ai-chat-pro', null, NOW)).toBe(false);
-    // Use a contrived "feature" via cast — we only assert the branch
-    // semantics, not the matrix shape.
+    // price-prediction-7d is a 'free' entry (parity feature) — granted
+    // with no sub, a free-status sub, or none at all.
+    expect(isFeatureUnlocked('price-prediction-7d', null, NOW)).toBe(true);
+    expect(isFeatureUnlocked('price-prediction-7d', undefined, NOW)).toBe(true);
+    expect(isFeatureUnlocked('price-prediction-7d', FREE_SUBSCRIPTION, NOW)).toBe(true);
   });
 
   it('returns false when no subscription supplied', () => {

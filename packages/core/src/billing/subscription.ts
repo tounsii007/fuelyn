@@ -62,7 +62,10 @@ export const FREE_SUBSCRIPTION: Subscription = { status: 'free', plan: null };
  */
 export const FEATURE_TIER: Readonly<Record<PremiumFeature, 'free' | 'premium'>> = {
   'ai-chat-pro':          'premium',
-  'price-prediction-7d':  'premium',
+  // Price forecasting is market parity (mehr-tanken/ADAC ship it free) —
+  // gating it reads as petty, so it stays free. Premium leads with the
+  // value-stack instead (see lib/premium/GATING.md).
+  'price-prediction-7d':  'free',
   'multi-vehicle-fleet':  'premium',
   'wallet-pass':          'premium',
   'voice-pro':            'premium',
