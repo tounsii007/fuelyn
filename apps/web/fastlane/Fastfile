@@ -1,0 +1,37 @@
+# Fastlane lanes for pushing store metadata (no build/signing here — the
+# native shells are produced by Capacitor; these lanes upload the listing
+# text + assets in fastlane/metadata/ that this repo maintains).
+#
+# Prereqs: `gem install fastlane`, credentials via env/CI secrets (see Appfile).
+# Screenshots are NOT included in the repo — drop device captures into
+# fastlane/screenshots/<locale>/ (iOS) and .../android/ before a full run.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload App Store listing metadata (skips binary + screenshots)"
+  lane :metadata do
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      overwrite_screenshots: false,
+      submit_for_review: false,
+      force: true, # non-interactive: don't prompt for confirmation
+      run_precheck_before_submit: false
+    )
+  end
+end
+
+platform :android do
+  desc "Upload Google Play listing metadata (skips APK/AAB)"
+  lane :metadata do
+    supply(
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      track: "production",
+      validate_only: true # dry validation; flip off to actually publish
+    )
+  end
+end

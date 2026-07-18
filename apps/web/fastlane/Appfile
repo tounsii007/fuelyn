@@ -1,0 +1,10 @@
+# Fastlane Appfile — identifiers shared by deliver (iOS) and supply (Android).
+# Credentials are supplied via env / CI secrets, never committed:
+#   iOS:   FASTLANE_USER, FASTLANE_PASSWORD (or App Store Connect API key)
+#   Play:  SUPPLY_JSON_KEY (service-account json path)
+
+app_identifier("com.fuelyn.app")   # iOS bundle id (see capacitor.config.ts)
+package_name("com.fuelyn.app")     # Android application id
+
+# apple_id("you@example.com")      # set via FASTLANE_USER instead
+# team_id("XXXXXXXXXX")            # set via env in CI

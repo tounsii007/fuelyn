@@ -1,0 +1,1 @@
+Effektivpreis-Anzeige, Preisprognose und Routenplanung verbessert. Fehlerbehebungen und Performance.
