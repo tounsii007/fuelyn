@@ -8,14 +8,15 @@ import { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AFFILIATE_PARTNERS } from '@/lib/affiliate-partners';
 import type { AffiliatePartner } from '@fuelyn/core';
+import { useTranslations } from '@/lib/hooks/use-translations';
 
 type TabId = 'all' | 'tankkarte' | 'ladekarte' | 'club';
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'all', label: 'Alle', icon: '🏷️' },
-  { id: 'tankkarte', label: 'Tankkarten', icon: '⛽' },
-  { id: 'ladekarte', label: 'Ladekarten', icon: '🔌' },
-  { id: 'club', label: 'Clubs', icon: '🏅' },
+const TABS: { id: TabId; labelKey: string; icon: string }[] = [
+  { id: 'all', labelKey: 'partners.tabAll', icon: '🏷️' },
+  { id: 'tankkarte', labelKey: 'partners.tabTankkarte', icon: '⛽' },
+  { id: 'ladekarte', labelKey: 'partners.tabLadekarte', icon: '🔌' },
+  { id: 'club', labelKey: 'partners.tabClub', icon: '🏅' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -25,14 +26,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   club: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  tankkarte: 'Tankkarte',
-  ladekarte: 'Ladekarte',
-  versicherung: 'Versicherung',
-  club: 'Automobilclub',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  tankkarte: 'partners.catTankkarte',
+  ladekarte: 'partners.catLadekarte',
+  versicherung: 'partners.catVersicherung',
+  club: 'partners.catClub',
 };
 
 function PartnerCard({ partner }: { partner: AffiliatePartner }) {
+  const { t } = useTranslations();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -50,7 +52,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
             <div className="min-w-0">
               <h3 className="font-bold text-gray-900 dark:text-gray-100 truncate">{partner.name}</h3>
               <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-0.5 ${CATEGORY_COLORS[partner.category] || ''}`}>
-                {CATEGORY_LABELS[partner.category] || partner.category}
+                {CATEGORY_LABEL_KEYS[partner.category] ? t(CATEGORY_LABEL_KEYS[partner.category]!) : partner.category}
               </span>
             </div>
           </div>
@@ -71,7 +73,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
       {expanded && (
         <div className="px-4 pb-3 border-t border-gray-50 dark:border-gray-700/50 pt-3">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Vorteile
+            {t('partners.benefitsHeading')}
           </p>
           <ul className="space-y-1.5">
             {partner.benefits.map((b, i) => (
@@ -93,7 +95,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
           onClick={() => setExpanded(!expanded)}
           className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-brand-600 transition-colors"
         >
-          {expanded ? 'Weniger anzeigen' : 'Vorteile anzeigen'}
+          {expanded ? t('partners.hideBenefits') : t('partners.showBenefits')}
         </button>
         <div className="flex-1" />
         <a
@@ -117,7 +119,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
             }
           }}
         >
-          Mehr erfahren
+          {t('partners.learnMore')}
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
           </svg>
@@ -128,6 +130,7 @@ function PartnerCard({ partner }: { partner: AffiliatePartner }) {
 }
 
 export default function PartnersPage() {
+  const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<TabId>('all');
 
   const filteredPartners = activeTab === 'all'
@@ -144,13 +147,13 @@ export default function PartnersPage() {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-            Empfehlungen
+            {t('partners.eyebrow')}
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">
-            Tank- & Ladekarten
+            {t('partners.title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Spare bei jedem Tanken und Laden mit der richtigen Karte.
+            {t('partners.subtitle')}
           </p>
           {/* Prominent affiliate disclosure (UWG §5a / Kennzeichnungspflicht):
               the ad relationship must be labelled clearly, not just in the
@@ -158,8 +161,8 @@ export default function PartnersPage() {
           <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium
                         text-gray-500 dark:text-gray-400
                         bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-1">
-            <span className="font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">Anzeige</span>
-            Affiliate-Links — Fuelyn erhält ggf. eine Provision, ohne Mehrkosten für dich.
+            <span className="font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">{t('partners.disclosureTag')}</span>
+            {t('partners.disclosureText')}
           </p>
         </div>
 
@@ -177,7 +180,7 @@ export default function PartnersPage() {
                 }`}
             >
               <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           ))}
         </div>
@@ -191,9 +194,7 @@ export default function PartnersPage() {
 
         {/* Disclaimer */}
         <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-8 px-4 leading-relaxed">
-          * Bei Klick auf &quot;Mehr erfahren&quot; wirst du zur Website des Anbieters weitergeleitet.
-          Fuelyn kann eine Provision erhalten, wenn du dich über unseren Link anmeldest.
-          Dies hat keinen Einfluss auf den Preis für dich.
+          {t('partners.disclaimer')}
         </p>
       </div>
     </AppShell>

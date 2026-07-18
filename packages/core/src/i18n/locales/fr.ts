@@ -493,6 +493,28 @@ export const fr: TranslationKeys = {
     },
   },
 
+  partners: {
+    eyebrow: 'Recommandations',
+    title: 'Cartes carburant & recharge',
+    subtitle: 'Économisez à chaque plein et chaque recharge avec la bonne carte.',
+    disclosureTag: 'Annonce',
+    disclosureText: 'Liens affiliés — Fuelyn peut percevoir une commission, sans surcoût pour vous.',
+    tabAll: 'Toutes',
+    tabTankkarte: 'Cartes carburant',
+    tabLadekarte: 'Cartes recharge',
+    tabClub: 'Clubs',
+    catTankkarte: 'Carte carburant',
+    catLadekarte: 'Carte recharge',
+    catVersicherung: 'Assurance',
+    catClub: 'Automobile club',
+    benefitsHeading: 'Avantages',
+    showBenefits: 'Voir les avantages',
+    hideBenefits: 'Voir moins',
+    learnMore: 'En savoir plus',
+    disclaimer:
+      'En touchant « En savoir plus », vous êtes redirigé vers le site du prestataire. Fuelyn peut percevoir une commission si vous vous inscrivez via notre lien. Cela n’affecte pas le prix que vous payez.',
+  },
+
   counterfactual: {
     title: 'Et si …',
     subtitle: 'Projection à partir de votre journal ({start} – {end})',

@@ -495,6 +495,28 @@ export const de = {
     },
   },
 
+  partners: {
+    eyebrow: 'Empfehlungen',
+    title: 'Tank- & Ladekarten',
+    subtitle: 'Spare bei jedem Tanken und Laden mit der richtigen Karte.',
+    disclosureTag: 'Anzeige',
+    disclosureText: 'Affiliate-Links — Fuelyn erhält ggf. eine Provision, ohne Mehrkosten für dich.',
+    tabAll: 'Alle',
+    tabTankkarte: 'Tankkarten',
+    tabLadekarte: 'Ladekarten',
+    tabClub: 'Clubs',
+    catTankkarte: 'Tankkarte',
+    catLadekarte: 'Ladekarte',
+    catVersicherung: 'Versicherung',
+    catClub: 'Automobilclub',
+    benefitsHeading: 'Vorteile',
+    showBenefits: 'Vorteile anzeigen',
+    hideBenefits: 'Weniger anzeigen',
+    learnMore: 'Mehr erfahren',
+    disclaimer:
+      'Bei Klick auf „Mehr erfahren" wirst du zur Website des Anbieters weitergeleitet. Fuelyn kann eine Provision erhalten, wenn du dich über unseren Link anmeldest. Dies hat keinen Einfluss auf den Preis für dich.',
+  },
+
   counterfactual: {
     title: 'Was wäre wenn …',
     subtitle: 'Hochrechnung auf Basis deines Logbuchs ({start} – {end})',

@@ -487,6 +487,28 @@ export const en: TranslationKeys = {
     },
   },
 
+  partners: {
+    eyebrow: 'Recommendations',
+    title: 'Fuel & charging cards',
+    subtitle: 'Save on every fill-up and charge with the right card.',
+    disclosureTag: 'Ad',
+    disclosureText: 'Affiliate links — Fuelyn may earn a commission, at no extra cost to you.',
+    tabAll: 'All',
+    tabTankkarte: 'Fuel cards',
+    tabLadekarte: 'Charging cards',
+    tabClub: 'Clubs',
+    catTankkarte: 'Fuel card',
+    catLadekarte: 'Charging card',
+    catVersicherung: 'Insurance',
+    catClub: 'Motoring club',
+    benefitsHeading: 'Benefits',
+    showBenefits: 'Show benefits',
+    hideBenefits: 'Show less',
+    learnMore: 'Learn more',
+    disclaimer:
+      'Tapping “Learn more” takes you to the provider’s website. Fuelyn may earn a commission if you sign up via our link. This has no effect on the price you pay.',
+  },
+
   counterfactual: {
     title: 'What if …',
     subtitle: 'Projected from your log ({start} – {end})',
