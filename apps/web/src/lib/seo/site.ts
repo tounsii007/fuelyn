@@ -26,9 +26,9 @@ export const SITE_TITLE = 'Fuelyn — Spritpreise vergleichen & günstig tanken'
 export const SITE_TITLE_TEMPLATE = '%s · Fuelyn';
 
 export const SITE_DESCRIPTION =
-  'Fuelyn findet die klügste Tankstelle, sagt Preis-Tiefpunkte voraus und macht ' +
-  'aus jedem Tankstopp eine datengestützte Entscheidung — nicht nur die billigste, ' +
-  'die sinnvollste.';
+  'Fuelyn findet nicht die billigste, sondern die sinnvollste Tankstelle: den ' +
+  'Effektivpreis aus Pumpenpreis, Umweg, Tankkarten-Rabatt und Reichweite — plus ' +
+  'Preisprognose für den besten Tankzeitpunkt.';
 
 export const SITE_DESCRIPTION_EN =
   'Fuelyn finds the smartest gas station, predicts fuel-price drops, and turns ' +

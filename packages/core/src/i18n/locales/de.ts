@@ -1003,8 +1003,8 @@ export const de = {
   },
 
   hero: {
-    headlinePart1: 'Tanken,',
-    headlinePart2: 'wenn es wirklich günstig ist.',
+    headlinePart1: 'Der günstigste Tankstopp.',
+    headlinePart2: 'Nicht nur der billigste Liter.',
     body: 'Erlaube den Standortzugriff für Live-Preise in deiner Nähe — oder schaue dich erstmal in Berlin um.',
     ctaShare: 'Standort freigeben',
     ctaDemo: 'Demo öffnen (Berlin)',
@@ -1013,7 +1013,7 @@ export const de = {
     highlightTrend: 'Preis-Trends',
     highlightEv: 'EV + Wasserstoff',
     featureSmartTitle: 'Smart-Empfehlung',
-    featureSmartBody: 'Nicht nur die billigste — die sinnvollste Tankstelle für deine Strecke.',
+    featureSmartBody: 'Effektivpreis inkl. Umweg, Tankkarte und Reichweite — die sinnvollste Tankstelle für deine Strecke, nicht nur die billigste.',
     featureMarketTitle: 'Markt-Kontext',
     featureMarketBody: '±ct vs. Schnitt für jede Tankstelle. Wissen, was günstig wirklich heißt.',
     featureBestTimeTitle: 'Beste Zeit',

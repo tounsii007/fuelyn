@@ -63,10 +63,10 @@ export default function OpengraphImage() {
               maxWidth: '900px',
             }}
           >
-            Günstig & schlau tanken.
+            Der günstigste Tankstopp.
           </div>
           <div style={{ fontSize: '34px', color: '#9fb4d8', maxWidth: '860px', lineHeight: 1.3 }}>
-            Die klügste Tankstelle finden. Preis-Tiefpunkte vorhersagen. Bei jedem Tankstopp sparen.
+            Effektivpreis statt Pumpenpreis — Umweg, Tankkarte und Reichweite eingerechnet.
           </div>
         </div>
 

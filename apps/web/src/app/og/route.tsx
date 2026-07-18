@@ -25,11 +25,11 @@ function clamp(value: string | null, max: number, fallback: string): string {
 
 export function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const title = clamp(searchParams.get('title'), 70, 'Günstig & schlau tanken.');
+  const title = clamp(searchParams.get('title'), 70, 'Der günstigste Tankstopp.');
   const subtitle = clamp(
     searchParams.get('subtitle'),
     120,
-    'Die klügste Tankstelle finden. Preis-Tiefpunkte vorhersagen. Bei jedem Tankstopp sparen.',
+    'Effektivpreis statt Pumpenpreis — Umweg, Tankkarte und Reichweite eingerechnet.',
   );
 
   return new ImageResponse(

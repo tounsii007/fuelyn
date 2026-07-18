@@ -995,8 +995,8 @@ export const en: TranslationKeys = {
   },
 
   hero: {
-    headlinePart1: 'Fuel up,',
-    headlinePart2: 'when it’s actually cheap.',
+    headlinePart1: 'The cheapest fill-up.',
+    headlinePart2: 'Not just the cheapest litre.',
     body: 'Allow location access for live prices near you — or have a browse around Berlin first.',
     ctaShare: 'Share location',
     ctaDemo: 'Open demo (Berlin)',
@@ -1005,7 +1005,7 @@ export const en: TranslationKeys = {
     highlightTrend: 'Price trends',
     highlightEv: 'EV + hydrogen',
     featureSmartTitle: 'Smart pick',
-    featureSmartBody: 'Not just the cheapest — the smartest station for your route.',
+    featureSmartBody: 'Effective price with detour, fuel card and range factored in — the smartest station for your route, not just the cheapest.',
     featureMarketTitle: 'Market context',
     featureMarketBody: '±ct vs. avg for every station. Know what cheap really means.',
     featureBestTimeTitle: 'Best time',

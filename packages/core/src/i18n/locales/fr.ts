@@ -1001,8 +1001,8 @@ export const fr: TranslationKeys = {
   },
 
   hero: {
-    headlinePart1: 'Faites le plein,',
-    headlinePart2: 'quand c’est vraiment moins cher.',
+    headlinePart1: 'Le plein le moins cher.',
+    headlinePart2: 'Pas seulement le litre le moins cher.',
     body: 'Autorisez la localisation pour les prix en direct près de chez vous — ou explorez d’abord Berlin.',
     ctaShare: 'Partager ma position',
     ctaDemo: 'Ouvrir la démo (Berlin)',
@@ -1011,7 +1011,7 @@ export const fr: TranslationKeys = {
     highlightTrend: 'Tendances de prix',
     highlightEv: 'VE + hydrogène',
     featureSmartTitle: 'Choix intelligent',
-    featureSmartBody: 'Pas la moins chère — la plus pertinente pour votre trajet.',
+    featureSmartBody: 'Prix réel : détour, carte carburant et autonomie compris — la station la plus pertinente pour votre trajet, pas seulement la moins chère.',
     featureMarketTitle: 'Contexte marché',
     featureMarketBody: '±ct vs moyenne pour chaque station. Savoir ce que « pas cher » signifie vraiment.',
     featureBestTimeTitle: 'Meilleur moment',
