@@ -149,7 +149,9 @@ export function PremiumStatusCard() {
             <p className="text-[10px] uppercase tracking-wide text-[var(--color-fg-subtle)]">
               {t('premium.monthlyLabel')}
             </p>
-            <p className="text-sm font-semibold text-[var(--color-fg)]">3,99 €/Monat</p>
+            {/* Displayed price must match the Stripe price object keyed
+                'fuelyn-monthly' (configured in the Stripe dashboard). */}
+            <p className="text-sm font-semibold text-[var(--color-fg)]">1,99 €/Monat</p>
           </button>
           <button
             type="button"
@@ -161,7 +163,7 @@ export function PremiumStatusCard() {
             <p className="text-[10px] uppercase tracking-wide text-[var(--color-brand-600)]">
               {t('premium.annualLabel')}
             </p>
-            <p className="text-sm font-semibold text-[var(--color-fg)]">29,99 €/Jahr</p>
+            <p className="text-sm font-semibold text-[var(--color-fg)]">19,99 €/Jahr</p>
             <p className="text-[10px] text-[var(--color-success-600)]">{t('premium.annualSavingsBadge')}</p>
           </button>
         </div>

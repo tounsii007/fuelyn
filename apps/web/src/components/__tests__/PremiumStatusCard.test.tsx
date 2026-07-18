@@ -33,8 +33,8 @@ describe('PremiumStatusCard', () => {
   it('offers the upgrade tiers to free users', () => {
     render(<PremiumStatusCard />);
     expect(screen.getByText('premium.statusFree')).toBeInTheDocument();
-    expect(screen.getByText('3,99 €/Monat')).toBeInTheDocument();
-    expect(screen.getByText('29,99 €/Jahr')).toBeInTheDocument();
+    expect(screen.getByText('1,99 €/Monat')).toBeInTheDocument();
+    expect(screen.getByText('19,99 €/Jahr')).toBeInTheDocument();
     expect(screen.queryByText('premium.managePortalCta')).toBeNull();
     expect(screen.queryByText('premium.activeBadge')).toBeNull();
   });
@@ -52,7 +52,7 @@ describe('PremiumStatusCard', () => {
     expect(screen.getByText('premium.activeBadge')).toBeInTheDocument();
     expect(screen.getByText('premium.managePortalCta')).toBeInTheDocument();
     expect(screen.getByText(/premium\.daysRemaining/)).toBeInTheDocument();
-    expect(screen.queryByText('3,99 €/Monat')).toBeNull();
+    expect(screen.queryByText('1,99 €/Monat')).toBeNull();
   });
 
   it('starts a monthly checkout via telemetry + the billing API', async () => {
@@ -60,7 +60,7 @@ describe('PremiumStatusCard', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<PremiumStatusCard />);
     await act(async () => {
-      fireEvent.click(screen.getByText('3,99 €/Monat'));
+      fireEvent.click(screen.getByText('1,99 €/Monat'));
     });
     expect(trackMock).toHaveBeenCalledWith('premium.checkout-started', 'monthly');
     expect(fetchMock).toHaveBeenCalledWith(
